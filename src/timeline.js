@@ -1,8 +1,9 @@
 /*!
- * JQuery Timeline Plugin Scripts
+ * jQuery Timeline Plugin
  * ------------------------
  * Version: 1.0.0
- * Coded by: Ka2 (https://ka2.org/)
+ * Author: Ka2 ( https://ka2.org/ )
+ * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
  */
 (function( $ ) {

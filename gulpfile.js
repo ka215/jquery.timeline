@@ -26,7 +26,7 @@ gulp.task('styles', function() {
 
 gulp.task('scripts', function() {
   return gulp.src('src/timeline.js')
-    .pipe(uglify())
+    .pipe(uglify({output: {comments: '/^!/'}}))
     .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
     .pipe(rename({extname: '.min.js'}))
     .pipe(gulp.dest('./dist'))
