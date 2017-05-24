@@ -7,13 +7,11 @@
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <!-- Bootstrap 4.0.0-alpha.6 -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-  <!-- Ionicons 2.0.1 -->
-  <link rel="stylesheet" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  <!-- jQuery Timeline -->
+  <link rel="stylesheet" href="./dist/timeline.min.css?ver=1.0.0">
   <!-- Font Awesome latest -->
   <script src="http://email.tl.fortawesome.com/c/eJxNjUEOwiAQRU9TlmQYaIcuWKhJ70E7g1XbYgrG68vS5Oct3uJ9DiwDC6lHQDAEiGQsut5qgw5Grw0QeX2d7NSPdOsc1E2nfNb4lZJ30Uve1RokQYQEJrJ1kmZKHJ3zwzAubkHPRm1hrfVdOnvpcGr7FGmZ4z_T7OwZPfJsUD-LOsMrYnts1Pm8_wAiUTJN"></script>
-  <!-- Timeline style -->
-  <link rel="stylesheet" href="./dist/timeline.min.css?">
 
   <!-- HTML5 ShimとRespond.js IE8のHTML5要素とメディアクエリのサポート -->
   <!-- 警告：Respond.jsは、file:// 経由でページを表示しても機能しません -->
@@ -25,30 +23,32 @@
 <body>
 <div class="wrapper">
 
-  <!-- コンテンツ・ラッパー。ページコンテンツを含む -->
   <div class="content-wrapper">
-    <!-- コンテンツ・ヘッダ (ページ・ヘッダ) -->
-    <section class="content-header">
-      <h1>
-        404 Not Found
-        <small>ページが見つかりません</small>
-      </h1>
-      <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> 管理TOP</a></li>
-        <li class="active">404</li>
-      </ol>
-    </section>
 
-    <!-- メイン・コンテンツ -->
+    <section class="content-header">
+
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#"><i class="fa fa-home"></i> HOME</a></li>
+        <li class="breadcrumb-item active">this</li>
+      </ol>
+
+    </section>
+    <!-- /.content-header -->
+
     <section class="content">
 
-      <!-- Your Page Content Here -->
+      <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+          <h1 class="display-3">404 Not Found</h1>
+          <p class="lead">ページが見つかりません</p>
+        </div>
+      </div>
 
     </section>
     <!-- /.content -->
+
   </div>
   <!-- /.content-wrapper -->
-
 
 </div>
 <!-- ./wrapper -->
@@ -57,11 +57,15 @@
 
 <!-- jQuery 3.1.1 -->
 <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-<!-- tether 1.4.0 -->
+<!-- tether 1.4.0 (for using bootstrap's tooltip component) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" crossorigin="anonymous"></script>
 <!-- Bootstrap 4.0.0-alpha.6 -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
-<!-- Main script -->
-<script src="./dist/timeline.min.js?"></script>
+<!-- jQuery Timeline -->
+<script src="./dist/timeline.min.js?ver=1.0.0"></script>
+<!-- local scripts -->
+<script>
+
+</script>
 </body>
 </html>
