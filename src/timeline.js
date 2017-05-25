@@ -10,13 +10,14 @@
 
   // Constant values
   var pluginName   = 'jQuery.Timeline',
-      rowH         = 40,
+      //rowH         = 40,
       pointMargin  = 2,
-      tlEventAreaH = 0;
+      tlEventAreaH = 0,
+      rowH, i18nMonth, i18nDay, i18nMa;
 
-  if ( 'global' in $.timeline && typeof $.timeline.global === 'object' && $.timeline.global.rowH !== undefined ) {
-    rowH = Number( $.timeline.global.rowH );
-  }
+//  if ( 'global' in $.timeline && typeof $.timeline.global === 'object' && $.timeline.global.rowH !== undefined ) {
+//    rowH = Number( $.timeline.global.rowH );
+//  }
 
   var methods = {
     init : function( options ) {
@@ -42,7 +43,8 @@
         zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
         range           : 3, // The default view range of the timetable starting from the `startDatetime`
         rows            : 5, // Rows of timeline event area
-        height          : "auto", // Fixed height (pixel) of timeline event area; default "auto" is (rows * 40)px
+        rowHeight       : 40, // Height of one row
+        height          : "auto", // Fixed height (pixel) of timeline event area; default "auto" is (rows * rowHeight)px
         minGridPer      : 2, // Minimum grid per
         minGridSize     : 30, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
         rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
@@ -50,7 +52,12 @@
           left          : "jqtl-circle-left",
           right         : "jqtl-circle-right"
         },
-        showPointer     : true
+        showPointer     : true,
+        i18n            : {
+          month         : { 'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August', 'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December' },
+          day           : { 'Sun': 'Sunday', 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thurseday', 'Fri': 'Friday', 'Sat': 'Saturday' },
+          ma            : [ 'am', 'pm' ]
+        }
       }, options);
       
       // initialize plugin
@@ -75,6 +82,7 @@
               "zerofill-year"         : settings.zerofillYear ? 1 : 0,
               "range"                 : settings.range,
               "rows"                  : settings.rows,
+              "row-height"            : settings.rowHeight,
               "timeline-height"       : settings.height,
               "min-grid-per"          : settings.minGridPer,
               "min-grid-size"         : settings.minGridSize,
@@ -82,6 +90,9 @@
               "navi-icon-left"        : settings.naviIcon.left,
               "navi-icon-right"       : settings.naviIcon.right,
               "show-pointer"          : settings.showPointer ? 1 : 0,
+              "i18n-month"            : settings.i18n.month,
+              "i18n-day"              : settings.i18n.day,
+              "i18n-ma"               : settings.i18n.ma,
               "text"                  : ""
           });
         
@@ -99,6 +110,11 @@
             target: $this,
             timeline : timeline
           });
+          
+          rowH      = settings.rowHeight;
+          i18nMonth = settings.i18n.month;
+          i18nDay   = settings.i18n.day;
+          i18nMa    = settings.i18n.ma;
           
           // Retrive Current Date
           var currentDt, currentDate, _tmp, _regx;
@@ -224,6 +240,9 @@
         if ( 'rows' in options ) {
           data.timeline.attr( 'rows', options.rows );
         }
+        if ( 'rowHeight' in options ) {
+          data.timeline.attr( 'row-height', options.rowHeight );
+        }
         if ( 'height' in options ) {
           data.timeline.attr( 'timeline-height', options.height );
         }
@@ -246,6 +265,17 @@
         }
         if ( 'showPointer' in options ) {
           data.timeline.attr( 'show-pointer', options.showPointer ? 1 : 0 );
+        }
+        if ( 'i18n' in options ) {
+          if ( typeof options.i18n.month != undefined ) {
+            data.timeline.attr( 'i18n-month', JSON.stringify( options.i18n.month ) );
+          }
+          if ( typeof options.i18n.day != undefined ) {
+            data.timeline.attr( 'i18n-day', JSON.stringify( options.i18n.day ) );
+          }
+          if ( typeof options.i18n.ma != undefined ) {
+            data.timeline.attr( 'i18n-ma', JSON.stringify( options.i18n.ma ) );
+          }
         }
 
         // Retrive current Date
@@ -463,6 +493,7 @@
         zerofillYear   : Number( data.timeline.attr('zerofill-year') ) == 1 ? true : false,
         range          : Number( data.timeline.attr('range') ),
         rows           : Number( data.timeline.attr('rows') ),
+        rowHeight      : Number( data.timeline.attr('row-height') ),
         height         : data.timeline.attr('timeline-height') === 'auto' ? 'auto' : Number( data.timeline.attr('timeline-height') ),
         minGridPer     : Number( data.timeline.attr('min-grid-per') ),
         minGridSize    : Number( data.timeline.attr('min-grid-size') ),
@@ -472,6 +503,11 @@
           right        : data.timeline.attr('navi-icon-right'),
         },
         showPointer    : data.timeline.attr('show-pointer'),
+        i18n           : {
+          month        : JSON.parse( data.timeline.attr('i18n-month') ),
+          day          : JSON.parse( data.timeline.attr('i18n-day') ),
+          ma           : JSON.parse( data.timeline.attr('i18n-ma') ),
+        },
         events         : ( new Function( 'return ' + data.timeline.text() ) )()
       };
     },
@@ -892,7 +928,8 @@
         data = $this.data('timeline');
 
     if ( data.timeline.attr('timeline-height') === "auto" || typeof data.timeline.attr('timeline-height') !== "number" ) {
-      tlEventAreaH = Number( data.timeline.attr('rows') ) * rowH;
+      // tlEventAreaH = Number( data.timeline.attr('rows') ) * rowH;
+      tlEventAreaH = Number( data.timeline.attr('rows') ) * Number( data.timeline.attr('row-height') );
     } else {
       tlEventAreaH = Number( data.timeline.attr('timeline-height') );
     }
@@ -982,6 +1019,7 @@
 //        minRangeDt  = new Date( data.timeline.attr('timeline-range-from') ),
 //        maxRangeDt  = new Date( data.timeline.attr('timeline-range-to') ),
 //        tlMaxRow    = Number( data.timeline.attr('rows') ),
+        rowH        = Number( data.timeline.attr('row-height') ),
         tlTotalCols = Number( data.timeline.attr('total-cols') ),
         minGridPer  = Number( data.timeline.attr('min-grid-per') ),
         minGridSize = Number( data.timeline.attr('min-grid-size') ),
@@ -1485,9 +1523,12 @@
   function formatDate( format, date ) {
     // Date format like PHP
     var baseDt  = Object.prototype.toString.call( date ) === '[object Date]' ? date : new Date( date ),
-        month   = { 'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August', 'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December' },
-        day     = { 'Sun': 'Sunday', 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thurseday', 'Fri': 'Friday', 'Sat': 'Saturday' },
-        ma      = [ 'am', 'pm' ],
+        //month   = { 'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August', 'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December' },
+        //day     = { 'Sun': 'Sunday', 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thurseday', 'Fri': 'Friday', 'Sat': 'Saturday' },
+        //ma      = [ 'am', 'pm' ],
+        month   = i18nMonth,
+        day     = i18nDay,
+        ma      = i18nMa,
         formatStrings = format.split(''),
         converted = '',
         esc = false,
@@ -1527,12 +1568,12 @@
       return baseDt;
     }
 
-    // localize
+/*    // localize
     if ( typeof $.timeline.global === 'object' ) {
       month = typeof $.timeline.global.month === 'object' ? $.timeline.global.month : month;
       day   = typeof $.timeline.global.day   === 'object' ? $.timeline.global.day   : day;
       ma    = typeof $.timeline.global.ma    === 'object' ? $.timeline.global.ma    : ma;
-    }
+    } */
 
     formatStrings.forEach( function( str, i ) {
       var res, tmp, tzo, sign;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>TimeLine</title>
+  <title>Example jQuery Timeline</title>
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <!-- Bootstrap 4.0.0-alpha.6 -->
@@ -21,37 +21,72 @@
   <![endif]-->
 </head>
 <body>
-<div class="wrapper">
+<div class="container-fluid">
 
-  <div class="content-wrapper">
+  <nav class="content-header">
 
-    <section class="content-header">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#"><i class="fa fa-home"></i> HOME</a></li>
+      <li class="breadcrumb-item active">jQuery Timeline</li>
+    </ol>
 
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#"><i class="fa fa-home"></i> HOME</a></li>
-        <li class="breadcrumb-item active">this</li>
-      </ol>
+  </nav>
+  <!-- /.content-header -->
 
-    </section>
-    <!-- /.content-header -->
+  <section class="row">
 
-    <section class="content">
+    <div class="content-main col-lg-12">
+    
+      <div id="myTimeline">
+        <ul class="timeline-events">
+          <li>Not allowed event definition</li>
+          <li data-timeline-node="{ eventId:1,start:'',end:'',content:'text text text text ...' }">Event Label</li>
+          <li data-timeline-node="{ start:'',content:'<p>In this way, you can include <em>HTML tags</em> in the event body.<br>:<br>:</p>' }">Event with undefined of end date</li>
+          <li data-timeline-node="{ eventId:3,start:'',end:'',row:2,bgColor:'#89c997',color:'#ffffff',callback:'$(\'#myModal\').modal()',content:'Show modal window via bootstrap' }">Event having callback</li>
+          <li data-timeline-node="{ eventId:2,start:'',end:'',row:3,bgColor:'#a1d8e6',color:'#008db7',extend:{toggle:'popover',placement:'bottom',content:'Show popover via bootstrap'} }">Event having custom colored</li>
+          <li data-timeline-node="{ start:'',end:'',row:3,extend:{'post_id':13,'permalink':'https://www.google.com/'} }">Event having extended params</li>
+          <li data-timeline-node="{ start:'',end:'',row:4,bgColor:'#e6eb94',margin:6 }">Sample Event ( ~ )</li>
+          <li data-timeline-node="{ start:'',row:4,bdColor:'#942343',image:'./dist/img/sample.bmp' }">Event having image for point type</li>
+          <li data-timeline-node="{ start:'',end:'',row:5 }">Long event from the past over range</li>
+          <li data-timeline-node="{ start:'',end:'',row:6,bgColor:'#fbdac8' }">Long event until the future over range</li>
+        </ul>
+      </div>
+    
+    </div>
+    <!-- /.content-main -->
 
-      <div class="jumbotron jumbotron-fluid">
-        <div class="container">
-          <h1 class="display-3">404 Not Found</h1>
-          <p class="lead">ページが見つかりません</p>
+    <div class="col-lg-6 col-md-12">
+
+      <div class="card mb-3">
+        <div class"card-block">
+          <h5><i class="fa fa-cog"></i> Timeline Configuration</h5>
+          <div class="card-text">
+
+            
+
+          </div>
         </div>
       </div>
+      <!-- /.card -->
+    </div>
+    <!-- /.col -->
+    <div class="col-lg-6 col-md-12">
 
-    </section>
-    <!-- /.content -->
+      <div class="card mb-3">
+        <div class="card-block">
+          <p class="h1">Timeline Event Detail</p>
+          <p class="lead">Please click on any event on the above timeline.</p>
+        </div>
+      </div>
+      <!-- /.card -->
+    </div>
+    <!-- /.col -->
 
-  </div>
-  <!-- /.content-wrapper -->
+  </section>
+  <!-- /.row -->
 
 </div>
-<!-- ./wrapper -->
+<!-- /.container-fluid -->
 
 <!-- REQUIRED JS SCRIPTS -->
 
@@ -63,9 +98,15 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 <!-- jQuery Timeline -->
 <script src="./dist/timeline.min.js?ver=1.0.0"></script>
+<!-- script src="./src/timeline.js"></script -->
 <!-- local scripts -->
 <script>
+$(function () {
+  "use strict";
 
+  $("#myTimeline").timeline();
+
+});
 </script>
 </body>
 </html>

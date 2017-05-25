@@ -225,12 +225,16 @@
   min-height: 5px;
 }
 .timeline-events {
-  position: absolute;
+  position: relative;
   display: block;
   left: 0;
   width: 100%;
-  height: 200px;
+  height: auto;
   z-index: 9;
+}
+.timeline-container .timeline-events {
+  position: absolute;
+  height: 200px;
 }
 .timeline-node {
   position: absolute;
