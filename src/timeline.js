@@ -126,7 +126,7 @@
             default:
               currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-'+ currentDt.getDate() +' '+ currentDate.getHours() +':00:00';
           }
-console.info( currentDt, currentDate );
+// console.info( currentDt, currentDate );
           $this.data('timeline').timeline.attr( 'actual-start-datetime', currentDate );
         
           renderTimeline( $this );
@@ -276,7 +276,7 @@ console.info( currentDt, currentDate );
         }
         data.timeline.attr( 'actual-start-datetime', currentDate );
 
-console.info( 'Fired "render" method', options, data.timeline );
+// console.info( 'Fired "render" method', options, data.timeline );
         $this.find('.timeline-container').empty().removeClass('timeline-container');
         renderTimeline( $this );
         resizeTimeline( $this );
@@ -302,13 +302,13 @@ console.info( 'Fired "render" method', options, data.timeline );
           data = $this.data('timeline');
         
         if ( data && typeof callback === 'function' ) {
-          console.info( 'Fired "initialized" method after initialize this plugin.' );
+          // console.info( 'Fired "initialized" method after initialize this plugin.' );
           callback( $this, data );
         }
       });
     },
     dateback  : function( evt ) {
-//console.info([ 'Fired "dateback" method', this, evt ]);
+// console.info([ 'Fired "dateback" method', this, evt ]);
       evt.preventDefault();
       var $root = $(this).parents('.timeline-container'),
           data = $root.data('timeline'),
@@ -317,7 +317,7 @@ console.info( 'Fired "render" method', options, data.timeline );
           currentTimelinePos = $root.find('.timeline-body').scrollLeft(),
           mov = 0;
       if ( fullTimelineWidth > visibleTimelineWidth ) {
-//console.info([ fullTimelineWidth / visibleTimelineWidth, currentTimelinePos, fullTimelineWidth - currentTimelinePos, (currentTimelinePos / visibleTimelineWidth) ]);
+// console.info([ fullTimelineWidth / visibleTimelineWidth, currentTimelinePos, fullTimelineWidth - currentTimelinePos, (currentTimelinePos / visibleTimelineWidth) ]);
         if ( (currentTimelinePos / visibleTimelineWidth) > 1 ) {
           mov = currentTimelinePos - visibleTimelineWidth;
         } else {
@@ -329,7 +329,7 @@ console.info( 'Fired "render" method', options, data.timeline );
       return this;
     },
     dateforth : function( evt ) {
-//console.info([ 'Fired "dateforth" method', this, evt ]);
+// console.info([ 'Fired "dateforth" method', this, evt ]);
       evt.preventDefault();
       var $root = $(this).parents('.timeline-container'),
           data = $root.data('timeline'),
@@ -352,11 +352,13 @@ console.info( 'Fired "render" method', options, data.timeline );
       var args = arguments.length > 1 ? Array.prototype.slice.call(arguments, 1) : [ arguments[0] ],
           control = args[0].toLowerCase(),
           animateSpeed = typeof args[1] !== 'undefined' ? String( args[1] ).toLowerCase() : 0;
-//console.info([ 'Fired "alignment" method', this, control, animateSpeed ]);
+// console.info([ 'Fired "alignment" method', this, control, animateSpeed ]);
       var visibleTimelineWidth = $(this).find('.timeline-body')[0].clientWidth, // 表示域
           fullTimelineWidth = $(this).find('.timeline-wrapper')[0].scrollWidth, // 全長
           mov = 0; // 初期位置(= left)
       if ( fullTimelineWidth > visibleTimelineWidth ) { // 表示域より全長が大きい場合（横スクロールが発生する場合）
+        var data = $(this).data('timeline'),
+            posX;
         switch ( control ) {
           case "left":
             // Move to beginning of timetable range
@@ -372,9 +374,8 @@ console.info( 'Fired "render" method', options, data.timeline );
             break;
           case "current":
             // Move to nearest current time on timetable (default)
-            var currentDt = setCurrentDate( true ),
-                data      = $(this).data('timeline'),
-                posX      = getAbscissa( currentDt, data );
+            var currentDt = setCurrentDate( true );
+            posX = getAbscissa( currentDt, data );
             if ( posX > -1 ) {
               if ( (posX - visibleTimelineWidth / 2) > (fullTimelineWidth - visibleTimelineWidth + 1) ) {
                 mov = fullTimelineWidth - visibleTimelineWidth + 1;
@@ -387,9 +388,8 @@ console.info( 'Fired "render" method', options, data.timeline );
             break;
           case "latest":
             // Move to latest event on the timetable
-            var data        = $(this).data('timeline'),
-                eventNodes  = ( new Function( 'return ' + data.timeline.text() ) )(),
-                diffDt, cur, latestKey, latestDt, posX;
+            var eventNodes  = ( new Function( 'return ' + data.timeline.text() ) )(),
+                diffDt, cur, latestKey, latestDt;
             $.each( eventNodes, function( i, evt ) {
               cur = formatDate( 'U', evt.start );
               if ( i == 0 ) {
@@ -402,7 +402,7 @@ console.info( 'Fired "render" method', options, data.timeline );
                 }
               }
             });
-//console.info([ latestKey, eventNodes[latestKey] ]);
+// console.info([ latestKey, eventNodes[latestKey] ]);
             latestDt = new Date( eventNodes[latestKey].start ),
             posX     = getAbscissa( latestDt, data );
             if ( posX > -1 ) {
@@ -420,7 +420,7 @@ console.info( 'Fired "render" method', options, data.timeline );
             mov = 0;
             var targetId = '#' + control;
             if ( $(targetId).length ) {
-              var posX = $(targetId).position().left;
+              posX = $(targetId).position().left;
               if ( (posX - visibleTimelineWidth / 2) > (fullTimelineWidth - visibleTimelineWidth + 1) ) {
                 mov = fullTimelineWidth - visibleTimelineWidth + 1;
               } else {
@@ -502,7 +502,7 @@ console.info( 'Fired "render" method', options, data.timeline );
         $(this).trigger( 'align.timeline', [ 'evt-' + (incrementId - 1), 'fast' ] );
         
         if ( data && typeof callback === 'function' ) {
-          console.info( 'Fired "addEvent" method after events addition.' );
+          // console.info( 'Fired "addEvent" method after events addition.' );
           callback( $this, data );
         }
       });
@@ -547,7 +547,7 @@ console.info( 'Fired "render" method', options, data.timeline );
         placeEvents( $this );
         
         if ( data && typeof callback === 'function' ) {
-          console.info( 'Fired "removeEvent" method after events removing.' );
+          // console.info( 'Fired "removeEvent" method after events removing.' );
           callback( $this, data );
         }
       });
@@ -592,7 +592,7 @@ console.info( 'Fired "render" method', options, data.timeline );
         $(this).trigger( 'align.timeline', [ 'evt-' + lastUpdated, 'fast' ] );
         
         if ( data && typeof callback === 'function' ) {
-console.info( 'Fired "updateEvent" method after events updating.' );
+// console.info( 'Fired "updateEvent" method after events updating.' );
           callback( $this, data );
         }
       });
@@ -626,7 +626,7 @@ console.info( 'Fired "updateEvent" method after events updating.' );
         $(this).trigger( 'align.timeline', [ 'evt-' + eventId, 'fast' ] );
         
         if ( showEvent( eventData ) && eventData.callback ) {
-console.info( 'Fired "openEvent" method after event shown.' );
+// console.info( 'Fired "openEvent" method after event shown.' );
           Function.call( null, 'return ' + eventData.callback )();
           //var callback = Function.call( null, 'return ' + eventData.callback )();
           //callback.call( eventData );
@@ -652,8 +652,8 @@ console.info( 'Fired "openEvent" method after event shown.' );
     // Rendering timeline view
     var $this = $(obj), i, _tmp, _regx, 
         data = $this.data('timeline');
-//console.info([ 'Called "renderTimeline" function', $this, data.timeline ]);
-console.info( data.timeline[0].attributes );
+// console.info([ 'Called "renderTimeline" function', $this, data.timeline ]);
+// console.info( data.timeline[0].attributes );
     
     _regx = /-|\/|\s|\:/;
     _tmp = data.timeline.attr('actual-start-datetime').split( _regx );
@@ -700,7 +700,7 @@ console.info( data.timeline[0].attributes );
         scaleMediumCols = [ scaleSet[topScale]['medium_cols'] ],
         scaleSmallCols;
     
-//console.info([ scaleSet.years['small_cols'], scaleSet.months['small_cols'], scaleSet.days['small_cols'] ]);
+// console.info([ scaleSet.years['small_cols'], scaleSet.months['small_cols'], scaleSet.days['small_cols'] ]);
     // initialize element
     if ( ! $this.hasClass('timeline-container') ) {
       $this.addClass('timeline-container');
@@ -723,7 +723,7 @@ console.info( data.timeline[0].attributes );
     } else {
       endDt = new Date( endDt.setDate( endDt.getDate() + Number( data.timeline.attr('range') ) - 1 ) );
     }
-//console.info([ startDt, endDt ]);
+// console.info([ startDt, endDt ]);
     
     // Set scaleMediumCols
     if ( midScale === 'days' && Number( data.timeline.attr('range') ) > 1 ) {
@@ -773,9 +773,11 @@ console.info( data.timeline[0].attributes );
     }
     
     // Create Time Scale
-    var topLevelRow = mediumLevelRow = smallLevelRow = '<tr>',
-        scaleSmallCols = array_sum( scaleMediumCols ) * scaleSet[topScale]['small_cols'],
+    var topLevelRow = '<tr>',
+        mediumLevelRow = '<tr>',
+        smallLevelRow = '<tr>',
         tmpDate, resMod, label;
+    scaleSmallCols = array_sum( scaleMediumCols ) * scaleSet[topScale]['small_cols'];
     
     // Stored total cols
     data.timeline.attr( 'total-cols', scaleSmallCols );
@@ -840,9 +842,9 @@ console.info( data.timeline[0].attributes );
     if ( data.timeline.attr( 'show-pointer' ) == 0 ) {
       tlPointer.css('display', 'none');
     } else {
-    	var currentDt = setCurrentDate( true ),
-    	    posX = getAbscissa( currentDt, data );
-    	if ( posX > -1 ) {
+      var currentDt = setCurrentDate( true ),
+          posX = getAbscissa( currentDt, data );
+      if ( posX > -1 ) {
         tlPointer.css('left', posX + 'px');
       } else {
         tlPointer.css('display', 'none');
@@ -860,7 +862,7 @@ console.info( data.timeline[0].attributes );
         tlNavRight     = data.timeline.attr( 'navi-icon-right' ) === '' ? 'jqtl-circle-right' : data.timeline.attr( 'navi-icon-right' ),
         tlNavPrevClass = /^jqtl-circle-.*$/.test( tlNavLeft ) ? 'timeline-to-prev-default' : 'timeline-to-prev-custom',
         tlNavNextClass = /^jqtl-circle-.*$/.test( tlNavRight ) ? 'timeline-to-next-default' : 'timeline-to-next-custom';
-//console.info([ tlNavLeft, tlNavRight ]);
+// console.info([ tlNavLeft, tlNavRight ]);
     tlFooterNav += '<a href="javascript:void(0);" class="timeline-to-prev ' + tlNavPrevClass + '"><i class="' + tlNavLeft + '"></i></a>';
     tlFooterNav += '<a href="javascript:void(0);" class="timeline-to-next ' + tlNavNextClass + '"><i class="' + tlNavRight + '"></i></a>';
     tlFooterNav += '</div>';
@@ -886,7 +888,7 @@ console.info( data.timeline[0].attributes );
 
   function resizeTimeline( obj ) {
     // Resizing timeline view
-    var $this = $(obj), i,
+    var $this = $(obj),
         data = $this.data('timeline');
 
     if ( data.timeline.attr('timeline-height') === "auto" || typeof data.timeline.attr('timeline-height') !== "number" ) {
@@ -898,8 +900,8 @@ console.info( data.timeline[0].attributes );
       width : $this.find('.timeline-timetable.timeline-scale').outerWidth(),
       height: 63 // $this.find('.timeline-timetable.timeline-scale').outerHeight() だと正確な値が取れない（bootstrap利用だとOK）（なぜだ！？）
     };
-    //console.info([ document.getElementsByClassName( 'timeline-scale' )[0].clientHeight, $(document).find('.timeline-timetable:first-child').height(), $this.find('.timeline-timetable:first-child').height(),$this.find('.timeline-timetable:first-child').innerHeight(),$this.find('.timeline-timetable:first-child').outerHeight(),$this.find('.timeline-timetable:first-child').outerHeight(true) ]);
-    //console.info([ timetableSize, $(this).find('.timeline-wrapper').height(), $(this).find('.spacer-cell').width() ]);
+    // console.info([ document.getElementsByClassName( 'timeline-scale' )[0].clientHeight, $(document).find('.timeline-timetable:first-child').height(), $this.find('.timeline-timetable:first-child').height(),$this.find('.timeline-timetable:first-child').innerHeight(),$this.find('.timeline-timetable:first-child').outerHeight(),$this.find('.timeline-timetable:first-child').outerHeight(true) ]);
+    // console.info([ timetableSize, $(this).find('.timeline-wrapper').height(), $(this).find('.spacer-cell').width() ]);
     if ( $this.find('.timeline-wrapper')[0].offsetHeight != timetableSize.height + tlEventAreaH ) {
       $this.find('.timeline-wrapper').css('height', (timetableSize.height + tlEventAreaH) + 'px');
       $this.find('.timeline-events').css('height', tlEventAreaH + 'px');
@@ -979,7 +981,7 @@ console.info( data.timeline[0].attributes );
         tlRange     = Number( data.timeline.attr('range') ),
 //        minRangeDt  = new Date( data.timeline.attr('timeline-range-from') ),
 //        maxRangeDt  = new Date( data.timeline.attr('timeline-range-to') ),
-        tlMaxRow    = Number( data.timeline.attr('rows') ),
+//        tlMaxRow    = Number( data.timeline.attr('rows') ),
         tlTotalCols = Number( data.timeline.attr('total-cols') ),
         minGridPer  = Number( data.timeline.attr('min-grid-per') ),
         minGridSize = Number( data.timeline.attr('min-grid-size') ),
@@ -1000,9 +1002,9 @@ console.info( data.timeline[0].attributes );
         break;
     }
     
-console.info([ 'placeEvents', data.timeline, eventNodes, tlStartDt, tlEndDt, tlTotalCols, tlWidth ]);
+// console.info([ 'placeEvents', data.timeline, eventNodes, tlStartDt, tlEndDt, tlTotalCols, tlWidth ]);
     $this.find('.timeline-events').empty();
-    eventNodes.forEach(function( evt, i ) {
+    eventNodes.forEach(function( evt ) {
       if ( evt.start ) {
         var evtStartDt = new Date( evt.start ),
             evtEndDt   = evt.end == undefined ? new Date( evt.start ) : new Date( evt.end ),
@@ -1095,7 +1097,7 @@ console.info([ 'placeEvents', data.timeline, eventNodes, tlStartDt, tlEndDt, tlT
         } else {
           coordinate.w = 0;
         }
-console.info([ coordinate.x, coordinate.y, coordinate.w, evtStartDt, evtEndDt, evt.eventId ]);
+// console.info([ coordinate.x, coordinate.y, coordinate.w, evtStartDt, evtEndDt, evt.eventId ]);
         if ( coordinate.w > 0 ) {
           if ( tlType === 'point' ) {
             // For event view type: point
@@ -1200,7 +1202,7 @@ console.info([ coordinate.x, coordinate.y, coordinate.w, evtStartDt, evtEndDt, e
 
   function drowRelationLine( obj ) {
     var events   = obj.find('.timeline-node.timeline-event-pointer'),
-        relayMap = {},
+        // relayMap = {},
         canvas   = obj.find('.timeline-line-canvas')[0],
         ctx;
     if ( ! canvas.getContext ) {
@@ -1209,10 +1211,10 @@ console.info([ coordinate.x, coordinate.y, coordinate.w, evtStartDt, evtEndDt, e
     ctx = canvas.getContext('2d');
     // Get data for drawing and draw line
     events.each(function(){
-//console.log( $(this) );
+// console.log( $(this) );
       var lineColor = $(this).data('relayLinecolor') == undefined ? $(this).css('border-left-color') : $(this).data('relayLinecolor'),
           lineSize  = $(this).data('relayLinesize') == undefined ? Math.round(rowH/10) : $(this).data('relayLinesize'),
-          targetId, selfPoint, startPoint, endPoint, cv, controlPoint, diffRow;
+          selfPoint, startPoint, endPoint, cv, diffRow;
       // initialize
       ctx.strokeStyle = lineColor;
       ctx.lineWidth   = lineSize;
@@ -1270,7 +1272,8 @@ console.info([ coordinate.x, coordinate.y, coordinate.w, evtStartDt, evtEndDt, e
         return;
       }
       curve = curve || false;
-      var diff = { x: Math.abs( (start.x - end.x) / rowH ), y:Math.abs( (start.y - end.y) / rowH ) };
+      var diff = { x: Math.abs( (start.x - end.x) / rowH ), y:Math.abs( (start.y - end.y) / rowH ) },
+          controlPoint;
       ctx.beginPath();
       ctx.moveTo( start.x, start.y );
       if ( curve !== false ) {
@@ -1331,7 +1334,7 @@ console.info([ coordinate.x, coordinate.y, coordinate.w, evtStartDt, evtEndDt, e
     if ( $('.timeline-event-view').length == 0 ) {
       return true;
     }
-console.info( eventData );
+// console.info( eventData );
     $('.timeline-event-view').empty();
     var tlevHeader = $('<div />', { addClass: "timeline-event-header" }),
         tlevLabel  = $('<h3 />',  { addClass: "timeline-event-label" }),
@@ -1387,8 +1390,8 @@ console.info( eventData );
   }
   
   function getAbscissa( targetDt, dataObject ) {
-    var targetDt    = Object.prototype.toString.call( targetDt ) === '[object Date]' ? targetDt : new Date( targetDt ),
-        data        = dataObject.timeline,
+    targetDt    = Object.prototype.toString.call( targetDt ) === '[object Date]' ? targetDt : new Date( targetDt );
+    var data        = dataObject.timeline,
         //justify     = $.inArray( justify.toLowerCase(), [ 'left', 'center' ] ) != -1 ? justify.toLowerCase() : 'center',
         startDt     = new Date( data.attr('actual-start-datetime') ),
         endDt       = new Date( startDt ),
@@ -1443,7 +1446,7 @@ console.info( eventData );
   
   function array_sum( ary ) {
     // Sum all values in array
-    return ary.reduce(function( prev, current, i, ary ) {
+    return ary.reduce(function( prev, current ) {
       return prev + current;
     });
   }
@@ -1532,7 +1535,7 @@ console.info( eventData );
     }
 
     formatStrings.forEach( function( str, i ) {
-      var res, tmp, sign;
+      var res, tmp, tzo, sign;
       if ( esc === false ) {
         switch( str ) {
           case 'Y': // Full year | ruby %Y
