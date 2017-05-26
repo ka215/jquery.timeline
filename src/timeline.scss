@@ -1,3 +1,11 @@
+/* global variables */
+$font_path: "./fonts/";
+$default_event_bgcolor: #e3d7a3;
+$default_event_txtcolor: #777e41;
+$default_event_pointer_bgcolor: #f0f0f0;
+$default_event_pointer_border: #4496d3;
+$default_needle_pointer_color: #e8383d;
+
 @charset "UTF-8";
 /*!
  * jQuery Timeline Plugin
@@ -9,11 +17,11 @@
  */
 @font-face {
   font-family: 'jQueryTimeline';
-  src:  url('fonts/jQueryTimeline.eot?t4qpol');
-  src:  url('fonts/jQueryTimeline.eot?t4qpol#iefix') format('embedded-opentype'),
-    url('fonts/jQueryTimeline.ttf?t4qpol') format('truetype'),
-    url('fonts/jQueryTimeline.woff?t4qpol') format('woff'),
-    url('fonts/jQueryTimeline.svg?t4qpol#jQueryTimeline') format('svg');
+  src:  url('#{$font_path}jQueryTimeline.eot?t4qpol');
+  src:  url('#{$font_path}jQueryTimeline.eot?t4qpol#iefix') format('embedded-opentype'),
+    url('#{$font_path}jQueryTimeline.ttf?t4qpol') format('truetype'),
+    url('#{$font_path}jQueryTimeline.woff?t4qpol') format('woff'),
+    url('#{$font_path}jQueryTimeline.svg?t4qpol#jQueryTimeline') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -245,8 +253,8 @@
   line-height: 20px;
   vertical-align: middle;
   text-align: left;
-  background-color: #e3d7a3;
-  color: #777e41;
+  background-color: $default_event_bgcolor;
+  color: $default_event_txtcolor;
   user-select: none;
   border-radius: 4px;
   cursor: pointer;
@@ -258,9 +266,9 @@
   padding: 0;
   line-height: 1;
   text-align: center;
-  background-color: #f0f0f0;
+  background-color: $default_event_pointer_bgcolor;
   border-radius: 100%;
-  border: solid 4px #4496d3;
+  border: solid 4px $default_event_pointer_border;
   background-image: none;
   background-size: cover;
   background-repeat: no-repeat;
@@ -349,7 +357,7 @@
   top: 56px;
   width: 1px;
   height: calc( 100% - 56px );
-  border-left: 2px dotted #e8383d;
+  border-left: 2px dotted $default_needle_pointer_color;
   z-index: 19;
 }
 .timeline-needle-pointer:before {
@@ -359,7 +367,7 @@
   top: -8px;
   left: -7.5px;
   font-size: 13px;
-  color: #e8383d;
+  color: $default_needle_pointer_color;
 }
 .timeline-footer {
   position: relative;
