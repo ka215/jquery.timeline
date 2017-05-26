@@ -26,8 +26,7 @@
   <nav class="content-header">
 
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#"><i class="fa fa-home"></i> HOME</a></li>
-      <li class="breadcrumb-item active">jQuery Timeline</li>
+      <li class="breadcrumb-item active"><a href="./index.html"><i class="fa fa-plug"></i> jQuery Timeline</a></li>
     </ol>
 
   </nav>
@@ -40,40 +39,38 @@
       <div id="myTimeline">
         <ul class="timeline-events">
           <li>Not allowed event definition</li>
-          <li data-timeline-node="{ eventId:1,start:'',end:'',content:'text text text text ...' }">Event Label</li>
-          <li data-timeline-node="{ start:'',content:'<p>In this way, you can include <em>HTML tags</em> in the event body.<br>:<br>:</p>' }">Event with undefined of end date</li>
-          <li data-timeline-node="{ eventId:3,start:'',end:'',row:2,bgColor:'#89c997',color:'#ffffff',callback:'$(\'#myModal\').modal()',content:'Show modal window via bootstrap' }">Event having callback</li>
-          <li data-timeline-node="{ eventId:2,start:'',end:'',row:3,bgColor:'#a1d8e6',color:'#008db7',extend:{toggle:'popover',placement:'bottom',content:'Show popover via bootstrap'} }">Event having custom colored</li>
-          <li data-timeline-node="{ start:'',end:'',row:3,extend:{'post_id':13,'permalink':'https://www.google.com/'} }">Event having extended params</li>
-          <li data-timeline-node="{ start:'',end:'',row:4,bgColor:'#e6eb94',margin:6 }">Sample Event ( ~ )</li>
-          <li data-timeline-node="{ start:'',row:4,bdColor:'#942343',image:'./dist/img/sample.bmp' }">Event having image for point type</li>
-          <li data-timeline-node="{ start:'',end:'',row:5 }">Long event from the past over range</li>
-          <li data-timeline-node="{ start:'',end:'',row:6,bgColor:'#fbdac8' }">Long event until the future over range</li>
+          <li data-timeline-node="{ start:'2017-05-26 10:00',end:'2017-05-26 13:00',content:'text text text text ...' }">Event Label</li>
+          <li data-timeline-node="{ start:'2017-05-26 23:10',content:'<p>In this way, you can include <em>HTML tags</em> in the event body.<br>:<br>:</p>' }">Event with undefined of end date</li>
+          <li data-timeline-node="{ start:'2017-05-26 12:45',end:'2017-05-26 13:45',row:2,bgColor:'#89c997',color:'#ffffff',callback:'$(\'#myModal\').modal()',content:'Show modal window via bootstrap' }">Event having callback</li>
+          <li data-timeline-node="{ start:'2017-05-26 16:08',end:'2017-05-26 17:54',row:3,bgColor:'#a1d8e6',color:'#008db7',extend:{toggle:'popover',placement:'bottom',content:'Show popover via bootstrap'} }">Event having custom colored</li>
+          <li data-timeline-node="{ start:'2017-05-25 23:00',end:'2017-05-26 04:15',row:3,extend:{'post_id':13,'permalink':'https://www.google.com/'} }">Event having extended params</li>
+          <li data-timeline-node="{ end:'2017-05-25 09:00',row:4,bgColor:'#e6eb94',margin:6 }">Event with undefined of start date</li>
+          <li data-timeline-node="{ start:'2017-05-27 17:15',row:4,bdColor:'#942343',image:'./dist/img/sample.bmp' }">Event having image for point type</li>
+          <li data-timeline-node="{ start:'2017-05-24 20:21',end:'2017-05-26 0:12',row:5 }">Long event from the past over range</li>
+          <li data-timeline-node="{ start:'2017-05-26 23:50',end:'2017-05-28 1:23',row:6,bgColor:'#fbdac8' }">Long event until the future over range</li>
         </ul>
       </div>
     
     </div>
     <!-- /.content-main -->
 
-    <div class="col-lg-6 col-md-12">
+    <div class="col-lg-6 col-md-12" hidden>
 
       <div class="card mb-3">
         <div class"card-block">
           <h5><i class="fa fa-cog"></i> Timeline Configuration</h5>
           <div class="card-text">
-
-            
-
+            <!-- configuration content -->
           </div>
         </div>
       </div>
       <!-- /.card -->
     </div>
     <!-- /.col -->
-    <div class="col-lg-6 col-md-12">
+    <div class="col-lg-12 col-md-12">
 
       <div class="card mb-3">
-        <div class="card-block">
+        <div class="card-block timeline-event-view">
           <p class="h1">Timeline Event Detail</p>
           <p class="lead">Please click on any event on the above timeline.</p>
         </div>
@@ -87,6 +84,26 @@
 
 </div>
 <!-- /.container-fluid -->
+
+<div class="modal fade" id="myModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="timeline-event-view"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.modal -->
 
 <!-- REQUIRED JS SCRIPTS -->
 
@@ -102,9 +119,22 @@
 <!-- local scripts -->
 <script>
 $(function () {
-  "use strict";
 
-  $("#myTimeline").timeline();
+  $("#myTimeline").timeline({
+    startDatetime: '2017-05-25',
+    rows: 6,
+    rangeAlign: 'center'
+  });
+
+  // usage bootstrap's popover
+  $('.timeline-node').each(function(){
+    if ( $(this).data('toggle') === 'popover' ) {
+      $(this).attr( 'title', $(this).text() );
+      $(this).popover({
+        trigger: 'hover'
+      });
+    }
+  });
 
 });
 </script>
