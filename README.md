@@ -1,3 +1,4 @@
+
 jQuery.Timeline
 ===
 
@@ -53,6 +54,16 @@ $(function () {
 
 ## Options
 
+You can pass options on plugin initialization. For example:
+
+```js:
+$("#myTimeline").timeline({
+  startDatetime: '2017-05-25',
+  rows: 6,
+  rangeAlign: 'center'
+});
+```
+
 | Option | Type | Default | Description |
 |--------|------|:--------|-------------|
 | type | String | bar | View type of timeline event is either "**bar**" or "**point**" |
@@ -76,6 +87,17 @@ $(function () {
 
 
 ## Methods
+
+The initialized Timeline object can do various operations by using method. It is also possible to execute multiple methods by chaining each method.
+
+```js:
+$("#myTimeline").timeline({
+  type  : "bar",
+  range : 5
+}).timeline("initialized", function( self, data ){ 
+  console.log([ "user's callback", self, data ]);
+});
+```
 
 | Method | Description | Arguments | Usage |
 |--------|:------------|-----------|:-------|
