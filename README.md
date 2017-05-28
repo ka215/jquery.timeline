@@ -1,3 +1,4 @@
+[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE)
 
 jQuery.Timeline
 ===
