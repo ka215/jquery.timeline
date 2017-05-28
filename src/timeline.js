@@ -25,10 +25,13 @@
         datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
         showHeadline    : true, // Whether to display headline
         datetimeFormat  : {
-          full          : "Y/m/d",
+          full          : "j M Y", // or "Y/m/d" etc.
           year          : "Y",
-          month         : "n", // or "F" etc.
-          day           : "n/j" // or "j" etc.
+          month         : "M Y", // or "F" etc.
+          day           : "D, j M", // or "j" etc.
+          years         : "Y", 
+          months        : "F", 
+          days          : "j"
         },
         minuteInterval  : 30, // Recommend more than 5 minutes; only if top scale is "days" ; Deprecated
         zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
@@ -67,6 +70,9 @@
               "datetime-format-year"  : settings.datetimeFormat.year,
               "datetime-format-month" : settings.datetimeFormat.month,
               "datetime-format-day"   : settings.datetimeFormat.day,
+              "datetime-format-years" : settings.datetimeFormat.years,
+              "datetime-format-months": settings.datetimeFormat.months,
+              "datetime-format-days"  : settings.datetimeFormat.days,
               "minute-interval"       : settings.minuteInterval,
               "zerofill-year"         : settings.zerofillYear ? 1 : 0,
               "range"                 : settings.range,
@@ -202,8 +208,20 @@
           if ( typeof options.datetimeFormat.year != undefined ) {
             data.timeline.attr( 'datetime-format-year', options.datetimeFormat.year );
           }
+          if ( typeof options.datetimeFormat.month != undefined ) {
+            data.timeline.attr( 'datetime-format-month', options.datetimeFormat.month );
+          }
           if ( typeof options.datetimeFormat.day != undefined ) {
             data.timeline.attr( 'datetime-format-day', options.datetimeFormat.day );
+          }
+          if ( typeof options.datetimeFormat.years != undefined ) {
+            data.timeline.attr( 'datetime-format-years', options.datetimeFormat.years );
+          }
+          if ( typeof options.datetimeFormat.months != undefined ) {
+            data.timeline.attr( 'datetime-format-months', options.datetimeFormat.months );
+          }
+          if ( typeof options.datetimeFormat.days != undefined ) {
+            data.timeline.attr( 'datetime-format-days', options.datetimeFormat.days );
           }
         }
         if ( 'minuteInterval' in options ) {
@@ -454,10 +472,13 @@
         datetimePrefix : data.timeline.attr('datetime-prefix'),
         showHeadline   : Number( data.timeline.attr('show-headline') ) == 1 ? true : false,
         datetimeFormat : {
-          full         : data.timeline.attr('datetime-format-full'),
-          year         : data.timeline.attr('datetime-format-year'),
-          month        : data.timeline.attr('datetime-format-month'),
-          day          : data.timeline.attr('datetime-format-day'),
+          full         : data.timeline.attr('datetime-format-full'), // for event meta on detial view
+          year         : data.timeline.attr('datetime-format-year'), // for headline
+          month        : data.timeline.attr('datetime-format-month'), // for headline
+          day          : data.timeline.attr('datetime-format-day'), // for headline
+          years        : data.timeline.attr('datetime-format-years'), // for scale
+          months       : data.timeline.attr('datetime-format-months'), // for scale
+          days         : data.timeline.attr('datetime-format-days') // for scale
         },
         minuteInterval : Number( data.timeline.attr('minute-interval') ),
         zerofillYear   : Number( data.timeline.attr('zerofill-year') ) == 1 ? true : false,
@@ -703,7 +724,7 @@
         smlScale = scaleSet[topScale]['small_scale'],
         mediumCellSize = Number( data.timeline.attr( 'min-grid-per' ) ) * Number( data.timeline.attr( 'min-grid-size' ) ),
         scaleMediumCols = [ scaleSet[topScale]['medium_cols'] ],
-        scaleSmallCols;
+        scaleSmallCols, _tmpDt;
     
     // initialize element
     if ( ! $this.hasClass('timeline-container') ) {
@@ -720,12 +741,18 @@
     
     // Set endDate
     if ( data.timeline.attr('scale') === 'years' ) {
-      endDt = new Date( endDt.setFullYear( endDt.getFullYear() + Number( data.timeline.attr('range') ) - 1 ) );
+      endDt.setFullYear( endDt.getFullYear() + Number( data.timeline.attr('range') ) );
+      _tmpDt = endDt.getTime();
+      endDt.setTime( _tmpDt - 1 );
     } else
     if ( data.timeline.attr('scale') === 'months' ) {
-      endDt = new Date( endDt.setMonth( endDt.getMonth() + Number( data.timeline.attr('range') ) - 1 ) );
+      endDt.setMonth( endDt.getMonth() + Number( data.timeline.attr('range') ) );
+      _tmpDt = endDt.getTime();
+      endDt.setTime( _tmpDt - 1 );
     } else {
-      endDt = new Date( endDt.setDate( endDt.getDate() + Number( data.timeline.attr('range') ) - 1 ) );
+      endDt.setDate( endDt.getDate() + Number( data.timeline.attr('range') ) );
+      _tmpDt = endDt.getTime();
+      endDt.setTime( _tmpDt - 1 );
     }
     
     // Set scaleMediumCols
@@ -763,12 +790,12 @@
           toDate   = data.timeline.attr('datetime-prefix') + zt + formatDate( data.timeline.attr('datetime-format-year'), endDt );
           break;
         case "months":
-          fromDate = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-year') + data.timeline.attr('datetime-format-month'), startDt );
-          toDate   = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-year') + data.timeline.attr('datetime-format-month'), endDt );
+          fromDate = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-month'), startDt );
+          toDate   = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-month'), endDt );
           break;
         case "days":
-          fromDate = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-full'), startDt );
-          toDate   = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-full'), endDt );
+          fromDate = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-day'), startDt );
+          toDate   = data.timeline.attr('datetime-prefix') + formatDate( data.timeline.attr('datetime-format-day'), endDt );
           break;
       }
       tlTitle = '<span class="timeline-from-date">' + fromDate + '</span><span class="timeline-to-date">' + toDate + '</span>';
@@ -779,7 +806,7 @@
     var topLevelRow = '<tr>',
         mediumLevelRow = '<tr>',
         smallLevelRow = '<tr>',
-        tmpDate, resMod, label;
+        tmpDate, resMod, label, cellDt;
     scaleSmallCols = array_sum( scaleMediumCols ) * scaleSet[topScale]['small_cols'];
     
     // Stored total cols
@@ -792,15 +819,24 @@
       switch ( topScale ) {
         case 'years':
           tmpDate.setFullYear( tmpDate.getFullYear() + i );
-          label = formatDate( data.timeline.attr('datetime-format-year'), tmpDate ); // tmpDate.getFullYear()
+          zf = '';
+          if ( data.timeline.attr('zerofill-year') == 1 ) {
+            if ( tmpDate.getFullYear() < 100 ) {
+              zf = '00';
+            } else
+            if ( tmpDate.getFullYear() < 1000 ) {
+              zf = '0';
+            }
+          }
+          label = zf + formatDate( data.timeline.attr('datetime-format-years'), tmpDate );
           break;
         case 'months':
           tmpDate.setMonth( tmpDate.getMonth() + i );
-          label = formatDate( data.timeline.attr('datetime-format-month'), tmpDate ); // tmpDate.getFullYear() + '/' + ( tmpDate.getMonth() + 1 );
+          label = formatDate( data.timeline.attr('datetime-format-months'), tmpDate );
           break;
         case 'days':
           tmpDate.setDate( tmpDate.getDate() + i );
-          label = formatDate( data.timeline.attr('datetime-format-day'), tmpDate ); // ( tmpDate.getMonth() + 1 ) + '/' + tmpDate.getDate();
+          label = formatDate( data.timeline.attr('datetime-format-days'), tmpDate );
           break;
       }
       topLevelRow += label + '</th>';
@@ -809,22 +845,25 @@
     
     // Row of medium level time scale
     for ( i = 0; i < array_sum( scaleMediumCols ); i++ ) {
-      mediumLevelRow += '<th colspan="' + scaleSet[topScale]['small_cols'] + '" class="scale-medium scale-' + midScale + '">';
       tmpDate = new Date( startDt );
       switch ( midScale ) {
         case 'months':
           resMod = i % scaleSet[topScale]['medium_cols'];
           label = mediumCellSize < 18 ? '' : resMod + 1;
+          cellDt = new Date( tmpDate.getFullYear(), tmpDate.getMonth() + i, 1 ).getTime();
           break;
         case 'days':
           tmpDate.setDate( tmpDate.getDate() + i );
           label = mediumCellSize < 20 ? '' : tmpDate.getDate();
+          cellDt = tmpDate.getTime();
           break;
         case 'hours':
           resMod = i % scaleSet[topScale]['medium_cols'];
           label = mediumCellSize < 40 ? '' : resMod + ':00';
+          cellDt = tmpDate.setTime( tmpDate.getTime() + i * 3600000 );
           break;
       }
+      mediumLevelRow += '<th colspan="' + scaleSet[topScale]['small_cols'] + '" class="scale-medium scale-' + midScale + '" data-cell-datetime="' + cellDt + '">';
       mediumLevelRow += label + '</th>';
     }
     mediumLevelRow += '</tr>';
@@ -847,7 +886,7 @@
     } else {
       var currentDt = setCurrentDate( true ),
           posX = getAbscissa( currentDt, data );
-      if ( posX > -1 ) {
+      if ( posX !== false ) {
         tlPointer.css('left', posX + 'px');
       } else {
         tlPointer.css('display', 'none');
@@ -1221,7 +1260,7 @@
       // Draw lines
       if ( $(this).data('relayBefore') != undefined ) {
         // Draw from before-event to myself
-        if ( $(this).data('relayBefore') > 0 ) {
+        if ( $(this).data('relayBefore') > 0 && $('#evt-' + $(this).data('relayBefore')) > 0 ) {
           margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayBefore'))[0].offsetWidth) / 2 );
           startPoint = {
             x: $('#evt-' + $(this).data('relayBefore'))[0].offsetLeft - margin + cv.x,
@@ -1239,7 +1278,7 @@
       }
       if ( $(this).data('relayAfter') != undefined ) {
         // Draw from myself to after-event
-        if ( $(this).data('relayAfter') > 0 ) {
+        if ( $(this).data('relayAfter') > 0 && $('#evt-' + $(this).data('relayAfter')) > 0 ) {
           margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayAfter'))[0].offsetWidth) / 2 );
           endPoint = {
             x: $('#evt-' + $(this).data('relayAfter'))[0].offsetLeft - margin + cv.x,
@@ -1394,17 +1433,23 @@
         msDay       = 24 * 60 * 60 * 1000,
         msHour      = 60 * 60 * 1000,
         gridSize    = minGridPer * minGridSize,
-        posX;
+        _tmpDt, posX;
     // Set end datetime
     switch ( scale ) {
       case 'years':
-        endDt = new Date( endDt.setFullYear( endDt.getFullYear() + range - 1 ) );
+        endDt = new Date( endDt.setFullYear( endDt.getFullYear() + range ) );
+        _tmpDt = endDt.getTime();
+        endDt.setTime( _tmpDt - 1 );
         break;
       case 'months':
-        endDt = new Date( endDt.setMonth( endDt.getMonth() + range - 1 ) );
+        endDt = new Date( endDt.setMonth( endDt.getMonth() + range ) );
+        _tmpDt = endDt.getTime();
+        endDt.setTime( _tmpDt - 1 );
         break;
       case 'days':
-        endDt = new Date( endDt.setDate( endDt.getDate() + range - 1 ) );
+        endDt = new Date( endDt.setDate( endDt.getDate() + range ) );
+        _tmpDt = endDt.getTime();
+        endDt.setTime( _tmpDt - 1 );
         break;
     }
     if ( isBetweenTo( targetDt, startDt, endDt ) ) {
