@@ -79,9 +79,9 @@
               "navi-icon-left"        : settings.naviIcon.left,
               "navi-icon-right"       : settings.naviIcon.right,
               "show-pointer"          : settings.showPointer ? 1 : 0,
-              "i18n-month"            : settings.i18n.month,
-              "i18n-day"              : settings.i18n.day,
-              "i18n-ma"               : settings.i18n.ma,
+              "i18n-month"            : JSON.stringify( settings.i18n.month ),
+              "i18n-day"              : JSON.stringify( settings.i18n.day ),
+              "i18n-ma"               : JSON.stringify( settings.i18n.ma ),
               "text"                  : ""
           });
         
