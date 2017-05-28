@@ -1202,7 +1202,7 @@
     events.each(function(){
       var lineColor = $(this).data('relayLinecolor') == undefined ? $(this).css('border-left-color') : $(this).data('relayLinecolor'),
           lineSize  = $(this).data('relayLinesize') == undefined ? Math.round(rowH/10) : $(this).data('relayLinesize'),
-          selfPoint, startPoint, endPoint, cv, diffRow;
+          selfPoint, startPoint, endPoint, cv, margin, diffRow;
       // initialize
       ctx.strokeStyle = lineColor;
       ctx.lineWidth   = lineSize;
@@ -1212,8 +1212,9 @@
         x: (rowH - ctx.lineWidth) / 2,
         y: rowH / 2
       };
+      margin = Math.floor( (rowH - $(this)[0].offsetWidth) / 2 );
       selfPoint = {
-        x: $(this)[0].offsetLeft + cv.x,
+        x: $(this)[0].offsetLeft - margin + cv.x,
         y: Math.floor( $(this)[0].offsetTop / rowH ) * rowH + cv.y
       };
       
@@ -1221,8 +1222,9 @@
       if ( $(this).data('relayBefore') != undefined ) {
         // Draw from before-event to myself
         if ( $(this).data('relayBefore') > 0 ) {
+          margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayBefore'))[0].offsetWidth) / 2 );
           startPoint = {
-            x: $('#evt-' + $(this).data('relayBefore'))[0].offsetLeft + cv.x,
+            x: $('#evt-' + $(this).data('relayBefore'))[0].offsetLeft - margin + cv.x,
             y: Math.floor( $('#evt-' + $(this).data('relayBefore'))[0].offsetTop / rowH ) * rowH + cv.y
           };
         } else {
@@ -1238,8 +1240,9 @@
       if ( $(this).data('relayAfter') != undefined ) {
         // Draw from myself to after-event
         if ( $(this).data('relayAfter') > 0 ) {
+          margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayAfter'))[0].offsetWidth) / 2 );
           endPoint = {
-            x: $('#evt-' + $(this).data('relayAfter'))[0].offsetLeft + cv.x,
+            x: $('#evt-' + $(this).data('relayAfter'))[0].offsetLeft - margin + cv.x,
             y: Math.floor( $('#evt-' + $(this).data('relayAfter'))[0].offsetTop / rowH ) * rowH + cv.y
           };
         } else {
