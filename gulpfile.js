@@ -21,6 +21,7 @@ gulp.task('styles', function() {
     .pipe(cleanCSS({compatibility: 'ie8'}))
     .pipe(rename({extname: '.min.css'}))
     .pipe(gulp.dest('./dist'))
+    .pipe(gulp.dest('./docs/css'))
     .pipe(browserSync.stream());
 });
 
@@ -30,6 +31,7 @@ gulp.task('scripts', function() {
     .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
     .pipe(rename({extname: '.min.js'}))
     .pipe(gulp.dest('./dist'))
+    .pipe(gulp.dest('./docs/js'))
     .pipe(browserSync.stream());
 });
 
