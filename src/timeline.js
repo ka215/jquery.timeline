@@ -1260,38 +1260,46 @@
       // Draw lines
       if ( $(this).data('relayBefore') != undefined ) {
         // Draw from before-event to myself
-        if ( $(this).data('relayBefore') > 0 && $('#evt-' + $(this).data('relayBefore')) > 0 ) {
-          margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayBefore'))[0].offsetWidth) / 2 );
-          startPoint = {
-            x: $('#evt-' + $(this).data('relayBefore'))[0].offsetLeft - margin + cv.x,
-            y: Math.floor( $('#evt-' + $(this).data('relayBefore'))[0].offsetTop / rowH ) * rowH + cv.y
-          };
+        if ( $(this).data('relayBefore') > 0 ) {
+          if ( $('#evt-' + $(this).data('relayBefore')).length > 0 ) {
+            margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayBefore'))[0].offsetWidth) / 2 );
+            startPoint = {
+              x: $('#evt-' + $(this).data('relayBefore'))[0].offsetLeft - margin + cv.x,
+              y: Math.floor( $('#evt-' + $(this).data('relayBefore'))[0].offsetTop / rowH ) * rowH + cv.y
+            };
+          }
         } else {
           startPoint = { x: 0, y: selfPoint.y };
         }
-        diffRow = ( startPoint.y - selfPoint.y ) / rowH;
-        if ( Math.abs( diffRow ) > 0 && $(this).data('relayCurve') != undefined && $.inArray( $(this).data('relayCurve'), [ 'lt', 'rt', 'lb', 'rb' ] ) != -1 ) {
-          drawLine( startPoint, selfPoint, $(this).data('relayCurve') );
-        } else {
-          drawLine( startPoint, selfPoint );
+        if ( startPoint ) {
+          diffRow = ( startPoint.y - selfPoint.y ) / rowH;
+          if ( Math.abs( diffRow ) > 0 && $(this).data('relayCurve') != undefined && $.inArray( $(this).data('relayCurve'), [ 'lt', 'rt', 'lb', 'rb' ] ) != -1 ) {
+            drawLine( startPoint, selfPoint, $(this).data('relayCurve') );
+          } else {
+            drawLine( startPoint, selfPoint );
+          }
         }
       }
       if ( $(this).data('relayAfter') != undefined ) {
         // Draw from myself to after-event
-        if ( $(this).data('relayAfter') > 0 && $('#evt-' + $(this).data('relayAfter')) > 0 ) {
-          margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayAfter'))[0].offsetWidth) / 2 );
-          endPoint = {
-            x: $('#evt-' + $(this).data('relayAfter'))[0].offsetLeft - margin + cv.x,
-            y: Math.floor( $('#evt-' + $(this).data('relayAfter'))[0].offsetTop / rowH ) * rowH + cv.y
-          };
+        if ( $(this).data('relayAfter') > 0 ) {
+          if ( $('#evt-' + $(this).data('relayAfter')).length > 0 ) {
+            margin = Math.floor( (rowH - $('#evt-' + $(this).data('relayAfter'))[0].offsetWidth) / 2 );
+            endPoint = {
+              x: $('#evt-' + $(this).data('relayAfter'))[0].offsetLeft - margin + cv.x,
+              y: Math.floor( $('#evt-' + $(this).data('relayAfter'))[0].offsetTop / rowH ) * rowH + cv.y
+            };
+          }
         } else {
           endPoint = { x: canvas.width, y: selfPoint.y };
         }
-        diffRow = ( selfPoint.y - endPoint.y ) / rowH;
-        if ( Math.abs( diffRow ) > 0 && $(this).data('relayCurve') != undefined && $.inArray( $(this).data('relayCurve'), [ 'lt', 'rt', 'lb', 'rb' ] ) != -1 ) {
-          drawLine( selfPoint, endPoint, $(this).data('relayCurve') );
-        } else {
-          drawLine( selfPoint, endPoint );
+        if ( endPoint ) {
+          diffRow = ( selfPoint.y - endPoint.y ) / rowH;
+          if ( Math.abs( diffRow ) > 0 && $(this).data('relayCurve') != undefined && $.inArray( $(this).data('relayCurve'), [ 'lt', 'rt', 'lb', 'rb' ] ) != -1 ) {
+            drawLine( selfPoint, endPoint, $(this).data('relayCurve') );
+          } else {
+            drawLine( selfPoint, endPoint );
+          }
         }
       }
       
