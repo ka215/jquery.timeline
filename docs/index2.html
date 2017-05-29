@@ -26,8 +26,8 @@
 
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><i class="fa fa-plug"></i> jQuery Timeline</li>
-      <li class="breadcrumb-item active"><a href="./index.html"><i class="fa fa-check-square-o"></i> Bar type</a></li>
-      <li class="breadcrumb-item"><a href="./index2.html">Point type</a></li>
+      <li class="breadcrumb-item active"><a href="./index.html">Bar type</a></li>
+      <li class="breadcrumb-item"><a href="./index2.html"><i class="fa fa-check-square-o"></i> Point type</a></li>
     </ol>
 
   </nav>
@@ -38,20 +38,28 @@
     <div class="content-main col-lg-12">
     
       <div id="myTimeline">
-        <ul class="timeline-events">
-          <li>Not allowed event definition</li>
-          <li data-timeline-node="{ start:'2017-5-29 8:00',end:'2017-5-29 10:30',content:'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis luctus tortor nec bibendum malesuada. Etiam sed libero cursus, placerat est at, fermentum quam. In sed fringilla mauris. Fusce auctor turpis ac imperdiet porttitor. Duis vel pharetra magna, ut mollis libero. Etiam cursus in leo et viverra. Praesent egestas dui a magna eleifend, id elementum felis maximus. Interdum et malesuada fames ac ante ipsum primis in faucibus. Vestibulum sed elit gravida, euismod nunc id, ullamcorper tellus. Morbi elementum urna faucibus tempor lacinia. Quisque pharetra purus at risus tempor hendrerit. Nam dui justo, molestie quis tincidunt sit amet, eleifend porttitor mauris. Maecenas sit amet ex vitae mi finibus pharetra. Donec vulputate leo eu vestibulum gravida. Ut in facilisis dolor, vitae iaculis dui.' }">Event Label</li>
-          <li data-timeline-node="{ start:'2017-5-29 10:30',end:'2017-5-29 12:15',bgColor:'#a3d6cc',content:'<p>In this way, you can include <em>HTML tags</em> in the event body.<br><i class=\'fa fa-ellipsis-v\'></i><br><i class=\'fa fa-ellipsis-v\'></i></p>' }">HTML tags is included in the event content</li>
-          <li data-timeline-node="{ start:'2017-5-29 13:00',content:'For the bar type on the timeline, event blocks are displayed in minimum units unless you specify an event end time.' }">Event with undefined of end date</li>
-          <li data-timeline-node="{ end:'2017-5-29 15:00',bgColor:'#e6eb94',content:'In this case, no displayed.' }">Event with undefined of start date</li>
-          <li data-timeline-node="{ start:'2017-5-29 12:45',end:'2017-5-29 16:00',row:2,bgColor:'#89c997',color:'#ffffff',callback:'$(\'#myModal\').modal()',content:'Show modal window via bootstrap' }">Event having callback</li>
-          <li data-timeline-node="{ start:'2017-5-29 16:03',end:'2017-5-29 19:05',row:3,bgColor:'#a1d8e6',color:'#008db7',extend:{toggle:'popover',placement:'bottom',content:'It is also possible to bind external custom events.'} }">Show popover via bootstrap</li>
-          <li data-timeline-node="{ start:'2017-5-28 23:00',end:'2017-5-29 5:15',row:3,extend:{'post_id':13,'permalink':'https://www.google.com/'} }">Event having extended params</li>
-          <li data-timeline-node="{ start:'2017-5-29 5:40',end:'2017-5-29 8:20',row:3,bgColor:'#ef857d',color:'#fff',content:'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis luctus tortor nec bibendum malesuada. Etiam sed libero cursus, placerat est at, fermentum quam. In sed fringilla mauris. Fusce auctor turpis ac imperdiet porttitor.' }">Lorem Ipsum</li>
-          <li data-timeline-node="{ start:'2017-5-29 10:00',end:'2017-5-29 19:00',row:4,bdColor:'#942343' }">Event having image for point type</li>
-          <li data-timeline-node="{ start:'2017-4-1 20:00',end:'2017-5-29 8:30',row:5 }">Long event from the past over range</li>
-          <li data-timeline-node="{ start:'2017-5-29 19:00',end:'2017-6-14 1:00',row:5,bgColor:'#fbdac8' }">Long event until the future over range</li>
-        </ul>
+        <div class="timeline-events">
+          <!-- point type events -->
+          <label>Row 2</label>
+          <div data-timeline-node="{ eventId:1, start:'2017-1-5 5:30',row:2,bdColor:'#942343',image:'./imgs/sample-1.jpg' }">Event Relation 1</div>
+          <div data-timeline-node="{ eventId:2, start:'2017-2-15 0:00',row:2,margin:12,bdColor:'#942343',relation:{before:1} }">Event Relation 2</div>
+          <div data-timeline-node="{ eventId:3, start:'2017-4-7 12:30',row:2,margin:12,bdColor:'#942343',relation:{before:2},content:'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras vitae ligula bibendum, rhoncus felis ac, tincidunt nunc. Maecenas vehicula neque ac tristique egestas.' }">Relational Event (ID:3)</div>
+          <div data-timeline-node="{ eventId:4, start:'2017-5-27 8:40',row:2,margin:12,bdColor:'#942343',relation:{before:3} }">Event Relation 4</div>
+          <div data-timeline-node="{ eventId:5, start:'2017-7-14 17:30',row:2,margin:12,bdColor:'#942343',relation:{before:4} }">Event Relation 5</div>
+          <div data-timeline-node="{ eventId:6, start:'2017-9-26 18:30',row:2,margin:12,bdColor:'#942343',relation:{before:5,after:-1} }">Event Relation 6</div>
+          <label>Row 3</label>
+          <div data-timeline-node="{ eventId:7, start:'2016-9-26 7:00',row:3,image:'./imgs/sample-2.jpg' }">Event Relation 7</div>
+          <div data-timeline-node="{ eventId:8, start:'2016-11-9 8:30',row:3,margin:12,relation:{before:7} }">Event Relation 8</div>
+          <div data-timeline-node="{ eventId:9, start:'2017-1-25 11:15',row:3,margin:12,relation:{before:8} }">Event Relation 9</div>
+          <div data-timeline-node="{ eventId:10, start:'2017-4-7 14:10',row:3,margin:12,relation:{before:9,after:5} }">Event Relation 10</div>
+          <label>Row 4 - 6</label>
+          <div data-timeline-node="{ eventId:11, start:'2016-10-15 0:00',row:6,bdColor:'#37a34a',image:'./imgs/sample-3.jpg',relation:{after:12,linesize:10} }">Event Relation 11</div>
+          <div data-timeline-node="{ eventId:12, start:'2017-2-4 17:00',row:6,bdColor:'#37a34a',image:'./imgs/sample-4.jpg' }">Event Relation 12</div>
+          <div data-timeline-node="{ eventId:13, start:'2016-8-11 22:00',row:5,bdColor:'#6f5436',image:'./imgs/sample-5.jpg',relation:{before:-1,after:11,curve:'rt'} }">Event Relation 13</div>
+          <div data-timeline-node="{ eventId:14, start:'2016-8-31 2:00',row:4,bdColor:'#dc6b9a',image:'./imgs/sample-6.jpg',relation:{before:-1,after:7,linecolor:'#5a4498',curve:'rb'} }">Event Relation 14</div>
+          <div data-timeline-node="{ eventId:15, start:'2016-12-24 10:00',row:4,bdColor:'#dc6b9a',image:'./imgs/sample-7.jpg',relation:{before:8,linecolor:'#5a4498',curve:'lb'} }">Event Relation 15</div>
+          <div data-timeline-node="{ eventId:16, start:'2017-8-11 20:00',row:5,bdColor:'#6f5436',image:'./imgs/sample-8.jpg',relation:{before:12,after:-1,curve:'lt'} }">Event Relation 16</div>
+        </div>
       </div>
     
     </div>
@@ -123,7 +131,10 @@
 $(function () {
 
   $("#myTimeline").timeline({
-    startDatetime: '2017-05-28',
+    type: 'point',
+    scale: 'years',
+    startDatetime: '2016-1-1',
+    rows: 6,
     rangeAlign: 'center'
   });
 
@@ -136,14 +147,6 @@ $(function () {
       });
     }
   });
-
-  /* 
-  $('#myTimeline').timeline('openEvent', function(){
-    console.info( $(this).data );
-    $('.extend-params');
-  });
-  */
-
 
 });
 </script>
