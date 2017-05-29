@@ -188,7 +188,7 @@ When linking from itself (event ID: 2) to past event (event ID: 1):
 ```html:
 <ol class="timeline-events">
   <li data-timeline-node="{ eventId:1, start:'2017-5-25 12:00',row:2 }">Event 1</li>
-  <li data-timeline-node="{ eventId:2, start:'2017-5-27 20:00',row:3,relation:{before:1} }">Event 2</li>
+  <li data-timeline-node="{ eventId:2, start:'2017-5-27 20:00',row:2,relation:{before:1} }">Event 2</li>
 </ol>
 ```
 
