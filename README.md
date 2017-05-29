@@ -298,10 +298,16 @@ $('.timeline-node').each(function(){
 });
 ```
 
-Now when you mouse over the event on the timeline you will see the tooltip.[^bootstrapTooltip]
+Now when you mouse over the event on the timeline you will see the tooltip.
 
-[^bootstrapTooltip]: In Bootstrap version 4.x, errors may occur when tooltips are used. In that case, it may be solved by inclusion of the [tether](http://tether.io/) plugin.
+> **Note**: In Bootstrap version 4.x, errors may occur when tooltips are used. In that case, it may be solved by inclusion of the [tether](http://tether.io/) plugin.
 
+
+## Note
+
+We posted a Japanese manual here:
+
+[https://ka2.org/](https://ka2.org/)
 
 ## License
 
