@@ -307,7 +307,7 @@ Now when you mouse over the event on the timeline you will see the tooltip.
 
 We posted a Japanese manual here:
 
-[https://ka2.org/](https://ka2.org/)
+[https://ka2.org/](https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/)
 
 ## License
 
