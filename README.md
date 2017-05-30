@@ -7,6 +7,13 @@ You are able to easily create two types of horizontal timeline with this jQuery 
 
 ![jQuery.Timeline Image](https://ka215.github.io/jquery.timeline/imgs/jquery_timeline_image.png)
 
+## DEMO
+
+For various examples, please see here:
+
+* [Bar Type Timeline](https://ka215.github.io/jquery.timeline/index.html)
+* [Point Type Timeline](https://ka215.github.io/jquery.timeline/index2.html)
+
 ## Browser Support
 jQuery.Timeline supports the following browsers:
 
@@ -25,14 +32,14 @@ JQuery.Timeline works normal operation with jQuery version **1.9.0** or later. W
 
 Use resources in the dist directory in the repository package.
 
-```html:
+```html
 <link rel="stylesheet" href="./dist/timeline.min.css">
 <script src="./dist/timeline.min.js"></script>
 ```
 
 ### HTML:
 
-```html:
+```html
 <!-- Timeline Block -->
 <div id="myTimeline">
   <ul class="timeline-events">
@@ -49,7 +56,7 @@ Use resources in the dist directory in the repository package.
 
 ### jQuery:
 
-```js:
+```javascript
 $(function () {
   $("#myTimeline").timeline();
 });
@@ -59,7 +66,7 @@ $(function () {
 
 You can pass options on plugin initialization. For example:
 
-```js:
+```javascript
 $("#myTimeline").timeline({
   startDatetime: '2017-05-25',
   rows: 6,
@@ -93,7 +100,7 @@ $("#myTimeline").timeline({
 
 The initialized Timeline object can do various operations by using method. It is also possible to execute multiple methods by chaining each method.
 
-```js:
+```javascript
 $("#myTimeline").timeline({
   type  : "bar",
   range : 5
@@ -124,7 +131,7 @@ Events placed on the timeline have parameters for display. You can specify this 
 
 ### Directly markup on HTML
 
-```html:
+```html
 <div class="timeline-events">
   <div>This event is ignored because it is an invalid event</div>
   <div data-timeline-node="{ start:'2017-01-01 00:00',end:'2017-01-01 13:00',content:'Fill in the text of the event.' }">This is a valid event</div>
@@ -136,7 +143,7 @@ Events placed on the timeline have parameters for display. You can specify this 
 
 ### Using methods
 
-```js:
+```javascript
 $('myTimeline').timeline()
 .timeline( 'addEvent', [
   {start:'2017-1-1 08:00',end:'2017-1-1 10:00',label:'Event 1',content:'Event body'},
@@ -177,7 +184,7 @@ The setting values that can be specified by the relation parameter are as follow
 | after | Numeric | eventId | Specify the event ID to be concatenated after (right side) its own event. By specifying `-1`, you can draw a line outside the timeline area (the right end of the display area). |
 | linesize | Integer | pixels | Specify the thickness of the connection line. |
 | linecolor | String | color code | Specify the color of the connection line. |
-| curve | String | Any of `lt`,`rt`,`rb`,`lb` | Line can be curved when connecting to events of a line different from own event. Specify the curved direction at that time. For example, to concatenate to the upper left event specified by before, specify `rb`. |
+| curve | String | Any of `lt`,`rt`,`rb`,`lb` | Line can be curved when connecting to events of a line different from own event. Specify the curved direction at that time. For example, to concatenate to the upper left event specified by before, specify `lb`. |
 
 #### Example of lines
 
@@ -185,7 +192,7 @@ The setting values that can be specified by the relation parameter are as follow
 
 When linking from itself (event ID: 2) to past event (event ID: 1):
 
-```html:
+```html
 <ol class="timeline-events">
   <li data-timeline-node="{ eventId:1, start:'2017-5-25 12:00',row:2 }">Event 1</li>
   <li data-timeline-node="{ eventId:2, start:'2017-5-27 20:00',row:2,relation:{before:1} }">Event 2</li>
@@ -198,7 +205,7 @@ When linking from itself (event ID: 2) to past event (event ID: 1):
 
 When concatenating by curved line from itself (event ID: 2) to a past event (event ID: 1) of a different line:
 
-```html:
+```html
 <dl class="timeline-events">
   <dd data-timeline-node="{ eventId:1, start:'2017-5-25 12:00',row:2 }">Event 1</dd>
   <dd data-timeline-node="{ eventId:2, start:'2017-5-27 20:00',row:3,relation:{before:1,curve:'lb'} }">Event 2</dd>
@@ -212,7 +219,7 @@ When concatenating by curved line from itself (event ID: 2) to a past event (eve
 
 This plugin has a function to internationalize the date and time format text to be output and to define translated text according to the language to be used. When using this function, please add the following option when initializing the timeline object.
 
-```js:
+```javascript
 $("#myTimeline").timeline({
   i18n : {
     month: { 'Jan.': 'Januar', 'Feb.': 'Februar', 'März': 'März', 'Apr.': 'April', 'Mai': 'Mai', 'Juni': 'Juni', 'Juli': 'Juli', 'Aug.': 'August', 'Sept.': 'September', 'Okt.': 'Oktober', 'Nov.': 'November', 'Dez.': 'Dezember' },
@@ -224,14 +231,6 @@ $("#myTimeline").timeline({
 
 > **Note**: The above is an example of defining translation text in German.
 
-## DEMO
-
-For various examples, please see here:
-
-* [Bar Type Timeline](https://ka215.github.io/jquery.timeline/index.html)
-* [Point Type Timeline](https://ka215.github.io/jquery.timeline/index2.html)
-
-
 ## TIPS
 
 Some practical TIPS are as follows:
@@ -240,7 +239,7 @@ Some practical TIPS are as follows:
 
 First, we set up an event detail area in the body block (.modal-body) of the modal window.
 
-```html:
+```html
 <div class="modal fade" id="myModal">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -263,7 +262,7 @@ First, we set up an event detail area in the body block (.modal-body) of the mod
 
 Set the callback of the event parameter to the call of the modal window.
 
-```html:
+```html
 <div id="myTimeline">
   <div class="timeline-events">
     <div data-timeline-node="{ start:'2017-05-26 12:45',end:'2017-05-26 13:45',callback:'$(\'#myModal\').modal()',content:'Show modal window via bootstrap' }">Event having callback</div>
@@ -277,7 +276,7 @@ When an event on the timeline is clicked, event details will be displayed in the
 
 You will define options for tooltip control in the extended setting of event parameters.
 
-```html:
+```html
 <div id="myTimeline">
   <ul class="timeline-events">
     <li data-timeline-node="{ start:'2017-05-26 16:08',end:'2017-05-26 17:54',row:2,extend:{toggle:'popover',placement:'bottom',content:'Show popover via bootstrap'} }">Event with popover</li>
@@ -287,7 +286,7 @@ You will define options for tooltip control in the extended setting of event par
 
 Make the tooltip bind to the event node block rendered in JavaScript.
 
-```js:
+```javascript
 $('.timeline-node').each(function(){
   if ( $(this).data('toggle') === 'popover' ) {
     $(this).attr( 'title', $(this).text() );
