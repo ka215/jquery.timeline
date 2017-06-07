@@ -19,7 +19,7 @@ jQuery.Timeline supports the following browsers:
 
 * **Chrome** : Recommended latest version as active support
 * **Firefox** :  Recommended latest version as active support
-* Safari : Not checked the working yet 
+* **Safari** : Recommended latest version as active support
 * **Opera** : Recommended latest version as active support
 * **Edge** : Recommended latest version as active support
 * IE : Not checked the working yet
