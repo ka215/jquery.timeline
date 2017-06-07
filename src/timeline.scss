@@ -10,7 +10,7 @@ $default_needle_pointer_color: #e8383d;
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.1
+ * Version: 1.0.2
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -325,7 +325,6 @@ $default_needle_pointer_color: #e8383d;
   position: absolute;
   display: block;
   left: 0;
-  bottom: 0;
   width: 100%;
   height: 200px;
   z-index: 6;
@@ -354,11 +353,15 @@ $default_needle_pointer_color: #e8383d;
 .timeline-needle-pointer {
   position: absolute;
   display: block;
-  top: 56px;
+  bottom: 7px;
   width: 1px;
   height: calc( 100% - 56px );
   border-left: 2px dotted $default_needle_pointer_color;
   z-index: 19;
+}
+_::-webkit-full-page-media, _:future, :root .timeline-needle-pointer {
+  /* For Safari only */
+  bottom: 0;
 }
 .timeline-needle-pointer:before {
   content: "\ea37";
