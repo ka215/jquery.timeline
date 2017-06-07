@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -66,13 +66,13 @@
               "start-datetime"        : settings.startDatetime,
               "datetime-prefix"       : settings.datetimePrefix,
               "show-headline"         : settings.showHeadline ? 1 : 0,
-              "datetime-format-full"  : settings.datetimeFormat.full,
-              "datetime-format-year"  : settings.datetimeFormat.year,
-              "datetime-format-month" : settings.datetimeFormat.month,
-              "datetime-format-day"   : settings.datetimeFormat.day,
-              "datetime-format-years" : settings.datetimeFormat.years,
-              "datetime-format-months": settings.datetimeFormat.months,
-              "datetime-format-days"  : settings.datetimeFormat.days,
+              "datetime-format-full"  : settings.datetimeFormat.full || 'j M Y',
+              "datetime-format-year"  : settings.datetimeFormat.year || 'Y',
+              "datetime-format-month" : settings.datetimeFormat.month || 'M Y',
+              "datetime-format-day"   : settings.datetimeFormat.day || 'D, j M',
+              "datetime-format-years" : settings.datetimeFormat.years || 'Y',
+              "datetime-format-months": settings.datetimeFormat.months || 'F',
+              "datetime-format-days"  : settings.datetimeFormat.days || 'j',
               "minute-interval"       : settings.minuteInterval,
               "zerofill-year"         : settings.zerofillYear ? 1 : 0,
               "range"                 : settings.range,
@@ -82,8 +82,8 @@
               "min-grid-per"          : settings.minGridPer,
               "min-grid-size"         : settings.minGridSize,
               "range-align"           : settings.rangeAlign,
-              "navi-icon-left"        : settings.naviIcon.left,
-              "navi-icon-right"       : settings.naviIcon.right,
+              "navi-icon-left"        : settings.naviIcon.left || 'jqtl-circle-left',
+              "navi-icon-right"       : settings.naviIcon.right || 'jqtl-circle-right',
               "show-pointer"          : settings.showPointer ? 1 : 0,
               "i18n-month"            : JSON.stringify( settings.i18n.month ),
               "i18n-day"              : JSON.stringify( settings.i18n.day ),
@@ -115,7 +115,7 @@
           if ( settings.startDatetime === 'currently' ) {
             currentDt = setCurrentDate( true );
           } else {
-            currentDt = new Date( settings.startDatetime );
+            currentDt = new Date( normalizeDate( settings.startDatetime ) );
             _regx = /-|\//;
             _tmp = settings.startDatetime.split( _regx );
             if ( Number( _tmp[0] ) < 100 ) {
@@ -125,16 +125,16 @@
           }
           switch( settings.scale ) {
             case 'years':
-              currentDate = currentDt.getFullYear() +'-01-01 00:00:00';
+              currentDate = currentDt.getFullYear() +'/01/01 00:00:00';
               break;
             case 'months':
-              currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-01 00:00:00';
+              currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/01 00:00:00';
               break;
             case 'days':
-              currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-'+ currentDt.getDate() +' 00:00:00';
+              currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/'+ currentDt.getDate() +' 00:00:00';
               break;
             default:
-              currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-'+ currentDt.getDate() +' '+ currentDate.getHours() +':00:00';
+              currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/'+ currentDt.getDate() +' '+ currentDate.getHours() +':00:00';
           }
           $this.data('timeline').timeline.attr( 'actual-start-datetime', currentDate );
         
@@ -279,7 +279,7 @@
         if ( data.timeline.attr('start-datetime') === 'currently' ) {
           currentDt = setCurrentDate( true );
         } else {
-          currentDt = new Date( data.timeline.attr('start-datetime') );
+          currentDt = new Date( normalizeDate( data.timeline.attr('start-datetime') ) );
           _regx = /-|\//;
           _tmp = data.timeline.attr('start-datetime').split( _regx );
           if ( Number( _tmp[0] ) < 100 ) {
@@ -289,16 +289,16 @@
         }
         switch( data.timeline.attr('scale') ) {
           case 'years':
-            currentDate = currentDt.getFullYear() +'-01-01 00:00:00';
+            currentDate = currentDt.getFullYear() +'/01/01 00:00:00';
             break;
           case 'months':
-            currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-01 00:00:00';
+            currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/01 00:00:00';
             break;
           case 'days':
-            currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-'+ currentDt.getDate() +' 00:00:00';
+            currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/'+ currentDt.getDate() +' 00:00:00';
             break;
           default:
-            currentDate = currentDt.getFullYear() +'-'+ (currentDt.getMonth() + 1) +'-'+ currentDt.getDate() +' '+ currentDate.getHours() +':00:00';
+            currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/'+ currentDt.getDate() +' '+ currentDate.getHours() +':00:00';
         }
         data.timeline.attr( 'actual-start-datetime', currentDate );
 
@@ -427,7 +427,7 @@
                 }
               }
             });
-            latestDt = new Date( eventNodes[latestKey].start ),
+            latestDt = new Date( normalizeDate( eventNodes[latestKey].start ) ),
             posX     = getAbscissa( latestDt, data );
             if ( posX > -1 ) {
               if ( (posX - visibleTimelineWidth / 2) > (fullTimelineWidth - visibleTimelineWidth + 1) ) {
@@ -731,7 +731,7 @@
       $this.addClass('timeline-container');
     }
     if ( $this.find('.timeline-events').length > 0 ) {
-      $this.find('.timeline-events').clone().appendTo( dfEvents );
+      $this.find('.timeline-events').children().clone().appendTo( dfEvents );
       defaultEvents( dfEvents, data );
     }
     if ( data.timeline.attr( 'type' ) === 'point' || data.timeline.attr( 'type' ) === 'mixed' ) {
@@ -828,6 +828,7 @@
               zf = '0';
             }
           }
+//console.info( data.timeline.attr('datetime-format-years') );
           label = zf + formatDate( data.timeline.attr('datetime-format-years'), tmpDate );
           break;
         case 'months':
@@ -980,11 +981,13 @@
 
   function defaultEvents( obj, data ) {
     // Defining default events
-    if ( $(obj).find('.timeline-events').children().length > 0 ) {
+    //if ( $(obj).find('.timeline-events').children().length > 0 ) {
+    if ( $(obj).children().length > 0 ) {
       var eventData = [],
           eventIds = [],
           startEventId = 1;
-      $(obj).find('.timeline-events').children().each(function(){
+      //$(obj).find('.timeline-events').children().each(function(){
+      $(obj).children().each(function(){
         if ( $(this).data('timelineNode') ) {
           var event = ( new Function( 'return ' + $(this).data('timelineNode') ) )();
           event['label'] = $(this).text();
@@ -1004,7 +1007,7 @@
         data.timeline.text( JSON.stringify( eventData ) );
       }
     }
-    return;
+    return data;
   }
 
   function placeEvents( obj ) {
@@ -1012,7 +1015,7 @@
     var $this       = $(obj),
         data        = $this.data('timeline'),
         eventNodes  = ( new Function( 'return ' + data.timeline.text() ) )(),
-        tlStartDt   = new Date( data.timeline.attr('actual-start-datetime') ),
+        tlStartDt   = new Date( normalizeDate( data.timeline.attr('actual-start-datetime') ) ),
         tlEndDt     = new Date( tlStartDt ),
         tlType      = data.timeline.attr('type'),
         tlScale     = data.timeline.attr('scale'),
@@ -1041,8 +1044,8 @@
     $this.find('.timeline-events').empty();
     eventNodes.forEach(function( evt ) {
       if ( evt.start ) {
-        var evtStartDt = new Date( evt.start ),
-            evtEndDt   = evt.end == undefined ? new Date( evt.start ) : new Date( evt.end ),
+        var evtStartDt = new Date( normalizeDate( evt.start ) ),
+            evtEndDt   = evt.end == undefined ? new Date( normalizeDate( evt.start ) ) : new Date( normalizeDate( evt.end ) ),
             msMonth    = 30 * 24 * 60 * 60 * 1000, // base value
             msDay      = 24 * 60 * 60 * 1000,
             msHour     = 60 * 60 * 1000,
@@ -1256,6 +1259,7 @@
         x: $(this)[0].offsetLeft - margin + cv.x,
         y: Math.floor( $(this)[0].offsetTop / rowH ) * rowH + cv.y
       };
+console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
       
       // Draw lines
       if ( $(this).data('relayBefore') != undefined ) {
@@ -1400,7 +1404,7 @@
     return $.ajax({
       type: 'GET'
     }).done(function(d,s,xhr){
-      $('body').data('serverDate', new Date(xhr.getResponseHeader('Date')));
+      $('body').data('serverDate', new Date( normalizeDate( xhr.getResponseHeader('Date') ) ) );
     }).promise();
   };
 
@@ -1427,10 +1431,10 @@
   }
   
   function getAbscissa( targetDt, dataObject ) {
-    targetDt    = Object.prototype.toString.call( targetDt ) === '[object Date]' ? targetDt : new Date( targetDt );
+    targetDt    = Object.prototype.toString.call( targetDt ) === '[object Date]' ? targetDt : new Date( normalizeDate( targetDt ) );
     var data        = dataObject.timeline,
         //justify     = $.inArray( justify.toLowerCase(), [ 'left', 'center' ] ) != -1 ? justify.toLowerCase() : 'center',
-        startDt     = new Date( data.attr('actual-start-datetime') ),
+        startDt     = new Date( normalizeDate( data.attr('actual-start-datetime') ) ),
         endDt       = new Date( startDt ),
         scale       = data.attr('scale'),
         range       = Number( data.attr('range') ),
@@ -1476,6 +1480,11 @@
     } else {
       return false;
     }
+  }
+  
+  function normalizeDate( dateString ) {
+    // For Safari
+    return dateString.replace(/-/g, '/');
   }
   
   function retriveDaysGrid( minuteInterval, minGridPer ) {
@@ -1527,7 +1536,8 @@
   
   function formatDate( format, date ) {
     // Date format like PHP
-    var baseDt  = Object.prototype.toString.call( date ) === '[object Date]' ? date : new Date( date ),
+    format = format || '';
+    var baseDt  = Object.prototype.toString.call( date ) === '[object Date]' ? date : new Date( normalizeDate( date ) ),
         month   = i18nMonth,
         day     = i18nDay,
         ma      = i18nMa,
