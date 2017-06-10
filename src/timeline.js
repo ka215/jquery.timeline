@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -12,7 +12,7 @@
   var pluginName   = 'jQuery.Timeline',
       pointMargin  = 2,
       tlEventAreaH = 0,
-      rowH, i18nMonth, i18nDay, i18nMa;
+      rowH;
 
   var methods = {
     init : function( options ) {
@@ -31,7 +31,9 @@
           day           : "D, j M", // or "j" etc.
           years         : "Y", 
           months        : "F", 
-          days          : "j"
+          days          : "j",
+          meta          : "Y/m/d H:i", // start datetime in meta of Event Detail; or "g:i A, D F j, Y"
+          metato        : "" // end datetime in meta of Event Detail; default is same to meta
         },
         minuteInterval  : 30, // Recommend more than 5 minutes; only if top scale is "days" ; Deprecated
         zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
@@ -47,11 +49,8 @@
           right         : "jqtl-circle-right"
         },
         showPointer     : true,
-        i18n            : {
-          month         : { 'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August', 'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December' },
-          day           : { 'Sun': 'Sunday', 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thurseday', 'Fri': 'Friday', 'Sat': 'Saturday' },
-          ma            : [ 'am', 'pm' ]
-        }
+        i18n            : {},
+        langsDir        : "./langs/"
       }, options);
       
       // initialize plugin
@@ -73,6 +72,8 @@
               "datetime-format-years" : settings.datetimeFormat.years || 'Y',
               "datetime-format-months": settings.datetimeFormat.months || 'F',
               "datetime-format-days"  : settings.datetimeFormat.days || 'j',
+              "datetime-format-meta"  : settings.datetimeFormat.meta || 'Y/m/d H:i',
+              "datetime-format-metato": settings.datetimeFormat.metato || '',
               "minute-interval"       : settings.minuteInterval,
               "zerofill-year"         : settings.zerofillYear ? 1 : 0,
               "range"                 : settings.range,
@@ -85,9 +86,10 @@
               "navi-icon-left"        : settings.naviIcon.left || 'jqtl-circle-left',
               "navi-icon-right"       : settings.naviIcon.right || 'jqtl-circle-right',
               "show-pointer"          : settings.showPointer ? 1 : 0,
-              "i18n-month"            : JSON.stringify( settings.i18n.month ),
-              "i18n-day"              : JSON.stringify( settings.i18n.day ),
-              "i18n-ma"               : JSON.stringify( settings.i18n.ma ),
+              "i18n-month"            : settings.i18n.month ? JSON.stringify( settings.i18n.month ) : '',
+              "i18n-day"              : settings.i18n.day ? JSON.stringify( settings.i18n.day ) : '',
+              "i18n-ma"               : settings.i18n.ma ? JSON.stringify( settings.i18n.ma ) : '',
+              "langs-dir"             : settings.langsDir,
               "text"                  : ""
           });
         
@@ -106,9 +108,6 @@
           });
           
           rowH      = settings.rowHeight;
-          i18nMonth = settings.i18n.month;
-          i18nDay   = settings.i18n.day;
-          i18nMa    = settings.i18n.ma;
           
           // Retrive Current Date
           var currentDt, currentDate, _tmp, _regx;
@@ -137,31 +136,63 @@
               currentDate = currentDt.getFullYear() +'/'+ (currentDt.getMonth() + 1) +'/'+ currentDt.getDate() +' '+ currentDate.getHours() +':00:00';
           }
           $this.data('timeline').timeline.attr( 'actual-start-datetime', currentDate );
-        
-          renderTimeline( $this );
           
-          // timeline container sizing
-          resizeTimeline( $this );
+          // Load Language as deferred interface (added v1.0.3)
+          $this[0].lang = getBrowserLang(); // Set locale
+          importLocale( $this ).done(function( locale ) {
+            $this.data('timeline').timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
+            $this.data('timeline').timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
+            $this.data('timeline').timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+            if ( 'format' in locale ) {
+              for ( var prop in locale.format ) {
+                $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+              }
+            }
+            
+            renderTimeline( $this );
+            
+            // timeline container sizing
+            resizeTimeline( $this );
+            
+            // do methods.alignment
+            $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+            
+            $this.css('visibility','visible');
+            
+            placeEvents( $this );
+            
+          }).fail(function() {
+            
+            renderTimeline( $this );
+            
+            // timeline container sizing
+            resizeTimeline( $this );
+            
+            // do methods.alignment
+            $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+            
+            $this.css('visibility','visible');
+            
+            placeEvents( $this );
+            
+          });
           
-          // do methods.alignment
-          $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+        } else {
           
-          $this.css('visibility','visible');
+          /* Debugging code for loading effect:
+          var wait = 0,
+              sleep = setInterval(function() {
+                wait++;
+                if ( wait == 1 ) {
+                  placeEvents( $this );
+                  clearInterval( sleep );
+                }
+              }, 300);
+          */
+          
+          placeEvents( $this );
           
         }
-        
-        /* Debugging code for loading effect:
-        var wait = 0,
-            sleep = setInterval(function() {
-              wait++;
-              if ( wait == 1 ) {
-                placeEvents( $this );
-                clearInterval( sleep );
-              }
-            }, 300);
-        */
-        placeEvents( $this );
-        
       });
       
     },
@@ -222,6 +253,12 @@
           }
           if ( typeof options.datetimeFormat.days != undefined ) {
             data.timeline.attr( 'datetime-format-days', options.datetimeFormat.days );
+          }
+          if ( typeof options.datetimeFormat.meta != undefined ) {
+            data.timeline.attr( 'datetime-format-meta', options.datetimeFormat.meta );
+          }
+          if ( typeof options.datetimeFormat.metato != undefined ) {
+            data.timeline.attr( 'datetime-format-metato', options.datetimeFormat.metato );
           }
         }
         if ( 'minuteInterval' in options ) {
@@ -303,12 +340,32 @@
         data.timeline.attr( 'actual-start-datetime', currentDate );
 
         $this.find('.timeline-container').empty().removeClass('timeline-container');
-        renderTimeline( $this );
-        resizeTimeline( $this );
-        placeEvents( $this );
-        
-        // do methods.alignment
-        $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+        // Load Language as deferred interface (added v1.0.3)
+        $this[0].lang = getBrowserLang(); // Set locale
+        importLocale( $this ).done(function( locale ) {
+          data.timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
+          data.timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
+          data.timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+          if ( 'format' in locale ) {
+            for ( var prop in locale.format ) {
+              $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+            }
+          }
+          
+          renderTimeline( $this );
+          resizeTimeline( $this );
+          placeEvents( $this );
+          
+          // do methods.alignment
+          $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+        }).fail(function() {
+          renderTimeline( $this );
+          resizeTimeline( $this );
+          placeEvents( $this );
+          
+          // do methods.alignment
+          $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+        });
       });
     },
     show : function( ) {
@@ -632,7 +689,9 @@
       }
       return $(currentTimeline).each(function(){
         var data       = $(this).data('timeline'),
-            eventNodes = ( new Function( 'return ' + data.timeline.text() ) )(), eventData;
+            eventNodes = ( new Function( 'return ' + data.timeline.text() ) )(),
+            metaFormat = { start: data.timeline.attr('datetime-format-meta'), end: data.timeline.attr('datetime-format-metato') },
+            eventData;
         $.each( eventNodes, function( i, evt ) {
           if ( evt.eventId == eventId ) {
             eventData = evt;
@@ -652,7 +711,7 @@
         // Alignment to current node
         $(this).trigger( 'align.timeline', [ 'evt-' + eventId, 'fast' ] );
         
-        if ( showEvent( eventData ) && eventData.callback ) {
+        if ( showEvent( eventData, metaFormat ) && eventData.callback ) {
           // console.info( 'Fired "openEvent" method after event shown.' );
           Function.call( null, 'return ' + eventData.callback )();
           //var callback = Function.call( null, 'return ' + eventData.callback )();
@@ -828,7 +887,6 @@
               zf = '0';
             }
           }
-//console.info( data.timeline.attr('datetime-format-years') );
           label = zf + formatDate( data.timeline.attr('datetime-format-years'), tmpDate );
           break;
         case 'months':
@@ -1259,7 +1317,6 @@
         x: $(this)[0].offsetLeft - margin + cv.x,
         y: Math.floor( $(this)[0].offsetTop / rowH ) * rowH + cv.y
       };
-console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
       
       // Draw lines
       if ( $(this).data('relayBefore') != undefined ) {
@@ -1372,7 +1429,7 @@ console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
 
   }
 
-  function showEvent( eventData ) {
+  function showEvent( eventData, metaFormat ) {
     if ( $('.timeline-event-view').length == 0 ) {
       return true;
     }
@@ -1384,10 +1441,13 @@ console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
         tlevFooter = $('<div />', { addClass: "timeline-event-footer" }),
         temp;
     tlevLabel.text( eventData.label );
-    temp =  '<span class="timeline-event-start-date">' + formatDate( 'Y/m/d H:i', eventData.start ) + '</span>';
+    if ( metaFormat.end === '' ) {
+      metaFormat.end = metaFormat.start;
+    }
+    temp =  '<span class="timeline-event-start-date">' + formatDate( metaFormat.start, eventData.start ) + '</span>';
     if ( eventData.end ) {
       temp += '<span class="timeline-event-date-separator"></span>';
-      temp += '<span class="timeline-event-end-date">' + formatDate( 'Y/m/d H:i', eventData.end ) + '</span>';
+      temp += '<span class="timeline-event-end-date">' + formatDate( metaFormat.end, eventData.end ) + '</span>';
     }
     tlevHeader.append( tlevLabel.prop('outerHTML') + tlevMeta.append( temp ).prop('outerHTML') );
     if ( eventData.content ) {
@@ -1538,9 +1598,9 @@ console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
     // Date format like PHP
     format = format || '';
     var baseDt  = Object.prototype.toString.call( date ) === '[object Date]' ? date : new Date( normalizeDate( date ) ),
-        month   = i18nMonth,
-        day     = i18nDay,
-        ma      = i18nMa,
+        month   = { 'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August', 'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December' },
+        day     = { 'Sun': 'Sunday', 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thurseday', 'Fri': 'Friday', 'Sat': 'Saturday' },
+        ma      = [ 'am', 'pm' ],
         formatStrings = format.split(''),
         converted = '',
         esc = false,
@@ -1578,6 +1638,13 @@ console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
 
     if ( format === '' ) {
       return baseDt;
+    }
+
+    if ( $('.timeline-container').length > 0 ) {
+      var tlData = $('.timeline-container').eq(0).data('timeline').timeline;
+      month = tlData.attr('i18n-month') ? JSON.parse( tlData.attr('i18n-month') ) : month;
+      day   = tlData.attr('i18n-day') ? JSON.parse( tlData.attr('i18n-day') ) : day;
+      ma    = tlData.attr('i18n-ma') ? JSON.parse( tlData.attr('i18n-ma') ) : ma;
     }
 
     formatStrings.forEach( function( str, i ) {
@@ -1706,5 +1773,25 @@ console.info([ cv.x, cv.y, margin, selfPoint.x, selfPoint.y ]);
     return converted;
   }
   
+  var getBrowserLang = function() {
+    return ( navigator.userLanguage || navigator.browserLanguage || navigator.language ); //.substr(0,2);
+  };
+  
+  function importLocale( tlObj ) {
+    var dfd = $.Deferred(),
+        langDir  = tlObj.data('timeline').timeline.attr('langs-dir') || './langs/',
+        loadPath = langDir + tlObj[0].lang.toLowerCase() + '.json';
+    $.ajax({
+      url: loadPath,
+      type: 'post',
+      dataType: 'json'
+    }).done(function( locale ){
+      dfd.resolve( locale );
+    }).fail(function(){
+      dfd.reject();
+    });
+    
+    return dfd.promise();
+  }
   
 })( jQuery );

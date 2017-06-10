@@ -5,16 +5,15 @@ $default_event_txtcolor: #777e41;
 $default_event_pointer_bgcolor: #f0f0f0;
 $default_event_pointer_border: #4496d3;
 $default_needle_pointer_color: #e8383d;
-
-@charset "UTF-8";
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.2
+ * Version: 1.0.3
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
  */
+@charset "UTF-8";
 @font-face {
   font-family: 'jQueryTimeline';
   src:  url('#{$font_path}jQueryTimeline.eot?t4qpol');
@@ -234,7 +233,7 @@ $default_needle_pointer_color: #e8383d;
 }
 .timeline-events {
   position: relative;
-  display: block;
+  display: none;
   left: 0;
   width: 100%;
   height: auto;
@@ -243,6 +242,9 @@ $default_needle_pointer_color: #e8383d;
 .timeline-container .timeline-events {
   position: absolute;
   height: 200px;
+}
+.timeline-body .timeline-events {
+  display: block;
 }
 .timeline-node {
   position: absolute;
