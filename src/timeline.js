@@ -1783,7 +1783,7 @@
         loadPath = langDir + tlObj[0].lang.toLowerCase() + '.json';
     $.ajax({
       url: loadPath,
-      type: 'post',
+      type: 'get',
       dataType: 'json'
     }).done(function( locale ){
       dfd.resolve( locale );
