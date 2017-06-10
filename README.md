@@ -13,6 +13,7 @@ For various examples, please see here:
 
 * [Bar Type Timeline](https://ka215.github.io/jquery.timeline/index.html)
 * [Point Type Timeline](https://ka215.github.io/jquery.timeline/index2.html)
+* [Multi Languages](https://ka215.github.io/jquery.timeline/index3.html)
 
 ## Browser Support
 jQuery.Timeline supports the following browsers:
@@ -70,6 +71,7 @@ You can pass options on plugin initialization. For example:
 $("#myTimeline").timeline({
   startDatetime: '2017-05-25',
   rows: 6,
+  datetimeFormat: { meta: 'g:i A, D F j, Y' },
   rangeAlign: 'center'
 });
 ```
@@ -81,7 +83,7 @@ $("#myTimeline").timeline({
 | startDatetime | String | currently | Default set datetime as viewing timetable; format is `"^[-+]d{4}(/\|-)d{2}(/\|-)d{2}\sd{2}:d{2}:d{2}$"` or "**currently**" |
 | datetimePrefix | String |  | The prefix of the date and time notation displayed in the headline |
 | showHeadline | Boolean | true | Whether to display headline |
-| datetimeFormat | Object | `{full:"j M Y", year:"Y", month:"M", day:"D, j M", years:"Y", months:"F", days:"j"}` | Available formats are here: [fn.date.js](https://gist.github.com/ka215/20cbab58e4f7d4e5508a07cff8d64b00) |
+| datetimeFormat | Object | `{full:"j M Y", year:"Y", month:"M", day:"D, j M", years:"Y", months:"F", days:"j", meta:"Y/m/d H:i", metato:""}` | Available formats are here: [fn.date.js](https://gist.github.com/ka215/20cbab58e4f7d4e5508a07cff8d64b00); Since version 1.0.3, it's able to define the date format displayed in the meta field of the event detail. In addition, it can be specified as a language JSON file for multilingual support. |
 | minuteInterval | Integer | 30 | Recommend more than 5 minutes; only if top scale is "days" (Deprecated) |
 | zerofillYear | Boolean | false | It's outputted at the "0099" if true, the "99" if false |
 | range | Integer | 3 | The default view range of the timetable starting from the "startDatetime" |
@@ -94,6 +96,7 @@ $("#myTimeline").timeline({
 | naviIcon | Object | `{left:"jqtl-circle-left", right:"jqtl-circle-right"}` | Define class name |
 | showPointer | Boolean | true | Whether to display needle pointer on the current datetime |
 | i18n | Object | (omission) | Define translated text for internationalization of datetime format converted by datetime format. For details, refer to the section on [Internationalization](#Internationalization). |
+| langsDir | String | ./langs/ | Since ver.1.0.3, you can specify the path that stores the language files for multilingualization. Please specify by relative path or absolute URL from HTML where js script is loaded. |
 
 
 ## Methods
@@ -230,6 +233,55 @@ $("#myTimeline").timeline({
 ```
 
 > **Note**: The above is an example of defining translation text in German.
+
+### Multilingualization
+
+Since version 1.0.3, multilingual support enhanced. By placing any required language files (as the JSON format) on the "langs" folder, the translated text defined in the JSON file is applied according the language setting of the browser.
+
+```json
+{
+  "month": {
+    "Jan": "January",
+    "Feb": "February",
+    "Mar": "March",
+    "Apr": "April",
+    "May": "May",
+    "Jun": "June",
+    "Jul": "July",
+    "Aug": "August",
+    "Sep": "September",
+    "Oct": "October",
+    "Nov": "November",
+    "Dec": "December"
+  },
+  "day": {
+    "Sun": "Sunday",
+    "Mon": "Monday",
+    "Tue": "Tuesday",
+    "Wed": "Wednesday",
+    "Thu": "Thurseday",
+    "Fri": "Friday",
+    "Sat": "Saturday"
+  },
+  "ma": [
+    "am",
+    "pm"
+  ],
+  "format": {
+    "full": "j M Y",
+    "year": "Y",
+    "month": "M Y",
+    "day": "D, j M",
+    "years": "Y",
+    "months": "F",
+    "days": "j",
+    "meta": "g:i A, D F j, Y",
+    "metato": ""
+  }
+}
+```
+
+> **Note**: The above is an "en-US.json" that defined translation text in English.
 
 ## TIPS
 
