@@ -1,26 +1,26 @@
 {
   "month": {
-    "Jan.": "Janvier",
-    "Fév.": "Février",
-    "Mars": "Mars",
-    "Avr.": "Avril",
+    "Jan.": "Januar",
+    "Feb.": "Februar",
+    "März": "März",
+    "Apr.": "April",
     "Mai": "Mai",
-    "Juin": "Juin",
-    "Juillet": "Juillet",
-    "Août.": "Août",
-    "Sept.": "Septembre",
-    "Oct.": "Octobre",
-    "Nov.": "Novembre",
-    "Déc.": "Décembre"
+    "Juni": "Juni",
+    "Juli": "Juli",
+    "Aug.": "August",
+    "Sept.": "September",
+    "Okt.": "Oktober",
+    "Nov.": "November",
+    "Dec.": "December"
   },
   "day": {
-    "Lu": "Lundi",
-    "Ma": "Mardi",
-    "Me": "Mercredi",
-    "Jeudi": "Jeudi",
-    "Ve": "Vendredi",
-    "Sa": "Samedi",
-    "Di": "Dimanche"
+    "Mo": "Montag",
+    "Di": "Dienstag",
+    "Mi": "Mittwoch",
+    "Do": "Donnerstag",
+    "Fr": "Freitag",
+    "Sa": "Samstag",
+    "So": "Sonntag"
   },
   "ma": [
     "vorm.",
