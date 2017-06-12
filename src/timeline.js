@@ -1789,16 +1789,24 @@
   
   var getBrowserLang = function() {
     var dfd = $.Deferred(),
-        language = ( navigator.userLanguage || navigator.browserLanguage || navigator.language ); //.substr(0,2);
+        language = ( navigator.userLanguage || navigator.browserLanguage || navigator.language );
     if ( arguments.length == 0 || ! arguments[0] ) {
       // From local browser settings
       dfd.resolve( language );
     } else {
       $.ajax({
         url: '//ajaxhttpheaders.appspot.com',
+        data: { callback: pluginName },
         dataType: 'jsonp'
       }).done(function( headers ) {
-        language = headers['Accept-Language']; //.substring(0,2);
+        var tmpLang, langs, qualities, country;
+        tmpLang = headers['Accept-Language'].split(';');
+        langs = tmpLang[0].split(',');
+        qualities = tmpLang[1].split(','); // not used yet
+        country = headers['X-Appengine-Country']; // not used yet
+        if ( langs.length > 0 ) {
+          language = langs[0];
+        }
         dfd.resolve( language );
       }).fail(function() {
         dfd.reject();
