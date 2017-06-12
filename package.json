@@ -1,6 +1,6 @@
 {
   "name": "jquery.timeline",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Horizontal Timeline plugin for jQuery",
   "main": "gulpfile.js",
   "dependencies": {

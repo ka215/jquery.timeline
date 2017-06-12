@@ -97,6 +97,7 @@ $("#myTimeline").timeline({
 | showPointer | Boolean | true | Whether to display needle pointer on the current datetime |
 | i18n | Object | (omission) | Define translated text for internationalization of datetime format converted by datetime format. For details, refer to the section on [Internationalization](#Internationalization). |
 | langsDir | String | ./langs/ | Since ver.1.0.3, you can specify the path that stores the language files for multilingualization. Please specify by relative path or absolute URL from HTML where js script is loaded. |
+| httpLanguage | Boolean | false | Whether to obtain the language setting of the browsing environment from the server side header. |
 
 
 ## Methods
