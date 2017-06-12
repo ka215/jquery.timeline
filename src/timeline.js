@@ -1798,7 +1798,7 @@
         url: '//ajaxhttpheaders.appspot.com',
         dataType: 'jsonp'
       }).done(function( headers ) {
-        language = headers['Accept-Language'].substring(0,2);
+        language = headers['Accept-Language']; //.substring(0,2);
         dfd.resolve( language );
       }).fail(function() {
         dfd.reject();
