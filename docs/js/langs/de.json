@@ -1,0 +1,40 @@
+{
+  "month": {
+    "Jan.": "Januar",
+    "Feb.": "Februar",
+    "März": "März",
+    "Apr.": "April",
+    "Mai": "Mai",
+    "Juni": "Juni",
+    "Juli": "Juli",
+    "Aug.": "August",
+    "Sept.": "September",
+    "Okt.": "Oktober",
+    "Nov.": "November",
+    "Dec.": "December"
+  },
+  "day": {
+    "Mo": "Montag",
+    "Di": "Dienstag",
+    "Mi": "Mittwoch",
+    "Do": "Donnerstag",
+    "Fr": "Freitag",
+    "Sa": "Samstag",
+    "So": "Sonntag"
+  },
+  "ma": [
+    "vorm.",
+    "nachm."
+  ],
+  "format": {
+    "full": "j M Y",
+    "year": "Y",
+    "month": "M Y",
+    "day": "D, j M",
+    "years": "Y",
+    "months": "F",
+    "days": "j",
+    "meta": "g:i A, D F j, Y",
+    "metato": ""
+  }
+}
