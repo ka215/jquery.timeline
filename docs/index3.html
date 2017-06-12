@@ -118,7 +118,8 @@
 <!-- Bootstrap 4.0.0-alpha.6 -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 <!-- jQuery Timeline -->
-<script src="./js/timeline.min.js?ver=1.0.3"></script>
+<!-- script src="./js/timeline.min.js?ver=1.0.3"></script -->
+<script src="../src/timeline.js?ver=1.0.4"></script>
 <!-- local scripts -->
 <script>
 $(function () {
@@ -126,11 +127,7 @@ $(function () {
   $("#myTimeline").timeline({
     startDatetime: '2017-05-28',
     rangeAlign: 'center',
-    datetimeFormat: {
-      meta: "g:i a, D F j, Y",
-      metato: "g:i a, D F j"
-    },
-    langsDir: "./js/langs/"
+    langsDir: "../src/langs/" // ./js/langs/
   });
 
   // usage bootstrap's popover

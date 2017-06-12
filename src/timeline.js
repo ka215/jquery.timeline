@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -50,7 +50,8 @@
         },
         showPointer     : true,
         i18n            : {},
-        langsDir        : "./langs/"
+        langsDir        : "./langs/",
+        httpLnaguage    : false
       }, options);
       
       // initialize plugin
@@ -90,6 +91,7 @@
               "i18n-day"              : settings.i18n.day ? JSON.stringify( settings.i18n.day ) : '',
               "i18n-ma"               : settings.i18n.ma ? JSON.stringify( settings.i18n.ma ) : '',
               "langs-dir"             : settings.langsDir,
+              "http-language"         : settings.httpLnaguage ? 1 : 0,
               "text"                  : ""
           });
         
@@ -137,46 +139,48 @@
           }
           $this.data('timeline').timeline.attr( 'actual-start-datetime', currentDate );
           
-          // Load Language as deferred interface (added v1.0.3)
-          $this[0].lang = getBrowserLang(); // Set locale
-          importLocale( $this ).done(function( locale ) {
-            $this.data('timeline').timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
-            $this.data('timeline').timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
-            $this.data('timeline').timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
-            if ( 'format' in locale ) {
-              for ( var prop in locale.format ) {
-                $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+          // Load Language as deferred interface (updated v1.0.4)
+          getBrowserLang( settings.httpLnaguage ).always(function( language ){
+            $this[0].lang = language;
+          }).then(function(){
+            importLocale( $this ).done(function( locale ) {
+              $this.data('timeline').timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
+              $this.data('timeline').timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
+              $this.data('timeline').timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+              if ( 'format' in locale ) {
+                for ( var prop in locale.format ) {
+                  $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+                }
               }
-            }
-            
-            renderTimeline( $this );
-            
-            // timeline container sizing
-            resizeTimeline( $this );
-            
-            // do methods.alignment
-            $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
-            
-            $this.css('visibility','visible');
-            
-            placeEvents( $this );
-            
-          }).fail(function() {
-            
-            renderTimeline( $this );
-            
-            // timeline container sizing
-            resizeTimeline( $this );
-            
-            // do methods.alignment
-            $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
-            
-            $this.css('visibility','visible');
-            
-            placeEvents( $this );
-            
+              
+              renderTimeline( $this );
+              
+              // timeline container sizing
+              resizeTimeline( $this );
+              
+              // do methods.alignment
+              $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+              
+              $this.css('visibility','visible');
+              
+              placeEvents( $this );
+              
+            }).fail(function() {
+              
+              renderTimeline( $this );
+              
+              // timeline container sizing
+              resizeTimeline( $this );
+              
+              // do methods.alignment
+              $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+              
+              $this.css('visibility','visible');
+              
+              placeEvents( $this );
+              
+            });
           });
-          
         } else {
           
           /* Debugging code for loading effect:
@@ -310,6 +314,9 @@
             data.timeline.attr( 'i18n-ma', JSON.stringify( options.i18n.ma ) );
           }
         }
+        if ( 'langsDir' in options ) {
+          data.timeline.attr( 'langs-dir', options.langsDir );
+        }
 
         // Retrive current Date
         var currentDt, currentDate, _tmp, _regx;
@@ -340,31 +347,34 @@
         data.timeline.attr( 'actual-start-datetime', currentDate );
 
         $this.find('.timeline-container').empty().removeClass('timeline-container');
-        // Load Language as deferred interface (added v1.0.3)
-        $this[0].lang = getBrowserLang(); // Set locale
-        importLocale( $this ).done(function( locale ) {
-          data.timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
-          data.timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
-          data.timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
-          if ( 'format' in locale ) {
-            for ( var prop in locale.format ) {
-              $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+        // Load Language as deferred interface (updated v1.0.4)
+        getBrowserLang( settings.httpLnaguage ).always(function( language ){
+          $this[0].lang = language;
+        }).then(function(){
+          importLocale( $this ).done(function( locale ) {
+            data.timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
+            data.timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
+            data.timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+            if ( 'format' in locale ) {
+              for ( var prop in locale.format ) {
+                $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+              }
             }
-          }
-          
-          renderTimeline( $this );
-          resizeTimeline( $this );
-          placeEvents( $this );
-          
-          // do methods.alignment
-          $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
-        }).fail(function() {
-          renderTimeline( $this );
-          resizeTimeline( $this );
-          placeEvents( $this );
-          
-          // do methods.alignment
-          $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+            
+            renderTimeline( $this );
+            resizeTimeline( $this );
+            placeEvents( $this );
+            
+            // do methods.alignment
+            $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+          }).fail(function() {
+            renderTimeline( $this );
+            resizeTimeline( $this );
+            placeEvents( $this );
+            
+            // do methods.alignment
+            $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+          });
         });
       });
     },
@@ -556,6 +566,7 @@
           day          : JSON.parse( data.timeline.attr('i18n-day') ),
           ma           : JSON.parse( data.timeline.attr('i18n-ma') ),
         },
+        langsDir       : data.timeline.attr('langs-dir'),
         events         : ( new Function( 'return ' + data.timeline.text() ) )()
       };
     },
@@ -1774,13 +1785,29 @@
   }
   
   var getBrowserLang = function() {
-    return ( navigator.userLanguage || navigator.browserLanguage || navigator.language ); //.substr(0,2);
+    var dfd = $.Deferred(),
+        language = ( navigator.userLanguage || navigator.browserLanguage || navigator.language ); //.substr(0,2);
+    if ( arguments.length == 0 || ! arguments[0] ) {
+      // From local browser settings
+      dfd.resolve( language );
+    } else {
+      $.ajax({
+        url: '//ajaxhttpheaders.appspot.com',
+        dataType: 'jsonp'
+      }).done(function( headers ) {
+        language = headers['Accept-Language'].substring(0,2);
+        dfd.resolve( language );
+      }).fail(function() {
+        dfd.reject();
+      });
+    }
+    return dfd.promise();
   };
   
   function importLocale( tlObj ) {
     var dfd = $.Deferred(),
         langDir  = tlObj.data('timeline').timeline.attr('langs-dir') || './langs/',
-        loadPath = langDir + tlObj[0].lang.toLowerCase() + '.json';
+        loadPath = langDir + tlObj[0].lang + '.json'; // updated from `tlObj[0].lang.toLowerCase()`
     $.ajax({
       url: loadPath,
       type: 'get',
