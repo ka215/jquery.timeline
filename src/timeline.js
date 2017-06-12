@@ -317,6 +317,9 @@
         if ( 'langsDir' in options ) {
           data.timeline.attr( 'langs-dir', options.langsDir );
         }
+        if ( 'httpLanguage' in options ) {
+          data.timeline.attr( 'http-language', options.httpLanguage );
+        }
 
         // Retrive current Date
         var currentDt, currentDate, _tmp, _regx;
@@ -348,7 +351,7 @@
 
         $this.find('.timeline-container').empty().removeClass('timeline-container');
         // Load Language as deferred interface (updated v1.0.4)
-        getBrowserLang( settings.httpLnaguage ).always(function( language ){
+        getBrowserLang( data.timeline.attr('http-language') ).always(function( language ){
           $this[0].lang = language;
         }).then(function(){
           importLocale( $this ).done(function( locale ) {
