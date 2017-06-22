@@ -354,6 +354,25 @@ Now when you mouse over the event on the timeline you will see the tooltip.
 
 > **Note**: In Bootstrap version 4.x, errors may occur when tooltips are used. In that case, it may be solved by inclusion of the [tether](http://tether.io/) plugin.
 
+### 3. Bind a custom function to an "openEvent" method
+
+The custom function you want to call should be defined on the global scope.
+
+```html
+<div id="myTimeline">
+  <ul class="timeline-events">
+    <li data-timeline-node="{ start:'2017-06-20 08:00',end:'2017-06-20 12:00', callback:'$.openMyEvent()', extend:{'prop':'value'} }">Example Event</li>
+  </ul>
+</div>
+```
+
+```javascript
+$.openMyEvent = function() {
+  console.log('openEvent - event clicked...');
+  // Retrieve extended data from an opened event 
+  console.info( $('.timeline-node.active').data() );
+};
+```
 
 ## Note
 
