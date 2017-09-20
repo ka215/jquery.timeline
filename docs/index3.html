@@ -11,7 +11,7 @@
   <!-- Font Awesome latest -->
   <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
   <!-- jQuery Timeline -->
-  <link href="./css/timeline.min.css?ver=1.0.4" rel="stylesheet">
+  <link href="./css/timeline.min.css?ver=1.0.5" rel="stylesheet">
   <!-- HTML5 ShimとRespond.js IE8のHTML5要素とメディアクエリのサポート -->
   <!-- 警告：Respond.jsは、file:// 経由でページを表示しても機能しません -->
   <!--[if lt IE 9]>
@@ -46,7 +46,7 @@
           <li data-timeline-node="{ start:'2017-5-29 13:00',content:'For the bar type on the timeline, event blocks are displayed in minimum units unless you specify an event end time.' }">Event with undefined of end date</li>
           <li data-timeline-node="{ end:'2017-5-29 15:00',bgColor:'#e6eb94',content:'In this case, no displayed.' }">Event with undefined of start date</li>
           <li data-timeline-node="{ start:'2017-5-29 12:45',end:'2017-5-29 16:00',row:2,bgColor:'#89c997',color:'#ffffff',callback:'$(\'#myModal\').modal()',content:'Show modal window via bootstrap' }">Event having callback</li>
-          <li data-timeline-node="{ start:'2017-5-29 16:03',end:'2017-5-29 19:05',row:3,bgColor:'#a1d8e6',color:'#008db7',extend:{toggle:'popover',placement:'bottom',content:'It is also possible to bind external custom events.'} }">Show popover via bootstrap</li>
+          <li data-timeline-node="{ start:'2017-5-29 16:03',end:'2017-5-29 19:05',row:3,bgColor:'#a1d8e6',color:'#008db7',extend:{toggle:'popover',placement:'top',content:'It is also possible to bind external custom events.'} }">Show popover via bootstrap</li>
           <li data-timeline-node="{ start:'2017-5-28 23:00',end:'2017-5-29 5:15',row:3,extend:{'post_id':13,'permalink':'https://www.google.com/'} }">Event having extended params</li>
           <li data-timeline-node="{ start:'2017-5-29 5:40',end:'2017-5-29 8:20',row:3,bgColor:'#ef857d',color:'#fff',content:'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis luctus tortor nec bibendum malesuada. Etiam sed libero cursus, placerat est at, fermentum quam. In sed fringilla mauris. Fusce auctor turpis ac imperdiet porttitor.' }">Lorem Ipsum</li>
           <li data-timeline-node="{ start:'2017-5-29 10:00',end:'2017-5-29 19:00',row:4,bdColor:'#942343' }">Event having image for point type</li>
@@ -118,7 +118,7 @@
 <!-- Bootstrap 4.0.0-alpha.6 -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 <!-- jQuery Timeline -->
-<script src="./js/timeline.min.js?ver=1.0.4"></script>
+<script src="./js/timeline.min.js?ver=1.0.5"></script>
 <!-- script src="../src/timeline.js?ver=1.0.4"></script -->
 <!-- local scripts -->
 <script>
@@ -131,14 +131,16 @@ $(function () {
     httpLnaguage: true
   });
 
-  // usage bootstrap's popover
-  $('.timeline-node').each(function(){
-    if ( $(this).data('toggle') === 'popover' ) {
-      $(this).attr( 'title', $(this).text() );
-      $(this).popover({
-        trigger: 'hover'
-      });
-    }
+  $("#myTimeline").on('afterRender.timeline', function(){
+    // usage bootstrap's popover
+    $('.timeline-node').each(function(){
+      if ( $(this).data('toggle') === 'popover' ) {
+        $(this).attr( 'title', $(this).text() );
+        $(this).popover({
+          trigger: 'hover'
+        });
+      }
+    });
   });
 
 });

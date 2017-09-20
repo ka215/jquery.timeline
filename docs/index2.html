@@ -11,7 +11,7 @@
   <!-- Font Awesome latest -->
   <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
   <!-- jQuery Timeline -->
-  <link href="./css/timeline.min.css?ver=1.0.4" rel="stylesheet">
+  <link href="./css/timeline.min.css?ver=1.0.5" rel="stylesheet">
   <!-- HTML5 ShimとRespond.js IE8のHTML5要素とメディアクエリのサポート -->
   <!-- 警告：Respond.jsは、file:// 経由でページを表示しても機能しません -->
   <!--[if lt IE 9]>
@@ -49,7 +49,7 @@
           <div data-timeline-node="{ eventId:5, start:'2017-7-14 17:30',row:2,margin:12,bdColor:'#942343',relation:{before:4} }">Event Relation 5</div>
           <div data-timeline-node="{ eventId:6, start:'2017-9-26 18:30',row:2,margin:12,bdColor:'#942343',relation:{before:5,after:-1} }">Event Relation 6</div>
           <label>Row 3</label>
-          <div data-timeline-node="{ eventId:7, start:'2016-9-26 7:00',row:3,image:'./imgs/sample-2.jpg' }">Event Relation 7</div>
+          <div data-timeline-node="{ eventId:7, start:'2016-9-26 7:00',row:3,image:'./imgs/sample-2.jpg',extend:{toggle:'popover',placement:'top',content:'It is also possible to bind external custom events.'} }">Event Relation 7</div>
           <div data-timeline-node="{ eventId:8, start:'2016-11-9 8:30',row:3,margin:12,relation:{before:7} }">Event Relation 8</div>
           <div data-timeline-node="{ eventId:9, start:'2017-1-25 11:15',row:3,margin:12,relation:{before:8} }">Event Relation 9</div>
           <div data-timeline-node="{ eventId:10, start:'2017-4-7 14:10',row:3,margin:12,relation:{before:9,after:5} }">Event Relation 10</div>
@@ -126,7 +126,7 @@
 <!-- Bootstrap 4.0.0-alpha.6 -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 <!-- jQuery Timeline -->
-<script src="./js/timeline.min.js?ver=1.0.4"></script>
+<script src="./js/timeline.min.js?ver=1.0.5"></script>
 <!-- local scripts -->
 <script>
 $(function () {
@@ -139,14 +139,16 @@ $(function () {
     rangeAlign: 'center'
   });
 
-  // usage bootstrap's popover
-  $('.timeline-node').each(function(){
-    if ( $(this).data('toggle') === 'popover' ) {
-      $(this).attr( 'title', $(this).text() );
-      $(this).popover({
-        trigger: 'hover'
-      });
-    }
+  $("#myTimeline").on("afterRender.timeline", function(){
+    // usage bootstrap's popover
+    $('.timeline-node').each(function(){
+      if ( $(this).data('toggle') === 'popover' ) {
+        $(this).attr( 'title', $(this).text() );
+        $(this).popover({
+          trigger: 'hover'
+        });
+      }
+    });
   });
 
 });

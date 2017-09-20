@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: Ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -100,6 +100,10 @@
         $this.on( 'click.timeline', '.timeline-to-next', methods.dateforth );
         $this.on( 'click.timeline', '.timeline-node', methods.openEvent );
         $this.on( 'align.timeline', methods.alignment );
+        $this.on( 'afterRender.timeline', function(){
+          $(this).off('afterRender.timeline');
+        });
+
         
         // If uninitialized yet
         if ( ! data ) {
@@ -165,6 +169,9 @@
               
               placeEvents( $this );
               
+              // Bind an event after initialized (added v1.0.5)
+              $this.trigger( 'afterRender.timeline', [ options ] );
+              
             }).fail(function() {
               
               renderTimeline( $this );
@@ -178,6 +185,9 @@
               $this.css('visibility','visible');
               
               placeEvents( $this );
+              
+              // Bind an event after initialized (added v1.0.5)
+              $this.trigger( 'afterRender.timeline', [ options ] );
               
             });
           });
@@ -199,6 +209,17 @@
         }
       });
       
+    },
+    initialized : function( callback ) {
+      return this.each(function(){
+        var $this = $(this),
+          data = $this.data('timeline');
+        
+        if ( data && typeof callback === 'function' ) {
+          // console.info( 'Fired "initialized" method after initialize this plugin.' );
+          callback( $this, data );
+        }
+      });
     },
     destroy : function( ) {
       // destroy object
@@ -370,6 +391,10 @@
             
             // do methods.alignment
             $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+            
+            // Bind an event after rendered (added v1.0.5)
+            $this.trigger( 'afterRender.timeline', [ options ] );
+            
           }).fail(function() {
             renderTimeline( $this );
             resizeTimeline( $this );
@@ -377,6 +402,10 @@
             
             // do methods.alignment
             $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+
+            // Bind an event after rendered (added v1.0.5)
+            $this.trigger( 'afterRender.timeline', [ options ] );
+            
           });
         });
       });
@@ -389,17 +418,6 @@
     hide : function( ) {
       return this.each(function(){
         $(this).css('visibility', 'hidden').css('display', 'none');
-      });
-    },
-    initialized : function( callback ) {
-      return this.each(function(){
-        var $this = $(this),
-          data = $this.data('timeline');
-        
-        if ( data && typeof callback === 'function' ) {
-          // console.info( 'Fired "initialized" method after initialize this plugin.' );
-          callback( $this, data );
-        }
       });
     },
     dateback  : function( evt ) {
@@ -739,7 +757,7 @@
     // Dispatcher of Plugin
     if ( methods[method] ) {
       return methods[ method ].apply( this, Array.prototype.slice.call( arguments, 1 ) );
-    } else 
+    } else
     if ( typeof method === 'object' || ! method ) {
       return methods.init.apply( this, arguments );
     } else {

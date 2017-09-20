@@ -23,7 +23,7 @@ jQuery.Timeline supports the following browsers:
 * **Safari** : Recommended latest version as active support
 * **Opera** : Recommended latest version as active support
 * **Edge** : Recommended latest version as active support
-* IE : Not checked the working yet
+* **IE** : Recommended latest version as active support
 
 ## Dependencies
 
@@ -128,6 +128,20 @@ $("#myTimeline").timeline({
 | removeEvent | Removes the specified event from the timeline. To specify the event, use the event ID. | Array, Callback Function (optional) | `$.timeline('removeEvent', [ 6, 7 ]);`
 | updateEvent | Updates the contents of the specified event. It is possible to update multiple events simultaneously. | Array, Callback Function (optional) | `$.timeline('updateEvent', [ {eventId:3, start:'2017-5-29 13:00',end:'2017-5-29 15:30', row:1, label:'Updated Event', bgColor:'#aaaab0', color:'#d70035'} ]);` |
 | openEvent | Called back when an event is clicked. | (object) | Unlike other methods, the processing specified by the event parameter callback ([to be described later](#Event Parameters)) is invoked. |
+
+## Handling Events (since v1.0.5)
+
+Since version 1.0.5, the custom events are triggered according to the state of timeline objects. This allows you to bind your own processing to a custom event.
+
+```javascript
+$("#myTimeline").on("afterRender.timeline", function( e, options ) {
+  // Do something
+});
+```
+
+| Event | Description | Arguments |
+|--------|:------------|-----------|
+| afterRender.timeline | Fired after rendering completely a timeline object. | options (object) |
 
 ## Event Parameters
 
