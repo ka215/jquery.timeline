@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -12,6 +12,7 @@
   var pluginName   = 'jQuery.Timeline',
       pointMargin  = 2,
       tlEventAreaH = 0,
+      debugMode    = true, // Added v1.0.6
       rowH;
 
   var methods = {
@@ -49,9 +50,11 @@
           right         : "jqtl-circle-right"
         },
         showPointer     : true,
-        i18n            : {},
+        i18n            : {}, // Deprecated since v1.0.6
         langsDir        : "./langs/",
-        httpLnaguage    : false
+        httpLanguage    : false,
+        getLangUrl      : "//ajaxhttpheaders.appspot.com?callback=?", // Added v1.0.6
+        duration        : 150 // duration of animate as each transition effects; Added v1.0.6
       }, options);
       
       // initialize plugin
@@ -87,11 +90,16 @@
               "navi-icon-left"        : settings.naviIcon.left || 'jqtl-circle-left',
               "navi-icon-right"       : settings.naviIcon.right || 'jqtl-circle-right',
               "show-pointer"          : settings.showPointer ? 1 : 0,
-              "i18n-month"            : settings.i18n.month ? JSON.stringify( settings.i18n.month ) : '',
-              "i18n-day"              : settings.i18n.day ? JSON.stringify( settings.i18n.day ) : '',
-              "i18n-ma"               : settings.i18n.ma ? JSON.stringify( settings.i18n.ma ) : '',
+              //"i18n-month"            : settings.i18n.month ? JSON.stringify( settings.i18n.month ) : '',
+              //"i18n-day"              : settings.i18n.day ? JSON.stringify( settings.i18n.day ) : '',
+              //"i18n-ma"               : settings.i18n.ma ? JSON.stringify( settings.i18n.ma ) : '',
+              "i18n-month"            : settings.i18n.month ? settings.i18n.month : '',
+              "i18n-day"              : settings.i18n.day ? settings.i18n.day : '',
+              "i18n-ma"               : settings.i18n.ma ? settings.i18n.ma : '',
               "langs-dir"             : settings.langsDir,
-              "http-language"         : settings.httpLnaguage ? 1 : 0,
+              "http-language"         : settings.httpLanguage ? 1 : 0,
+              "get-lang-url"          : settings.getLangUrl,
+              "duration"              : settings.duration,
               "text"                  : ""
           });
         
@@ -143,14 +151,19 @@
           }
           $this.data('timeline').timeline.attr( 'actual-start-datetime', currentDate );
           
-          // Load Language as deferred interface (updated v1.0.4)
-          getBrowserLang( settings.httpLnaguage ).always(function( language ){
+          // Load Language as deferred interface (updated v1.0.4, v1.0.6)
+          //getBrowserLang( settings.httpLanguage ).always(function( language ){
+          getBrowserLang( settings.httpLanguage, settings.getLangUrl ).always(function( language ){
+            debugLog( 'Current Language:', language );
             $this[0].lang = language;
           }).then(function(){
             importLocale( $this ).done(function( locale ) {
               $this.data('timeline').timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
               $this.data('timeline').timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
               $this.data('timeline').timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+              //$this.data('timeline').timeline.attr( 'i18n-month', locale.month );
+              //$this.data('timeline').timeline.attr( 'i18n-day', locale.day );
+              //$this.data('timeline').timeline.attr( 'i18n-ma', locale.ma );
               if ( 'format' in locale ) {
                 for ( var prop in locale.format ) {
                   $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
@@ -163,7 +176,7 @@
               resizeTimeline( $this );
               
               // do methods.alignment
-              $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+              $this.trigger( 'align.timeline', [ settings.rangeAlign, 0 ] );
               
               $this.css('visibility','visible');
               
@@ -180,7 +193,7 @@
               resizeTimeline( $this );
               
               // do methods.alignment
-              $this.trigger( 'align.timeline', [ settings.rangeAlign ] );
+              $this.trigger( 'align.timeline', [ settings.rangeAlign, 0 ] );
               
               $this.css('visibility','visible');
               
@@ -193,16 +206,17 @@
           });
         } else {
           
-          /* Debugging code for loading effect:
-          var wait = 0,
-              sleep = setInterval(function() {
-                wait++;
-                if ( wait == 1 ) {
-                  placeEvents( $this );
-                  clearInterval( sleep );
-                }
-              }, 300);
-          */
+          if ( debugMode ) {
+            /* Debugging code for loading effect: */
+            var wait = 0,
+                sleep = setInterval(function() {
+                  wait++;
+                  if ( wait == 1 ) {
+                    placeEvents( $this );
+                    clearInterval( sleep );
+                  }
+                }, settings.duration );
+          }
           
           placeEvents( $this );
           
@@ -216,7 +230,7 @@
           data = $this.data('timeline');
         
         if ( data && typeof callback === 'function' ) {
-          // console.info( 'Fired "initialized" method after initialize this plugin.' );
+          debugLog( 'Fired "initialized" method after initialize this plugin.' );
           callback( $this, data );
         }
       });
@@ -327,12 +341,15 @@
         if ( 'i18n' in options ) {
           if ( typeof options.i18n.month != undefined ) {
             data.timeline.attr( 'i18n-month', JSON.stringify( options.i18n.month ) );
+            //data.timeline.attr( 'i18n-month', options.i18n.month );
           }
           if ( typeof options.i18n.day != undefined ) {
             data.timeline.attr( 'i18n-day', JSON.stringify( options.i18n.day ) );
+            //data.timeline.attr( 'i18n-day', options.i18n.day );
           }
           if ( typeof options.i18n.ma != undefined ) {
             data.timeline.attr( 'i18n-ma', JSON.stringify( options.i18n.ma ) );
+            //data.timeline.attr( 'i18n-ma', options.i18n.ma );
           }
         }
         if ( 'langsDir' in options ) {
@@ -340,6 +357,12 @@
         }
         if ( 'httpLanguage' in options ) {
           data.timeline.attr( 'http-language', options.httpLanguage );
+        }
+        if ( 'getLangUrl' in options ) {
+          data.timeline.attr( 'get-lang-url', options.getLangUrl );
+        }
+        if ( 'duration' in options ) {
+          data.timeline.attr( 'duration', options.duration );
         }
 
         // Retrive current Date
@@ -372,13 +395,18 @@
 
         $this.find('.timeline-container').empty().removeClass('timeline-container');
         // Load Language as deferred interface (updated v1.0.4)
-        getBrowserLang( data.timeline.attr('http-language') ).always(function( language ){
+        //getBrowserLang( data.timeline.attr('http-language') ).always(function( language ){
+        getBrowserLang( data.timeline.attr('http-language'), data.timeline.attr('get-lang-url') ).always(function( language ){
+          debugLog( 'Current Language:', language );
           $this[0].lang = language;
         }).then(function(){
           importLocale( $this ).done(function( locale ) {
             data.timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
             data.timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
             data.timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+            //data.timeline.attr( 'i18n-month', locale.month );
+            //data.timeline.attr( 'i18n-day', locale.day );
+            //data.timeline.attr( 'i18n-ma', locale.ma );
             if ( 'format' in locale ) {
               for ( var prop in locale.format ) {
                 $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
@@ -390,7 +418,7 @@
             placeEvents( $this );
             
             // do methods.alignment
-            $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+            $this.trigger( 'align.timeline', [ data.timeline.attr('range-align'), 0 ] );
             
             // Bind an event after rendered (added v1.0.5)
             $this.trigger( 'afterRender.timeline', [ options ] );
@@ -401,7 +429,7 @@
             placeEvents( $this );
             
             // do methods.alignment
-            $this.trigger( 'align.timeline', [ data.timeline.attr('range-align') ] );
+            $this.trigger( 'align.timeline', [ data.timeline.attr('range-align'), 0 ] );
 
             // Bind an event after rendered (added v1.0.5)
             $this.trigger( 'afterRender.timeline', [ options ] );
@@ -421,7 +449,7 @@
       });
     },
     dateback  : function( evt ) {
-      // console.info([ 'Fired "dateback" method', this, evt ]);
+      debugLog( 'Fired "dateback" method', this, evt );
       evt.preventDefault();
       var $root = $(this).parents('.timeline-container'),
           data = $root.data('timeline'),
@@ -436,12 +464,12 @@
           mov = currentTimelinePos - ((fullTimelineWidth - visibleTimelineWidth) / Number( data.timeline.attr('range') ));
         }
         mov = mov < 0 ? 0 : mov;
-        $root.find('.timeline-body').animate( { scrollLeft: mov }, 300 );
+        $root.find('.timeline-body').animate( { scrollLeft: mov }, data.timeline.attr('duration') );
       }
       return this;
     },
     dateforth : function( evt ) {
-      // console.info([ 'Fired "dateforth" method', this, evt ]);
+      debugLog( 'Fired "dateforth" method', this, evt );
       evt.preventDefault();
       var $root = $(this).parents('.timeline-container'),
           data = $root.data('timeline'),
@@ -456,22 +484,22 @@
           mov = currentTimelinePos + ((fullTimelineWidth - visibleTimelineWidth) / Number( data.timeline.attr('range') ));
         }
         mov = mov > (fullTimelineWidth - visibleTimelineWidth + 1) ? fullTimelineWidth - visibleTimelineWidth + 1 : mov;
-        $root.find('.timeline-body').animate( { scrollLeft: mov }, 300 );
+        $root.find('.timeline-body').animate( { scrollLeft: mov }, data.timeline.attr('duration') );
       }
       return this;
     },
     alignment : function( ) {
       var args = arguments.length > 1 ? Array.prototype.slice.call(arguments, 1) : [ arguments[0] ],
           control = args[0].toLowerCase(),
-          animateSpeed = typeof args[1] !== 'undefined' ? String( args[1] ).toLowerCase() : 0;
-      // console.info([ 'Fired "alignment" method', this, control, animateSpeed ]);
+          data = $(this).data('timeline'),
+          animateSpeed = typeof args[1] !== 'undefined' ? String( args[1] ).toLowerCase() : data.timeline.attr('duration');
+      debugLog( 'Fired "alignment" method', $(this), control, animateSpeed );
       var visibleTimelineWidth = $(this).find('.timeline-body')[0].clientWidth, // display area
           fullTimelineWidth = $(this).find('.timeline-wrapper')[0].scrollWidth, // full length
           mov = 0; // default position (=left)
       if ( fullTimelineWidth > visibleTimelineWidth ) {
         // When the total length is larger than the display area (when horizontal scrolling occurs)
-        var data = $(this).data('timeline'),
-            posX;
+        var posX;
         switch ( control ) {
           case "left":
             // Move to beginning of timetable range
@@ -550,8 +578,11 @@
       return this;
     },
     getOptions : function( ) {
-      var $this = $(this),
-          data  = $this.data('timeline');
+      debugLog( 'Fired "getOptions" method.' );
+      var $this   = $(this),
+          data    = $this.data('timeline');
+          //nodeMap = data.timeline[0].attributes;
+      //debugLog( data.timeline.attr('i18n-month'), nodeMap, nodeMap['i18n-month'].value );
       return {
         title          : data.timeline.attr('title'),
         type           : data.timeline.attr('type'),
@@ -579,15 +610,17 @@
         rangeAlign     : data.timeline.attr('range-align'),
         naviIcon       : {
           left         : data.timeline.attr('navi-icon-left'),
-          right        : data.timeline.attr('navi-icon-right'),
+          right        : data.timeline.attr('navi-icon-right')
         },
         showPointer    : data.timeline.attr('show-pointer'),
         i18n           : {
-          month        : JSON.parse( data.timeline.attr('i18n-month') ),
-          day          : JSON.parse( data.timeline.attr('i18n-day') ),
-          ma           : JSON.parse( data.timeline.attr('i18n-ma') ),
+          month        : data.timeline.attr('i18n-month') !== '' ? JSON.parse( data.timeline.attr('i18n-month') ) : {},
+          day          : data.timeline.attr('i18n-day')   !== '' ? JSON.parse( data.timeline.attr('i18n-day') ) : {},
+          ma           : data.timeline.attr('i18n-ma')    !== '' ? JSON.parse( data.timeline.attr('i18n-ma') ) : {}
         },
         langsDir       : data.timeline.attr('langs-dir'),
+        httpLanguage   : data.timeline.attr('http-language'),
+        getLangUrl     : data.timeline.attr('get-lang-url'),
         events         : ( new Function( 'return ' + data.timeline.text() ) )()
       };
     },
@@ -615,10 +648,10 @@
         placeEvents( $this );
         
         // Alignment to current node
-        $(this).trigger( 'align.timeline', [ 'evt-' + (incrementId - 1), 'fast' ] );
+        $(this).trigger( 'align.timeline', [ 'evt-' + (incrementId - 1) ] );
         
         if ( data && typeof callback === 'function' ) {
-          // console.info( 'Fired "addEvent" method after events addition.' );
+          debugLog( 'Fired "addEvent" method after events addition.' );
           callback( $this, data );
         }
       });
@@ -663,7 +696,7 @@
         placeEvents( $this );
         
         if ( data && typeof callback === 'function' ) {
-          // console.info( 'Fired "removeEvent" method after events removing.' );
+          debugLog( 'Fired "removeEvent" method after events removing.' );
           callback( $this, data );
         }
       });
@@ -705,10 +738,10 @@
         placeEvents( $this );
         
         // Alignment to current node
-        $(this).trigger( 'align.timeline', [ 'evt-' + lastUpdated, 'fast' ] );
+        $(this).trigger( 'align.timeline', [ 'evt-' + lastUpdated ] );
         
         if ( data && typeof callback === 'function' ) {
-          // console.info( 'Fired "updateEvent" method after events updating.' );
+          debugLog( 'Fired "updateEvent" method after events updating.' );
           callback( $this, data );
         }
       });
@@ -741,10 +774,10 @@
         });
         
         // Alignment to current node
-        $(this).trigger( 'align.timeline', [ 'evt-' + eventId, 'fast' ] );
+        $(this).trigger( 'align.timeline', [ 'evt-' + eventId ] );
         
         if ( showEvent( eventData, metaFormat ) && eventData.callback ) {
-          // console.info( 'Fired "openEvent" method after event shown.' );
+          debugLog( 'Fired "openEvent" method after event shown.' );
           Function.call( null, 'return ' + eventData.callback )();
           //var callback = Function.call( null, 'return ' + eventData.callback )();
           //callback.call( eventData );
@@ -770,7 +803,7 @@
     // Rendering timeline view
     var $this = $(obj), i, _tmp, _regx, 
         data = $this.data('timeline');
-    // console.info([ 'Called "renderTimeline" function', $this, data.timeline ]);
+    debugLog( 'Called "renderTimeline" function', $this, data.timeline );
     
     _regx = /-|\/|\s|\:/;
     _tmp = data.timeline.attr('actual-start-datetime').split( _regx );
@@ -1805,23 +1838,37 @@
     return converted;
   }
   
-  var getBrowserLang = function() {
+  function getBrowserLang( httpLanguage, getLangUrl ) {
     var dfd = $.Deferred(),
-        language = ( navigator.userLanguage || navigator.browserLanguage || navigator.language );
-    if ( arguments.length == 0 || ! arguments[0] ) {
+        //language = ( navigator.userLanguage || navigator.browserLanguage || navigator.language );
+        languages = window.navigator.languages || [
+          window.navigator.language ||
+          window.navigator.userLanguage ||
+          window.navigator.browserLanguage
+        ],
+        language = languages[0];
+    
+    if ( ! httpLanguage || httpLanguage == 0 ) {
       // From local browser settings
       dfd.resolve( language );
     } else {
       $.ajax({
-        url: '//ajaxhttpheaders.appspot.com',
-        data: { callback: pluginName },
+        url: getLangUrl,
         dataType: 'jsonp'
       }).done(function( headers ) {
         var tmpLang, langs, qualities, country;
-        tmpLang = headers['Accept-Language'].split(';');
-        langs = tmpLang[0].split(',');
-        qualities = tmpLang[1].split(','); // not used yet
-        country = headers['X-Appengine-Country']; // not used yet
+        $.each( headers, function( _p, _v ) {
+          if ( $.inArray( _p, [ "HTTP_ACCEPT_LANGUAGE", "Accept-Language" ] ) !== -1 ) {
+            tmpLang = _v.split(';');
+            langs = tmpLang[0].split(',');
+            if ( tmpLang.length > 1 ) {
+              qualities = tmpLang[1].split(',');
+            }
+          }
+          if ( $.inArray( _p, [ "X-Appengine-Country" ] ) !== -1 ) {
+            country = _v;
+          }
+        });
         if ( langs.length > 0 ) {
           language = langs[0];
         }
@@ -1831,7 +1878,7 @@
       });
     }
     return dfd.promise();
-  };
+  }
   
   function importLocale( tlObj ) {
     var dfd = $.Deferred(),
@@ -1848,6 +1895,25 @@
     });
     
     return dfd.promise();
+  }
+  
+  function escapeHtml( strings ) {
+    return strings
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+        //.replace(/&/g, "&amp;");
+  }
+  
+  function debugLog() {
+    // Output some logs for development
+    var args = ( arguments.length === 1 ? [arguments[0]] : Array.apply( null, arguments ) );
+    if ( args.length === 1 ) {
+      console.log( args[0] );
+    } else {
+      console.log( args );
+    }
   }
   
 })( jQuery );

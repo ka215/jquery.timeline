@@ -120,72 +120,69 @@
 <!-- Bootstrap 4.0.0-alpha.6 -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 <!-- jQuery Timeline -->
-<script src="../src/timeline.js?v=<?php filemtime(); ?>"></script>
+<script src="../src/timeline.js?v=<?php strtotime('now'); ?>"></script>
 <!-- local scripts -->
 <script>
 $(function () {
 
-/*
+
   $("#myTimeline").timeline({
     startDatetime: '2017-05-28',
-    rangeAlign: 'center'
+    rangeAlign: 'center',
+    langsDir: "./langs/",
+    httpLanguage: true,
+    getLangUrl: "//ka2.org/clientInfo/?callback=?"
   });
-*/
+
+  console.log( $("#myTimeline").timeline('getOptions') );
 
 /*
-  $("#myTimeline").timeline({
-    startDatetime: '2017-05-28', 
-    rangeAlign: 'center'
   }).timeline('updateEvent', [
     {eventId:1, row:4, label:'Updated Event', bgColor:'purple', color:'pink'}
   ]);
 */
 
+/*
 var language     = '',
     languages    = window.navigator.languages || [
       window.navigator.language ||
       window.navigator.userLanguage ||
       window.navigator.browserLanguage
     ],
-    pluginName   = 'jQuery.Timeline',
-    getLangUrl   = '//ka2.org/clientInfo/'; //'//ajaxhttpheaders.appspot.com?callback=?';
+    dfd = $.Deferred(),
+    getLangUrl   = '//ka2.org/clientInfo/';
+    //getLangUrl   = '//ajaxhttpheaders.appspot.com?callback=?';
 
-      $.ajax({
-        url: getLangUrl,
-        //data: { callback: pluginName },
-        dataType: 'jsonp',
-        type: 'get'
-      }).done(function( headers ) {
+$.ajax({
+  url: getLangUrl,
+  //data: { callback: pluginName },
+  dataType: 'jsonp'
+}).done(function( headers ) {
+  var tmpLang, langs, qualities, country;
+  $.each( headers, function( _p, _v ) {
+    if ( $.inArray( _p, [ "HTTP_ACCEPT_LANGUAGE", "Accept-Language" ] ) !== -1 ) {
+      tmpLang = headers[_p].split(';');
+      langs = tmpLang[0].split(',');
+      if ( tmpLang.length > 1 ) {
+        qualities = tmpLang[1].split(',');
+      }
+    }
+    if ( $.inArray( _p, [ "X-Appengine-Country" ] ) !== -1 ) {
+      country = headers[_p];
+    }
+  });
+  if ( langs.length > 0 ) {
+    language = langs[0];
+  }
+  dfd.resolve( language );
+}).fail(function() {
 console.log( arguments );
-        var tmpLang, langs, qualities, country;
-        tmpLang = headers['Accept-Language'].split(';');
-        langs = tmpLang[0].split(',');
-        qualities = tmpLang[1].split(','); // not used yet
-        country = headers['X-Appengine-Country']; // not used yet
-        if ( langs.length > 0 ) {
-          language = langs[0];
-        }
-        //dfd.resolve( language );
-      }).fail(function() {
-console.log( arguments );
-        //dfd.reject();
-      });
-
-/*
-$.getJSON('//ajaxhttpheaders.appspot.com')
-.success(function(data, status, headers, config){
-  alert("success");
-  console.log(headers()['X-TotalPages']);
-  language = headers['Accept-Language'];
-}).error(function (data, status) {
-  alert("error");
-  console.log(JSON.stringify(data));
-  console.log(JSON.stringify(status));
+  dfd.reject();
 });
-*/
 
-console.info(language);
-console.info(languages);
+console.info({ language: language });
+console.info({ languages: languages });
+*/
 
 });
 </script>
