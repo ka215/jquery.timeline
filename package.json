@@ -4,7 +4,6 @@
   "description": "Horizontal Timeline plugin for jQuery",
   "main": "gulpfile.js",
   "dependencies": {
-    "gulp-sass": "^3.1.0"
   },
   "devDependencies": {
     "browser-sync": "^2.18.12",
