@@ -8,18 +8,19 @@
  */
 (function( $ ) {
 
-  // Constant values
+  // Constants
   var pluginName   = 'jQuery.Timeline',
       pointMargin  = 2,
       tlEventAreaH = 0,
       debugMode    = true, // Added v1.0.6
+      pluginDfd    = new $.Deferred(), // Added v1.0.6
       rowH;
 
   var methods = {
     init : function( options ) {
       
       // Default settings
-      var settings = $.extend( {
+      var settings = $.extend(true, {
         type            : "bar", // View type of timeline event is either "bar" or "point"
         scale           : "days", // Timetable's top level scale is either "years" or "months" or "days"
         startDatetime   : "currently", // Default set datetime as viewing timetable; format is ( "^[-+]d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
@@ -101,7 +102,7 @@
               "get-lang-url"          : settings.getLangUrl,
               "duration"              : settings.duration,
               "text"                  : ""
-          });
+            });
         
         // Set Events
         $this.on( 'click.timeline', '.timeline-to-prev', methods.dateback );
@@ -116,12 +117,12 @@
         // If uninitialized yet
         if ( ! data ) {
           
-          $this.data('timeline', {
+          $(this).data('timeline', {
             target: $this,
             timeline : timeline
           });
           
-          rowH      = settings.rowHeight;
+          rowH = settings.rowHeight;
           
           // Retrive Current Date
           var currentDt, currentDate, _tmp, _regx;
@@ -227,7 +228,9 @@
     initialized : function( callback ) {
       return this.each(function(){
         var $this = $(this),
-          data = $this.data('timeline');
+            data  = $this.data('timeline');
+        
+        //pluginDfd.resolve();
         
         if ( data && typeof callback === 'function' ) {
           debugLog( 'Fired "initialized" method after initialize this plugin.' );
@@ -239,7 +242,7 @@
       // destroy object
       return this.each(function(){
         var $this = $(this),
-          data = $this.data('timeline');
+            data  = $this.data('timeline');
         
         $(window).off('.timeline');
         if ( data ) {
@@ -708,16 +711,19 @@
       return this.each(function(){
         var $this       = $(this),
             data        = $this.data('timeline'),
-            eventNodes  = ( new Function( 'return ' + data.timeline.text() ) )(),
             _ids        = [],
-            lastUpdated;
+            eventNodes, lastUpdated;
         // update events
         if ( events.length > 0 ) {
           $.each( events, function( i, newEvt ) {
             _ids.push(newEvt.eventId);
           });
         }
-        
+console.log( data.timeline[0].textContent );
+        data.timeline.ready(function(){
+console.log( this );
+          eventNodes = ( new Function( 'return ' + $(this).text() ) )();
+//        });
         if ( eventNodes.length > 0 && _ids.length > 0 ) {
           $.each( eventNodes, function( i, evt ) {
             if ( $.inArray( evt.eventId, _ids ) != -1 ) {
@@ -744,6 +750,7 @@
           debugLog( 'Fired "updateEvent" method after events updating.' );
           callback( $this, data );
         }
+});
       });
     },
     openEvent : function( event ) {
