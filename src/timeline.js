@@ -13,7 +13,6 @@
       pointMargin  = 2,
       tlEventAreaH = 0,
       debugMode    = true, // Added v1.0.6
-      pluginDfd    = new $.Deferred(), // Added v1.0.6
       rowH;
 
   var methods = {
@@ -51,10 +50,9 @@
           right         : "jqtl-circle-right"
         },
         showPointer     : true,
-        i18n            : {}, // Deprecated since v1.0.6
-        langsDir        : "./langs/",
-        httpLanguage    : false,
-        getLangUrl      : "//ajaxhttpheaders.appspot.com?callback=?", // Added v1.0.6
+        // i18n            : {}, // --> Deprecated since v1.0.6
+        // langsDir        : "./langs/", // --> Deprecated since v1.0.6
+        // httpLanguage    : false, // --> Deprecated since v1.0.6
         duration        : 150 // duration of animate as each transition effects; Added v1.0.6
       }, options);
       
@@ -91,15 +89,11 @@
               "navi-icon-left"        : settings.naviIcon.left || 'jqtl-circle-left',
               "navi-icon-right"       : settings.naviIcon.right || 'jqtl-circle-right',
               "show-pointer"          : settings.showPointer ? 1 : 0,
-              //"i18n-month"            : settings.i18n.month ? JSON.stringify( settings.i18n.month ) : '',
-              //"i18n-day"              : settings.i18n.day ? JSON.stringify( settings.i18n.day ) : '',
-              //"i18n-ma"               : settings.i18n.ma ? JSON.stringify( settings.i18n.ma ) : '',
-              "i18n-month"            : settings.i18n.month ? settings.i18n.month : '',
-              "i18n-day"              : settings.i18n.day ? settings.i18n.day : '',
-              "i18n-ma"               : settings.i18n.ma ? settings.i18n.ma : '',
-              "langs-dir"             : settings.langsDir,
-              "http-language"         : settings.httpLanguage ? 1 : 0,
-              "get-lang-url"          : settings.getLangUrl,
+              // "i18n-month"            : settings.i18n.month ? settings.i18n.month : '',
+              // "i18n-day"              : settings.i18n.day ? settings.i18n.day : '',
+              // "i18n-ma"               : settings.i18n.ma ? settings.i18n.ma : '',
+              // "langs-dir"             : settings.langsDir,
+              // "http-language"         : settings.httpLanguage ? 1 : 0,
               "duration"              : settings.duration,
               "text"                  : ""
             });
@@ -112,12 +106,13 @@
         $this.on( 'afterRender.timeline', function(){
           $(this).off('afterRender.timeline');
         });
+        // $this.on( 'loadeddata.timeline', '.timeline-update', methods.updateEvent );
 
         
         // If uninitialized yet
         if ( ! data ) {
           
-          $(this).data('timeline', {
+          $this.data('timeline', {
             target: $this,
             timeline : timeline
           });
@@ -154,22 +149,19 @@
           
           // Load Language as deferred interface (updated v1.0.4, v1.0.6)
           //getBrowserLang( settings.httpLanguage ).always(function( language ){
-          getBrowserLang( settings.httpLanguage, settings.getLangUrl ).always(function( language ){
-            debugLog( 'Current Language:', language );
-            $this[0].lang = language;
-          }).then(function(){
-            importLocale( $this ).done(function( locale ) {
-              $this.data('timeline').timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
-              $this.data('timeline').timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
-              $this.data('timeline').timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
-              //$this.data('timeline').timeline.attr( 'i18n-month', locale.month );
-              //$this.data('timeline').timeline.attr( 'i18n-day', locale.day );
-              //$this.data('timeline').timeline.attr( 'i18n-ma', locale.ma );
-              if ( 'format' in locale ) {
-                for ( var prop in locale.format ) {
-                  $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
-                }
-              }
+          // getBrowserLang( settings.httpLanguage ).always(function( language ){
+          //   debugLog( 'Current Language:', language );
+          //   $this[0].lang = language;
+          // }).then(function(){
+          //   importLocale( $this ).done(function( locale ) {
+          //     $this.data('timeline').timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
+          //     $this.data('timeline').timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
+          //     $this.data('timeline').timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
+          //     if ( 'format' in locale ) {
+          //       for ( var prop in locale.format ) {
+          //         $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
+          //     }
+          //    }
               
               renderTimeline( $this );
               
@@ -186,8 +178,8 @@
               // Bind an event after initialized (added v1.0.5)
               $this.trigger( 'afterRender.timeline', [ options ] );
               
-            }).fail(function() {
-              
+          //  }).fail(function() {
+          /*    
               renderTimeline( $this );
               
               // timeline container sizing
@@ -205,6 +197,7 @@
               
             });
           });
+          */
         } else {
           
           if ( debugMode ) {
@@ -229,8 +222,6 @@
       return this.each(function(){
         var $this = $(this),
             data  = $this.data('timeline');
-        
-        //pluginDfd.resolve();
         
         if ( data && typeof callback === 'function' ) {
           debugLog( 'Fired "initialized" method after initialize this plugin.' );
@@ -341,18 +332,16 @@
         if ( 'showPointer' in options ) {
           data.timeline.attr( 'show-pointer', options.showPointer ? 1 : 0 );
         }
+        /*
         if ( 'i18n' in options ) {
           if ( typeof options.i18n.month != undefined ) {
             data.timeline.attr( 'i18n-month', JSON.stringify( options.i18n.month ) );
-            //data.timeline.attr( 'i18n-month', options.i18n.month );
           }
           if ( typeof options.i18n.day != undefined ) {
             data.timeline.attr( 'i18n-day', JSON.stringify( options.i18n.day ) );
-            //data.timeline.attr( 'i18n-day', options.i18n.day );
           }
           if ( typeof options.i18n.ma != undefined ) {
             data.timeline.attr( 'i18n-ma', JSON.stringify( options.i18n.ma ) );
-            //data.timeline.attr( 'i18n-ma', options.i18n.ma );
           }
         }
         if ( 'langsDir' in options ) {
@@ -361,9 +350,7 @@
         if ( 'httpLanguage' in options ) {
           data.timeline.attr( 'http-language', options.httpLanguage );
         }
-        if ( 'getLangUrl' in options ) {
-          data.timeline.attr( 'get-lang-url', options.getLangUrl );
-        }
+        */
         if ( 'duration' in options ) {
           data.timeline.attr( 'duration', options.duration );
         }
@@ -397,9 +384,9 @@
         data.timeline.attr( 'actual-start-datetime', currentDate );
 
         $this.find('.timeline-container').empty().removeClass('timeline-container');
+        /*
         // Load Language as deferred interface (updated v1.0.4)
-        //getBrowserLang( data.timeline.attr('http-language') ).always(function( language ){
-        getBrowserLang( data.timeline.attr('http-language'), data.timeline.attr('get-lang-url') ).always(function( language ){
+        getBrowserLang( data.timeline.attr('http-language') ).always(function( language ){
           debugLog( 'Current Language:', language );
           $this[0].lang = language;
         }).then(function(){
@@ -407,15 +394,12 @@
             data.timeline.attr( 'i18n-month', JSON.stringify( locale.month ) );
             data.timeline.attr( 'i18n-day', JSON.stringify( locale.day ) );
             data.timeline.attr( 'i18n-ma', JSON.stringify( locale.ma ) );
-            //data.timeline.attr( 'i18n-month', locale.month );
-            //data.timeline.attr( 'i18n-day', locale.day );
-            //data.timeline.attr( 'i18n-ma', locale.ma );
             if ( 'format' in locale ) {
               for ( var prop in locale.format ) {
                 $this.data('timeline').timeline.attr( 'datetime-format-' + prop, locale.format[prop] );
               }
             }
-            
+            */
             renderTimeline( $this );
             resizeTimeline( $this );
             placeEvents( $this );
@@ -425,7 +409,7 @@
             
             // Bind an event after rendered (added v1.0.5)
             $this.trigger( 'afterRender.timeline', [ options ] );
-            
+            /*
           }).fail(function() {
             renderTimeline( $this );
             resizeTimeline( $this );
@@ -439,6 +423,7 @@
             
           });
         });
+        */
       });
     },
     show : function( ) {
@@ -616,6 +601,7 @@
           right        : data.timeline.attr('navi-icon-right')
         },
         showPointer    : data.timeline.attr('show-pointer'),
+        /*
         i18n           : {
           month        : data.timeline.attr('i18n-month') !== '' ? JSON.parse( data.timeline.attr('i18n-month') ) : {},
           day          : data.timeline.attr('i18n-day')   !== '' ? JSON.parse( data.timeline.attr('i18n-day') ) : {},
@@ -623,7 +609,7 @@
         },
         langsDir       : data.timeline.attr('langs-dir'),
         httpLanguage   : data.timeline.attr('http-language'),
-        getLangUrl     : data.timeline.attr('get-lang-url'),
+        */
         events         : ( new Function( 'return ' + data.timeline.text() ) )()
       };
     },
@@ -711,19 +697,16 @@
       return this.each(function(){
         var $this       = $(this),
             data        = $this.data('timeline'),
+            eventNodes  = ( new Function( 'return ' + data.timeline.text() ) )(),
             _ids        = [],
-            eventNodes, lastUpdated;
+            lastUpdated;
         // update events
         if ( events.length > 0 ) {
           $.each( events, function( i, newEvt ) {
             _ids.push(newEvt.eventId);
           });
         }
-console.log( data.timeline[0].textContent );
-        data.timeline.ready(function(){
-console.log( this );
-          eventNodes = ( new Function( 'return ' + $(this).text() ) )();
-//        });
+        
         if ( eventNodes.length > 0 && _ids.length > 0 ) {
           $.each( eventNodes, function( i, evt ) {
             if ( $.inArray( evt.eventId, _ids ) != -1 ) {
@@ -750,7 +733,6 @@ console.log( this );
           debugLog( 'Fired "updateEvent" method after events updating.' );
           callback( $this, data );
         }
-});
       });
     },
     openEvent : function( event ) {
@@ -898,7 +880,7 @@ console.log( this );
     }
     
     // Create header
-    if ( data.timeline.attr('show-headline') ) {
+    if ( boolVal( data.timeline.attr('show-headline') ) ) {
       var fromDate, toDate, zf, zt, tlTitle;
       switch( data.timeline.attr('scale') ) {
         case "years":
@@ -1012,7 +994,7 @@ console.log( this );
     tlGridsRow += '</tr>';
     
     // Create Timeline needle pointer
-    if ( data.timeline.attr( 'show-pointer' ) == 0 ) {
+    if ( ! boolVal( data.timeline.attr( 'show-pointer' ) ) ) {
       tlPointer.css('display', 'none');
     } else {
       var currentDt = setCurrentDate( true ),
@@ -1164,7 +1146,7 @@ console.log( this );
         tlEndDt.setYear( tlEndDt.getFullYear() + tlRange );
         break;
       case 'months':
-        tlEndDt.setMonth( tlEndDt.getMonth() + tlRange - 1 );
+        tlEndDt.setMonth( tlEndDt.getMonth() + tlRange );
         break;
       case 'days':
         tlEndDt.setDate( tlEndDt.getDate() + tlRange );
@@ -1619,15 +1601,6 @@ console.log( this );
     return dateString.replace(/-/g, '/');
   }
   
-  function retriveDaysGrid( minuteInterval, minGridPer ) {
-    // Deprecated
-    if ( minGridPer == 30 ) {
-      return Math.floor( 60 / Number( minuteInterval ) );
-    } else {
-      return Number( minGridPer );
-    }
-  }
-  
   function array_sum( ary ) {
     // Sum all values in array
     return ary.reduce(function( prev, current ) {
@@ -1845,7 +1818,7 @@ console.log( this );
     return converted;
   }
   
-  function getBrowserLang( httpLanguage, getLangUrl ) {
+  function getBrowserLang( httpLanguage ) {
     var dfd = $.Deferred(),
         //language = ( navigator.userLanguage || navigator.browserLanguage || navigator.language );
         languages = window.navigator.languages || [
@@ -1860,22 +1833,15 @@ console.log( this );
       dfd.resolve( language );
     } else {
       $.ajax({
-        url: getLangUrl,
+        url: '//ajaxhttpheaders.appspot.com',
+        data: { callback: pluginName },
         dataType: 'jsonp'
       }).done(function( headers ) {
-        var tmpLang, langs, qualities, country;
-        $.each( headers, function( _p, _v ) {
-          if ( $.inArray( _p, [ "HTTP_ACCEPT_LANGUAGE", "Accept-Language" ] ) !== -1 ) {
-            tmpLang = _v.split(';');
-            langs = tmpLang[0].split(',');
-            if ( tmpLang.length > 1 ) {
-              qualities = tmpLang[1].split(',');
-            }
-          }
-          if ( $.inArray( _p, [ "X-Appengine-Country" ] ) !== -1 ) {
-            country = _v;
-          }
-        });
+        var tmpLang, langs; //, qualities, country;
+        tmpLang = headers['Accept-Language'].split(';');
+        langs = tmpLang[0].split(',');
+        // qualities = tmpLang[1].split(','); // not used yet
+        // country = headers['X-Appengine-Country']; // not used yet
         if ( langs.length > 0 ) {
           language = langs[0];
         }
@@ -1911,6 +1877,10 @@ console.log( this );
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
         //.replace(/&/g, "&amp;");
+  }
+  
+  function boolVal( value ) {
+    return Boolean( Number( value ) );
   }
   
   function debugLog() {

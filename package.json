@@ -1,20 +1,18 @@
 {
   "name": "jquery.timeline",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Horizontal Timeline plugin for jQuery",
   "main": "gulpfile.js",
-  "dependencies": {
-    "gulp-sass": "^3.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "browser-sync": "^2.18.12",
+    "browser-sync": "^2.24.7",
     "gulp": "^3.9.1",
-    "gulp-autoprefixer": "^4.0.0",
-    "gulp-clean-css": "^3.4.0",
+    "gulp-autoprefixer": "^4.1.0",
+    "gulp-clean-css": "^3.10.0",
     "gulp-eslint": "^3.0.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-sass": "^3.1.0",
-    "gulp-uglify": "^3.0.0",
+    "gulp-rename": "^1.4.0",
+    "gulp-sass": "^3.2.1",
+    "gulp-uglify": "^3.0.1",
     "gulp-util": "^3.0.8"
   },
   "scripts": {
