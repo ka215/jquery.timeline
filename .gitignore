@@ -1,7 +1,7 @@
 node_modules/
 dist/imgs/
 docs/debug.php
-docs/test.php
+# docs/test.php
 *.orig
 
-src/custom_datetime.js
+# src/custom_datetime.js
