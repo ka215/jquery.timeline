@@ -74,33 +74,138 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <style>
 .jqtl-headline {
     width: 100%;
+    padding-left: 5px;
+    padding-right: 5px;
 }
-.jqtl-headline .timeline-title {
+.jqtl-headline .jqtl-timeline-title {
     font-size: 26px;
     color: #333;
 }
-.jqtl-headline .range-meta {
+.jqtl-headline .jqtl-range-meta {
     font-size: 86%;
     color: #777;
 }
 .jqtl-container {
     position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     border: solid 1px #DDD;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: #FFFFFF;
+}
+.hide-scrollbar {
     -ms-overflow-style: -ms-autohiding-scrollbar;
-    background-color: #F4F4DE;
 }
-.jqtl-container::-webkit-scrollbar {
-    /* display: none; */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
 }
-.jqtl-scope {
+.jqtl-main {
+    position: relative;
+}
+.jqtl-ruler-top, .jqtl-ruler-bottom {
+    position: relative;
+    border-left: solid 1px #DDD;
     z-index: 20;
 }
-.jqtl-events {
-    z-index: 10;
+.jqtl-ruler-bg-top, .jqtl-ruler-bg-bottom {
+    position: relative;
+    z-index: 21;
+}
+.jqtl-ruler-bottom {
+    top: 1px;
+}
+.jqtl-ruler-content-top, .jqtl-ruler-content-bottom {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    z-index: 22;
+}
+.jqtl-ruler-line-rows {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+.jqtl-ruler-line-rows:nth-child(even) {
+    background-color: rgba(247,247,247,.25);
+}
+.jqtl-ruler-line-item {
+    position: relative;
+    margin: 0;
+    vertical-align: middle;
+    text-align: center;
+    font-family: "Courier New", monospace !important;
+    color: #777;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.jqtl-ruler-line-item:nth-child(even) {
+    background-color: rgba(240,240,240,.25);
+}
+.jqtl-ruler-line-item[data-ruler-item="weekday-sat"] {
+    background-color: rgba(51,51,247,.08);
+}
+.jqtl-ruler-line-item[data-ruler-item="weekday-sun"] {
+    background-color: rgba(247,51,51,.08);
+}
+.jqtl-event-container {
+    position: relative;
+    z-index: 1;
 }
 .jqtl-bg-grid {
-    z-index: 1;
+    position: relative;
+    z-index: 2;
+}
+.jqtl-events {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+}
+.jqtl-side-index {
+    position: -webkit-sticky;
+    position: sticky;
+    left: 1px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: start;
+    align-items: center;
+    width: max-content;
+    border-right: solid 1px #DDD;
+    background-color: rgba(255,255,255,.45);
+    z-index: 25;
+}
+.jqtl-side-index-item {
+    padding-left: 10px;
+    padding-right: 10px;
+    width: 100%;
+    font-size: 14px;
+    vertical-align: middle;
+    border-bottom: solid 1px #DDD;
+    white-space: nowrap;
+}
+.jqtl-side-index-item:first-child {
+    border-top: solid 1px #DDD;
+}
+.jqtl-side-index-item:nth-child(even) {
+    background-color: rgba(247,247,247,.25);
 }
   </style>
 </head>
@@ -123,6 +228,35 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 
     <div class="col-12">
     
+<!-- /*
+      * Structure of the DOM element of the timeline container:
+      *
+      * <{{ Element with selector specified by user }}>
+      *   <div class="jqtl-headline"><!--     Headline - ->
+      *     <h* {{ Title: .timeline-title }}>
+      *     <div {{ Meta: .range-meta }}>
+      *   </div>
+      *   <div class="jqtl-container"><!--    Main Content - ->
+      *     <div class="jqtl-ruler-top">
+      *       <canvas class="jqtl-ruler-bg-top"></canvas>
+      *       <div class="jqtl-ruler-content-top">{{ Ruler }}</div>
+      *     </div>
+      *     <div class="jqtl-event-container">
+      *       <canvas class="jqtl-bg-grid"></canvas>
+      *       <div class="jqtl-events">{{ Events }}</div>
+      *       <div class="jqtl-side-index">{{ Index Contents }}</div>
+      *     </div>
+      *     <div class="jqtl-ruler-bottom">
+      *       <canvas class="jqtl-ruler-bg-bottom"></canvas>
+      *       <div class="jqtl-ruler-content-bottom">{{ Ruler }}</div>
+      *     </div>
+      *   </div>
+      *   <div class="jqtl-footer"><!--       Footer - ->
+      *     {{ Footer }}
+      *   </div>
+      * </{{ Element with selector specified by user }}>
+      *
+      */ -->
         <div id="my-timeline"></div>
     
     </div>
@@ -248,7 +382,7 @@ test_scales.forEach(function( scale ){
 var _x = getCoordinateX( date1.toLocaleString(), '2018/10/1 00:00:00', '2018/10/31 23:59:59', 'day', 5 ) || 0;
 console.log( _x + 'px' );
 
-console.log( renderTimelineGrids( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 26, 10, 48, '100%', '100%' ) );
+console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
 
 </script>
 </body>
