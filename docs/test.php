@@ -72,6 +72,76 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <!-- jQuery Timeline -->
   <link rel="stylesheet" href="./css/timeline.min.css?v=<?= filemtime( CURRENT_DIR . '/docs/css/timeline.min.css' ); ?>">
   <style>
+/* Loading Animation : start */
+#jqtl-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+}
+.jqtl-loading {
+    color: rgb(0,0,0);
+    font-family: "Courier New", monospace !important;
+    font-size: 48px;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    float: left;
+    animation-name: bounce_jqtl-loading;
+    animation-duration: 2.09s;
+    animation-iteration-count: infinite;
+    animation-direction: normal;
+    transform: scale(.5);
+}
+#jqtl-loading_1 {
+    animation-delay: 0.75s;
+}
+#jqtl-loading_2 {
+    animation-delay: 0.9s;
+}
+#jqtl-loading_3 {
+    animation-delay: 1.05s;
+}
+#jqtl-loading_4{
+    animation-delay: 1.2s;
+}
+#jqtl-loading_5 {
+    animation-delay: 1.35s;
+}
+#jqtl-loading_6 {
+    animation-delay: 1.5s;
+}
+#jqtl-loading_7 {
+    animation-delay: 1.64s;
+}
+#jqtl-loading_8 {
+    animation-delay: 1.79s;
+}
+#jqtl-loading_9 {
+    animation-delay: 1.94s;
+}
+#jqtl-loading_10 {
+    animation-delay: 2.09s;
+}
+@keyframes bounce_jqtl-loading {
+    0% {
+        transform: scale(1);
+        color: rgb(0,0,0);
+    }
+    100% {
+        transform: scale(.5);
+        color: rgb(255,255,255);
+    }
+}
+/* Loading Animation : end */
 .jqtl-headline {
     width: 100%;
     padding-left: 5px;
@@ -95,6 +165,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     overflow-x: auto;
     overflow-y: hidden;
     background-color: #FFFFFF;
+    visibility: hidden;
 }
 .hide-scrollbar {
     -ms-overflow-style: -ms-autohiding-scrollbar;
@@ -258,7 +329,9 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
       *
       */ -->
         <div id="my-timeline"></div>
-    
+        
+        <div id="my-timeline2"></div>
+        
     </div>
     <!-- /.content-main -->
 
@@ -306,7 +379,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 <!-- REQUIRED JS SCRIPTS -->
 
 <!-- jQuery (latest 3.3.1) -->
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
 <!-- Bootstrap 4.1.3 -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
@@ -379,10 +452,16 @@ test_scales.forEach(function( scale ){
 });
 */
 
-var _x = getCoordinateX( date1.toLocaleString(), '2018/10/1 00:00:00', '2018/10/31 23:59:59', 'day', 5 ) || 0;
-console.log( _x + 'px' );
+//var _x = getCoordinateX( date1.toLocaleString(), '2018/10/1 00:00:00', '2018/10/31 23:59:59', 'day', 5 ) || 0;
+//console.log( _x + 'px' );
 
-console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
+//console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
+
+$('#my-timeline2').timeline({
+    opt1: 'hoge',
+    opt2: 'fuga',
+});
+
 
 </script>
 </body>

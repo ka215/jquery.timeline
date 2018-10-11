@@ -8,6 +8,135 @@
  */
 
 /*
+ * Support the CommonJS because like registable to the npm (:> npmに登録できるように、CommonJSをサポート
+ * See: https://blog.npmjs.org/post/112712169830/making-your-jquery-plugin-work-better-with-npm
+ */
+(function( factory ) {
+    'use strict';
+    if ( typeof module === 'object' && typeof module.exports === 'object' ) {
+        factory( require( 'jquery' ), window, document );
+    } else {
+        factory( jQuery, window, document );
+    }
+}(function( $, window, document, undefined ) {
+    
+    $.fn.timeline = function( arg ) {
+        let methodArgs = Array.prototype.slice.call( arguments, 1 );
+        
+        return this.each(function() {
+            // Call the instance if plugin has been applied
+            let instance = $(this).data( 'timeline' );
+            
+            if ( instance && arg in instance && arg.charAt(0) != '_' ) {
+                // Call public method
+                instance[arg].apply( instance && methodArgs );
+            } else 
+            if ( typeof arg === 'object' || ! arg ) {
+                // Apply the plugin and store the instance in data
+                $(this).data( 'timeline', new $.timeline( this, arg ) );
+            } else {
+                // Error
+                console.error( 'Method "' + arg + '" does not exist on jQuery.timeline.' );
+            }
+        });
+    };
+    
+    // Class of the plugin core
+    $.timeline = function( elem, option ) {
+        // Proparties
+        this.elem = elem;
+        this.option = this._initOption( option );
+        this._renderView();
+        
+        
+    };
+    
+    // Methods of the plugin
+    $.extend( $.timeline.prototype, {
+        /*
+         * @private
+         */
+        _initOption: function( option ) {
+console.log( 'Called method "_initOption".', arguments );
+            return $.extend({
+                type            : "bar", // View type of timeline event is either "bar" or "point"
+                scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute", "second"; Enhanced since v2.0.0
+                startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
+                endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
+                datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
+                showHeadline    : true, // Whether to display headline
+                headline        : { // Content in the headline; Added new since v2.0.0
+                    title       : "",
+                    range       : true // Hide if false
+                },
+                showFooter      : true, // Whether to display footer; Added new since v2.0.0
+                datetimeFormat  : {
+                    full        : "j M Y", // or "Y/m/d" etc.
+                    year        : "Y",
+                    month       : "M Y", // or "F" etc.
+                    day         : "D, j M", // or "j" etc.
+                    years       : "Y", 
+                    months      : "F", 
+                    days        : "j",
+                    meta        : "Y/m/d H:i", // start datetime in meta of Event Detail; or "g:i A, D F j, Y"
+                    metato      : "" // end datetime in meta of Event Detail; default is same to meta
+                },
+                // minuteInterval  : 30, // --> Deprecated since v2.0.0
+                zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
+                // range           : 3, // --> Deprecated since v2.0.0
+                rows            : 5, // Rows of timeline event area
+                rowHeight       : 40, // Height of one row
+                width           : "auto", // Fixed width (pixel) of timeline view. defaults to "auto"; Added new since v2.0.0
+                height          : "auto", // Fixed height (pixel) of timeline view. defaults to "auto" ( rows * rowHeight )
+                // minGridPer      : 2, // --> Deprecated since v2.0.0
+                minGridSize     : 30, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
+                rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
+                naviIcon        : { // Define class name
+                    left        : "jqtl-circle-left",
+                    right       : "jqtl-circle-right"
+                },
+                showPointer     : true,
+                // i18n            : {}, // --> Deprecated since v1.0.6
+                // langsDir        : "./langs/", // --> Deprecated since v1.0.6
+                // httpLanguage    : false, // --> Deprecated since v1.0.6
+                duration        : 150 // duration of animate as each transition effects; Added v1.0.6
+            }, option );
+        },
+        _renderView: function() {
+console.log( 'Called method "_renderView".', arguments );
+console.log( 
+    getPluggableDatetime( this.option.startDatetime ) + "\n", 
+    getPluggableDatetime( this.option.endDatetime ) + "\n", 
+    getPluggableDatetime( '2018/10/1 00:00:00' ) + "\n", 
+    getPluggableDatetime( '2018-12-31 23:59:59' ) + "\n", 
+    getPluggableDatetime( '167-1-1 1:2:3' ) + "\n",
+    getPluggableDatetime( '77' ) + "\n",
+    getPluggableDatetime( '12345-3' ) + "\n",
+);
+            
+            
+            
+            renderTimelineView( this.elem, getPluggableDatetime( this.option.startDatetime ), getPluggableDatetime( this.option.endDatetime ), this.option.scale, this.option.minGridSize, this.option.rows, this.option.rowHeight, this.option.width, this.option.height );
+            
+            this.initialized();
+        },
+        /*
+         * @public
+         */
+        initialized: function() {
+            let _self = this;
+console.log( 'Called method "initialized".', _self );
+            /*
+            $.get( this.option.url, {q: this.option.q}, function( res ) {
+                $(_self.elem).text( res );
+            });
+            */
+        },
+    });
+    
+    // Helper functions
+
+/*
  * Supplemental method for validating arguments in local scope (:> ローカルスコープ内で引数を検証するための補助メソッド
  *
  * @param mixed default_value (required)
@@ -17,6 +146,7 @@
  * @return mixed
  */
 function supplement( default_value, opt_arg, opt_callback ) {
+    'use strict';
     if ( opt_arg === undefined ) {
         return default_value;
     }
@@ -27,20 +157,77 @@ function supplement( default_value, opt_arg, opt_callback ) {
 }
 
 /*
- * Determine whether variable is an array
+ * Determine whether variable is an array (:> 変数が配列かどうかを調べる
+ *
+ * @param mixed val (required)
+ *
+ * @return bool
  */
 function is_array( val ) {
+    'use strict';
     return Object.prototype.toString.call( val ) === '[object Array]';
 }
 
 /*
+ * Method to get week number as extension of Date object (:> Dateオブジェクトで週番号を取得する拡張メソッド
  *
+ * @return int
  */
 Date.prototype.getWeek = function() {
+    'use strict';
     let _onejan = new Date( this.getFullYear(), 0, 1 ),
         _millisecInDay = 86400000;
     return Math.ceil( ( ( ( this - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 );
 }
+
+/*
+ * Retrieve the created pluggable datetime from specified keyword (:> 指定キーから作成されたプラガブルな日時を取得する
+ *
+ * @param string key (required)
+ * @param string scale (optional; but this need it if key is "auto", defaults to "day")
+ *
+ * @return string _date
+ */
+function getPluggableDatetime( key, scale ) {
+    let _date = new Date(),
+        normaizeDate = function( dateString ) {
+            // For Safari, IE
+            return dateString.replace(/-/g, '/');
+        },
+        retriveServerDate = function() {
+            return $.get().done(function( d, s, xhr ) {
+                $('body').data( 'serverDate', new Date( normaizeDate( xhr.getResponseHeader( 'Date' ) ) ) );
+            }).promise();
+        };
+    scale  = supplement( 'day', scale );
+    
+    switch( true ) {
+        case /^current(|ly)$/i.test( key ):
+            retriveServerDate().then(function() {
+                _date = $('body').data( 'serverDate' );
+                $.removeData( 'body', 'serverDate' );
+            }, function() {
+                _date = new Date();
+            });
+            break;
+        case /^auto$/i.test( key ):
+            let _ms = verifyScale( scale );
+            _date.setTime( _date.getTime() + _ms );
+            break;
+        default:
+            _date = new Date( normaizeDate( key ) );
+            let _regx = /-|\//,
+                _temp = key.split( _regx );
+            if ( Number( _temp[0] ) < 100 ) {
+                // for 0 ~ 99 years map
+                _date.setFullYear( Number( _temp[0] ) );
+            }
+            break;
+    }
+    return _date;
+}
+
+
 
 /*
  * Verify the allowed scale, then retrieve that scale's millisecond if allowed (:> 許容スケールかを確認し、許可時はそのスケールのミリ秒を取得する
@@ -143,14 +330,6 @@ function diffDate( date1, date2, scale, intval, absval ) {
     let diffMS = _dt2 - _dt1,
         coefficient = verifyScale( scale ),
         retval;
-    /*
-    console.log( 
-        new Date( date1 ).toLocaleString( 'en-US', { hour12: false } ),
-        ' ～ ',
-        new Date( date2 ).toLocaleString( 'en-US', { hour12: false } ),
-        [ scale, calc, coefficient, diffMS ]
-    );
-    */
     if ( absval ) {
         diffMS = Math.abs( diffMS );
     }
@@ -244,7 +423,7 @@ function getCoordinateX( date, range_begin, range_end, scale, size_per_scale ) {
 /*
  * Render the view of the timeline (:> タイムラインのビューをレンダリングする
  *
- * @param string selector (required; selector name of DOM object for containing the timeline)
+ * @param DOM element elem (required)
  * @param string range_begin (required; begin date at the timeline range)
  * @param string range_end (required; end date at the timeline range)
  * @param string scale (required)
@@ -254,9 +433,9 @@ function getCoordinateX( date, range_begin, range_end, scale, size_per_scale ) {
  * @param int width (optional; maximum width of visible region of timeline)
  * @param int height (optional; maximun height of visible region of timeline)
  *
- * @return bool
+ * @return void
  */
-function renderTimelineView( selector, range_begin, range_end, scale, size_per_scale, rows, size_per_row, width, height ) {
+function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale, rows, size_per_row, width, height ) {
     'use strict';
     function validateDate( def, val ) {
         return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def;
@@ -270,10 +449,10 @@ function renderTimelineView( selector, range_begin, range_end, scale, size_per_s
         _rows   = supplement( null, rows, validateNumeric ),
         _size_scale = supplement( null, size_per_scale, validateNumeric ),
         _size_row   = supplement( null, size_per_row, validateNumeric );
-    selector = supplement( null, selector );
-    width    = supplement( null, width, validateNumeric );
-    height   = supplement( null, height, validateNumeric );
-    if ( ! selector || ! _begin || ! _end || ! _scale || ! _rows || ! _size_scale || ! _size_row  ) {
+    elem   = supplement( null, elem );
+    width  = supplement( null, width, validateNumeric );
+    height = supplement( null, height, validateNumeric );
+    if ( ! elem || ! _begin || ! _end || ! _scale || ! _rows || ! _size_scale || ! _size_row  ) {
         console.warn( 'Failed because exist undefined or invalid arguments.' );
         return false;
     }
@@ -295,7 +474,7 @@ function renderTimelineView( selector, range_begin, range_end, scale, size_per_s
         _visible_height = ( height <= _fullheight ? height : _fullheight ) + 'px';
     }
     // Render a timeline container (:> タイムラインコンテナの描画
-    if ( $(selector).length == 0 ) {
+    if ( $(elem).length == 0 ) {
         console.warn( 'Does not exist the element to render a timeline container.' );
         return false;
     }
@@ -304,14 +483,18 @@ function renderTimelineView( selector, range_begin, range_end, scale, size_per_s
         _tl_main       = $('<div></div>', { class: 'jqtl-main' }),
         hide_scrollbar = false;
     console.log( _fullwidth, _fullheight, _visible_width, _visible_height );
-    $(selector).empty().css( 'position', 'relative' ); // initialize
+    $(elem).empty().css( 'position', 'relative' ); // initialize
     if ( hide_scrollbar ) {
         _tl_container.addClass( 'hide-scrollbar' );
     }
     
     // Create the timeline headline (:> タイムラインの見出しを生成
     let title = 'jQuery Timeline Ver.2.0'; // '(Example Timeline)';
-    $(selector).prepend( createHeadline( title, range_begin, range_end ) );
+    $(elem).prepend( createHeadline( title, range_begin, range_end ) );
+    
+    // ローディング・アニメーションを表示
+    let _loading_margin_top = $(elem).find('.jqtl-headline').height();
+    $(elem).prepend( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
     
     // Create the timeline event container (:> タイムラインのイベントコンテナを生成
     _tl_main.append( createEventContainer( _fullwidth, _fullheight, _rows, _size_row, _cell_grids, _size_scale ) );
@@ -330,15 +513,46 @@ function renderTimelineView( selector, range_begin, range_end, scale, size_per_s
     
     // Append the timeline container in the timeline element (:> タイムライン要素にタイムラインコンテナを追加
     _tl_container.append( _tl_main );
-    $(selector).append( _tl_container );
+    $(elem).append( _tl_container );
     
     // Create the timeline footer (:> タイムラインのフッタを生成
-    $(selector).append( createFooter() );
+    $(elem).append( createFooter() );
     
-
+    // ローディング終了 & タイムラインコンテナを表示
+    $(elem).find('#jqtl-loading').remove();
+    $(elem).find('.jqtl-container').css( 'visibility', 'visible' );
+    
 }
 
+/*
+ * Show the loading animation of the lineline creation (:> タイムライン作成のローディング・アニメーションを表示
+ *
+ * @param string width (required)
+ * @param string height (required)
+ * @param int margin_top (required)
+ *
+ * @return DOM element
+ */
+function startLoading( width, height, margin_top ) {
+    height = height === 'auto' ? '360px' : height;
+    let _loading = $('<div></div>', { id: 'jqtl-loading', style: 'width:'+ width +';height:'+ height + ';top:' + margin_top + 'px;' }),
+        _loading_text = 'Loading...'.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter(Boolean);
+    _loading_text.forEach(function( str,idx ) {
+        let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: 'jqtl-loading' }).text( str );
+        _loading.append( _fountain_text );
+    });
+    return _loading;
+}
 
+/*
+ * Create the headline of the timeline (:> タイムラインの見出しを作成する
+ *
+ * @param string title (optional)
+ * @param string range_begin (required)
+ * @param string range_end (required)
+ *
+ * @return DOM element
+ */
 function createHeadline( title, range_begin, range_end ) {
     'use strict';
     function validateDate( def, val ) {
@@ -362,7 +576,15 @@ function createHeadline( title, range_begin, range_end ) {
 /*
  * Create the ruler of the timeline (:> タイムラインの目盛を作成する
  *
+ * @param int grids (required)
+ * @param int size_per_grid (required)
+ * @param int scale (required)
+ * @param int begin (required)
+ * @param string min_scale (required)
+ * @param string position (optional; defaults to "top")
+ * @param array ruler_line (optional; defaults to [ min_scale ])
  * 
+ * @return DOM element
  */
 function createRuler( grids, size_per_grid, scale, begin, min_scale, position, ruler_line ) {
     'use strict';
@@ -381,7 +603,7 @@ function createRuler( grids, size_per_grid, scale, begin, min_scale, position, r
         _ruler_bg   = $('<canvas width="'+ _fullwidth +'" height="'+ _fullheight +'"></canvas>', { class: 'jqtl-ruler-bg-' + position, }),
         _ruler_body = $('<div></div>', { class: 'jqtl-ruler-content-' + position }),
         ctx_ruler   = _ruler_bg[0].getContext('2d');
-    console.log( grids, size_per_grid, scale, begin, min_scale, position, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
+console.log( grids, size_per_grid, scale, begin, min_scale, position, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
     // Draw background of ruler
     ctx_ruler.fillStyle = '#FFF';
     ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
@@ -422,10 +644,19 @@ function createRuler( grids, size_per_grid, scale, begin, min_scale, position, r
 }
 
 /*
- * 
+ * Get the grid number per scale (:> 
+ *
+ * @param int grids (required)
+ * @param int begin (required)
+ * @param int scale (required)
+ * @param string target_scale (required)
+ *
+ * @return object
  */
 function getGridsPerScale( grids, begin, scale, target_scale ) {
-    let _tmp, i, _scopes = [], _scale_grids = {};
+    'use strict';
+    let _tmp, i, _scopes = [], _scale_grids = {},
+        _sep = '/';
     for ( i = 0; i < grids; i++ ) {
         _tmp = new Date( begin + ( i * scale ) );
         let _y   = _tmp.getFullYear(),
@@ -446,17 +677,16 @@ function getGridsPerScale( grids, begin, scale, target_scale ) {
             decade:     _dec,
             lustrum:    _lus,
             year:       _y,
-            month:      _y +'-'+ _m,
-            week:       _y +','+ _w,
-            weekday:    _y +'-'+ _m +'-'+ _d +','+ _wd,
-            day:        _y +'-'+ _m +'-'+ _d,
-            hour:       _y +'-'+ _m +'-'+ _d +' '+ _h,
-            minute:     _y +'-'+ _m +'-'+ _d +' '+ _h +':'+ _min,
-            second:     _y +'-'+ _m +'-'+ _d +' '+ _h +':'+ _min +':'+ _s,
+            month:      _y + _sep + _m + _sep + '1',
+            week:       _y + ',' + _w,
+            weekday:    _y + _sep + _m + _sep + _d + ',' + _wd,
+            day:        _y + _sep + _m + _sep + _d,
+            hour:       _y + _sep + _m + _sep + _d + ' ' + _h,
+            minute:     _y + _sep + _m + _sep + _d + ' ' + _h + ':' + _min,
+            second:     _y + _sep + _m + _sep + _d + ' ' + _h + ':' + _min + ':' + _s,
             datetime:   _tmp.toString(),
         });
     }
-//console.log( _scopes );
     _scopes.forEach(function( _scope, idx ) {
         // console.log( _scope[target_scale], idx );
         if ( ! _scale_grids[_scope[target_scale]] ) {
@@ -470,9 +700,16 @@ function getGridsPerScale( grids, begin, scale, target_scale ) {
 }
 
 /*
- * 
+ * Create the content of ruler of the timeline (:> タイムラインの目盛本文を作成する
+ *
+ * @param object line_scope (required; return value of "getGridsPerScale()")
+ * @param string line_scale (required)
+ * @param int size_per_grid (required)
+ *
+ * @return DOM element
  */
 function createRulerContent( line_scope, line_scale, size_per_grid ) {
+    'use strict';
     let _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ size_per_grid +'px;' }),
         _weekday = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
     for ( let _key in line_scope ) {
@@ -521,7 +758,18 @@ function createRulerContent( line_scope, line_scale, size_per_grid ) {
     return _ruler_lines;
 }
 
-
+/*
+ * Create the event container of the timeline (:> タイムラインのイベントコンテナを作成する
+ *
+ * @param int width (required)
+ * @param int height (required)
+ * @param int rows (required)
+ * @param int size_per_row (required)
+ * @param int grids (required)
+ * @param int size_per_scale (required)
+ *
+ * @return DOM element
+ */
 function createEventContainer( width, height, rows, size_per_row, grids, size_per_scale ) {
     'use strict';
     width -= 1;
@@ -584,7 +832,17 @@ function createEventContainer( width, height, rows, size_per_row, grids, size_pe
     return _container.append( _events_bg ).append( _events_body );
 }
 
-
+/*
+ * Create the side indexes of the timeline (:> タイムラインのサイド・インデックスを作成する
+ *
+ * @param int top_margin (required)
+ * @param int bottom_margin (required)
+ * @param int rows (required)
+ * @param int size_per_row (required)
+ * @param array indices (required)
+ *
+ * @return DOM element
+ */
 function createSideIndex( top_margin, bottom_margin, rows, size_per_row, indices ) {
     'use strict';
     let _wrapper = $('<div></div>', { class: 'jqtl-side-index' }),
@@ -598,9 +856,19 @@ function createSideIndex( top_margin, bottom_margin, rows, size_per_row, indices
     return _wrapper;
 }
 
+/*
+ * Create the footer of the timeline (:> タイムラインのフッターを作成する
+ *
+ * @param 
+ *
+ * @return DOM element
+ */
 function createFooter() {
     'use strict';
     let _footer = $('<div></div>', { class: 'jqtl-footer' });
     return _footer.append( '<div class="my-3 text-center">Footer</div>' );
 }
 
+
+})
+);
