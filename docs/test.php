@@ -13,7 +13,7 @@ define( 'TIMELINE_ROWS', 5 );
 // タイムラインの起点日時を算出して定数として定義
 $tldt_start_range = $current_datetime->modify( sprintf( '-%d day', floor( TIMELINE_RANGE / 2 ) ) );
 define( 'TIMELINE_START_DATE', $tldt_start_range->format( 'Y-m-d' ) );
-var_dump( $current_datetime, $tldt_start_range );
+// var_dump( $current_datetime, $tldt_start_range );
 
 /*
  * ランダムなタイムライン・イベントを生成
@@ -142,25 +142,56 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     }
 }
 /* Loading Animation : end */
+.jqtl-hide {
+    display: none;
+}
+.jqtl-align-self-left {
+    clear: both;
+    float: left;
+    display: inline-block;
+    text-align: left;
+}
+.jqtl-align-self-right {
+    clear: both;
+    float: right;
+    display: inline-block;
+    text-align: right;
+}
 .jqtl-headline {
     width: 100%;
     padding-left: 5px;
     padding-right: 5px;
 }
-.jqtl-headline .jqtl-timeline-title {
+.jqtl-timeline-title {
     font-size: 26px;
     color: #333;
 }
-.jqtl-headline .jqtl-range-meta {
+.jqtl-range-meta {
     font-size: 86%;
     color: #777;
+}
+.jqtl-range-span {
+    position: relative;
+    display: inline-block;
+    margin-left: 2px;
+    margin-right: 0;
+    width: 1em;
+    height: 1em;
+}
+.jqtl-range-span:before {
+    content: "\2013";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1em;
+    color: #C0C0C0;
 }
 .jqtl-container {
     position: relative;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    justify-content: space-between;
+    justify-content: flex-start;
     border: solid 1px #DDD;
     overflow-x: auto;
     overflow-y: hidden;
@@ -227,10 +258,26 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 .jqtl-ruler-line-item:nth-child(even) {
     background-color: rgba(240,240,240,.25);
 }
-.jqtl-ruler-line-item[data-ruler-item="weekday-sat"] {
+/* Custom ruler items */
+.jqtl-ruler-line-item[data-ruler-item^="year-"] {
+    text-align: left;
+    padding-left: 2em;
+}
+.jqtl-ruler-line-item[data-ruler-item^="month-"] {
+    text-align: left;
+    padding-left: 4em;
+}
+*/
+.jqtl-ruler-line-item[data-ruler-item^="week-"]:before {
+    content: '第';
+}
+.jqtl-ruler-line-item[data-ruler-item^="week-"]:after {
+    content: '週';
+}
+.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",6"] {
     background-color: rgba(51,51,247,.08);
 }
-.jqtl-ruler-line-item[data-ruler-item="weekday-sun"] {
+.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",0"] {
     background-color: rgba(247,51,51,.08);
 }
 .jqtl-event-container {
@@ -250,8 +297,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     z-index: 3;
 }
 .jqtl-side-index {
-    position: -webkit-sticky;
-    position: sticky;
+    position: relative;
     left: 1px;
     display: flex;
     flex-direction: column;
@@ -263,6 +309,10 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     background-color: rgba(255,255,255,.45);
     z-index: 25;
 }
+.jqtl-sticky-left {
+    position: -webkit-sticky;
+    position: sticky;
+}
 .jqtl-side-index-item {
     padding-left: 10px;
     padding-right: 10px;
@@ -272,11 +322,23 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     border-bottom: solid 1px #DDD;
     white-space: nowrap;
 }
+.jqtl-side-index-item a {
+    text-decoration: none;
+}
 .jqtl-side-index-item:first-child {
     border-top: solid 1px #DDD;
 }
 .jqtl-side-index-item:nth-child(even) {
     background-color: rgba(247,247,247,.25);
+}
+.jqtl-footer {
+    margin: 15px auto;
+    padding: 0;
+    width: 100%;
+}
+.jqtl-footer-content {
+    clear: both;
+    text-align: center;
 }
   </style>
 </head>
@@ -458,8 +520,51 @@ test_scales.forEach(function( scale ){
 //console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
 
 $('#my-timeline2').timeline({
-    opt1: 'hoge',
-    opt2: 'fuga',
+    startDatetime : '2018-10-1',
+    endDatetime   : '2018-12-31',
+    showHeadline  : true,
+    headline      : {
+        display   : true,
+        title     : 'jQuery Timeline Ver.2.0',
+        range     : true,
+        locale    : 'ja-JP-u-ca-japanese',
+        format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }
+    },
+    footer        : {
+        display   : true,
+        content   : '<small>&copy; MAGIC METHODS 2018</small>',
+        range     : true,
+        locale    : 'ja-JP-u-ca-japanese',
+        format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }
+    },
+    sidebar       : {
+        sticky : true,
+        list   : [ 
+            '<a href="#"><span><img src="dmy.jpg"></span> Peter Benjamin Parker</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Gwendolyn Stacy</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Mary Jane Watson</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Harry Osborn</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> May Parker</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Elizabeth Allan</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Kenny McFarlane</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Norman Osborn</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Otto Gunther Octavius</a>', 
+            '<a href="#"><span><img src="dmy.jpg"></span> Mayday Parker</a>', 
+        ]
+    },
+    ruler         : {
+        top    : {
+            lines      : [ 'year', 'month', 'week', 'day', 'weekday' ],
+            height     : 26,
+            fontSize   : 13,
+            color      : '#777',
+            background : '#FFF',
+            locale     : 'ja-JP',
+            format     : { timeZone: 'Asia/Tokyo', hour12: false, year: 'numeric', month: 'long', weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' },
+        },
+        // bottom : {}
+    },
+    
 });
 
 

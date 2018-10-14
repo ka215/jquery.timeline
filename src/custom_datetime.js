@@ -64,12 +64,21 @@ console.log( 'Called method "_initOption".', arguments );
                 startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
                 endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
                 datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
-                showHeadline    : true, // Whether to display headline
+                // showHeadline    : true, // --> Deprecated since v2.0.0
                 headline        : { // Content in the headline; Added new since v2.0.0
+                    display     : true, // Whether to display headline is instead of former showHeadline
                     title       : "",
-                    range       : true // Hide if false
+                    range       : true, // Hide if false
+                    locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+                    format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
                 },
-                showFooter      : true, // Whether to display footer; Added new since v2.0.0
+                footer          : { // Content in the footer; Added new since v2.0.0
+                    display     : true, // Whether to display footer
+                    content     : "",
+                    range       : false, // Visible if true
+                    locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+                    format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+                },
                 datetimeFormat  : {
                     full        : "j M Y", // or "Y/m/d" etc.
                     year        : "Y",
@@ -79,17 +88,32 @@ console.log( 'Called method "_initOption".', arguments );
                     months      : "F", 
                     days        : "j",
                     meta        : "Y/m/d H:i", // start datetime in meta of Event Detail; or "g:i A, D F j, Y"
-                    metato      : "" // end datetime in meta of Event Detail; default is same to meta
+                    metato      : "" // --> Deprecated since v2.0.0
                 },
                 // minuteInterval  : 30, // --> Deprecated since v2.0.0
                 zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
                 // range           : 3, // --> Deprecated since v2.0.0
-                rows            : 5, // Rows of timeline event area
-                rowHeight       : 40, // Height of one row
+                sidebar         : { // Settings of sidebar; Added new since v2.0.0
+                    sticky      : false,
+                    list        : [],
+                },
+                rows            : "auto", // Rows of timeline event area. defaults to "auto"; Enhanced since v2.0.0
+                rowHeight       : 48, // Height of one row
                 width           : "auto", // Fixed width (pixel) of timeline view. defaults to "auto"; Added new since v2.0.0
                 height          : "auto", // Fixed height (pixel) of timeline view. defaults to "auto" ( rows * rowHeight )
                 // minGridPer      : 2, // --> Deprecated since v2.0.0
-                minGridSize     : 30, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
+                minGridSize     : 32, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
+                ruler           : { // Settings of ruler; Added new since v2.0.0
+                    top         : { // Can define the ruler position to top or bottom and both
+                        lines      : [], // defaults to this.option.scale
+                        height     : 30,
+                        fontSize   : 14,
+                        color      : "#777777",
+                        background : "#FFFFFF",
+                        locale     : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+                        format     : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+                    },
+                },
                 rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
                 naviIcon        : { // Define class name
                     left        : "jqtl-circle-left",
@@ -116,7 +140,20 @@ console.log(
             
             
             
-            renderTimelineView( this.elem, getPluggableDatetime( this.option.startDatetime ), getPluggableDatetime( this.option.endDatetime ), this.option.scale, this.option.minGridSize, this.option.rows, this.option.rowHeight, this.option.width, this.option.height );
+            renderTimelineView( this.elem, this.option );
+            /*
+                getPluggableDatetime( this.option.startDatetime ), 
+                getPluggableDatetime( this.option.endDatetime ), 
+                this.option.scale, 
+                this.option.minGridSize, 
+                getPluggableRows( this.option.rows, this.option.sidebar.list ), 
+                this.option.rowHeight, 
+                this.option.headline, 
+                this.option.sidebar, 
+                this.option.ruler, 
+                this.option.width, 
+                this.option.height, 
+            ); */
             
             this.initialized();
         },
@@ -126,6 +163,7 @@ console.log(
         initialized: function() {
             let _self = this;
 console.log( 'Called method "initialized".', _self );
+            endLoading( _self.elem );
             /*
             $.get( this.option.url, {q: this.option.q}, function( res ) {
                 $(_self.elem).text( res );
@@ -176,8 +214,114 @@ function is_array( val ) {
 Date.prototype.getWeek = function() {
     'use strict';
     let _onejan = new Date( this.getFullYear(), 0, 1 ),
-        _millisecInDay = 86400000;
+        _millisecInDay = 24 * 60 * 60 * 1000;
     return Math.ceil( ( ( ( this - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 );
+}
+
+/*
+ * Retrieve the date string of specified locale (:> 指定されたロケールの日付文字列を取得する
+ *
+ * @param string date_seed
+ * @param string scale
+ * @param string locales
+ * @param object options
+ *
+ * @return string locale_string
+ */
+function getLocaleString( date_seed, scale, locales, options ) {
+    'use strict';
+    function toLocaleStringSupportsLocales() {
+        try {
+            new Date().toLocaleString( 'i' );
+        } catch ( e ) {
+            return e.name === "RangeError";
+        }
+        return false;
+    };
+    let is_toLocalString = toLocaleStringSupportsLocales(),
+        locale_string = '',
+        _options = {}, _prop, _temp;
+    for ( _prop in options ) {
+        if ( _prop === 'timeZone' || _prop === 'hour12' ) {
+            _options[_prop] = options[_prop];
+        }
+    }
+    switch ( true ) {
+        case /^millenniums?|millennia$/i.test( scale ):
+        case /^century$/i.test( scale ):
+        case /^dec(ade|ennium)$/i.test( scale ):
+        case /^lustrum$/i.test( scale ):
+            locale_string = date_seed;
+            break;
+        case /^years?$/i.test( scale ):
+            if ( is_toLocalString ) {
+                _options.year = options.hasOwnProperty('year') ? options.year : 'numeric';
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+            } else {
+                locale_string = new Date( date_seed ).getFullYear();
+            }
+            break;
+        case /^months?$/i.test( scale ):
+            if ( is_toLocalString ) {
+                _options.month = options.hasOwnProperty('month') ? options.month : 'numeric';
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+            } else {
+                locale_string = new Date( date_seed ).getMonth() + 1;
+            }
+            break;
+        case /^weeks?$/i.test( scale ):
+            _temp = date_seed.split(',');
+            locale_string = _temp[1];
+            break;
+        case /^weekdays?$/i.test( scale ):
+            _temp = date_seed.split(',');
+            if ( is_toLocalString ) {
+                _options.weekday = options.hasOwnProperty('weekday') ? options.weekday : 'narrow';
+                locale_string = new Date( _temp[0] ).toLocaleString( locales, _options );
+            } else {
+                let _weekday = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
+                locale_string = _weekday[_temp[1]];
+            }
+            break;
+        case /^days?$/i.test( scale ):
+            if ( is_toLocalString ) {
+                _options.day = options.hasOwnProperty('day') ? options.day : 'numeric';
+                locales = options.hasOwnProperty('day') ? locales : 'en-US';
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+            } else {
+                locale_string = new Date( date_seed ).getDate();
+            }
+            break;
+        case /^hours?$/i.test( scale ):
+            if ( is_toLocalString ) {
+                _options.hour = options.hasOwnProperty('hour') ? options.hour : 'numeric';
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+            } else {
+                locale_string = new Date( date_seed ).getHours();
+            }
+            break;
+        case /^minutes?$/i.test( scale ):
+            if ( is_toLocalString ) {
+                _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric';
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+            } else {
+                locale_string = new Date( date_seed ).getMinutes();
+            }
+            break;
+        case /^seconds?$/i.test( scale ):
+            if ( is_toLocalString ) {
+                _options.second = options.hasOwnProperty('second') ? options.second : 'numeric';
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+            } else {
+                locale_string = new Date( date_seed ).getSeconds();
+            }
+            break;
+        case /^millisec(|ond)s?$/i.test( scale ):
+        default:
+            locale_string = new Date( date_seed );
+            break;
+    }
+    return locale_string;
 }
 
 /*
@@ -185,34 +329,30 @@ Date.prototype.getWeek = function() {
  *
  * @param string key (required)
  * @param string scale (optional; but this need it if key is "auto", defaults to "day")
+ * @param int min_range (optional; but this need it if key is "auto", defaults to 3)
  *
  * @return string _date
  */
-function getPluggableDatetime( key, scale ) {
-    let _date = new Date(),
+function getPluggableDatetime( key, scale, min_range ) {
+    let _date,
         normaizeDate = function( dateString ) {
             // For Safari, IE
             return dateString.replace(/-/g, '/');
-        },
-        retriveServerDate = function() {
-            return $.get().done(function( d, s, xhr ) {
-                $('body').data( 'serverDate', new Date( normaizeDate( xhr.getResponseHeader( 'Date' ) ) ) );
-            }).promise();
         };
-    scale  = supplement( 'day', scale );
+    function validateScale( def, val ) {
+        return verifyScale( val ) !== false  ? def : val;
+    }
+    scale     = supplement( 'day', scale, validateScale );
+    min_range = supplement( 3, min_range );
     
     switch( true ) {
         case /^current(|ly)$/i.test( key ):
-            retriveServerDate().then(function() {
-                _date = $('body').data( 'serverDate' );
-                $.removeData( 'body', 'serverDate' );
-            }, function() {
-                _date = new Date();
-            });
+            _date = new Date();
             break;
         case /^auto$/i.test( key ):
-            let _ms = verifyScale( scale );
-            _date.setTime( _date.getTime() + _ms );
+            let _ms = verifyScale( getHigherScale( scale ) );
+            _date = new Date();
+            _date.setTime( _date.getTime() + ( _ms * min_range ) );
             break;
         default:
             _date = new Date( normaizeDate( key ) );
@@ -224,10 +364,27 @@ function getPluggableDatetime( key, scale ) {
             }
             break;
     }
-    return _date;
+    return _date.toString();
 }
 
-
+/*
+ * Retrieve the pluggable rows of the timeline (:> プラガブルなタイムラインの行数を取得する
+ *
+ * @param mixed option_rows (required)
+ * @param array sidebar_list (required)
+ *
+ * @return string fixed_rows
+ */
+function getPluggableRows( option_rows, sidebar_list ) {
+    function validateNumeric( def, val ) {
+        return typeof val === 'number' ? Number( val ) : def;
+    }
+    let fixed_rows = supplement( "auto", option_rows, validateNumeric );
+    if ( fixed_rows === "auto" ) {
+        fixed_rows = sidebar_list.length;
+    }
+    return fixed_rows > 0 ? fixed_rows : 1;
+}
 
 /*
  * Verify the allowed scale, then retrieve that scale's millisecond if allowed (:> 許容スケールかを確認し、許可時はそのスケールのミリ秒を取得する
@@ -301,6 +458,56 @@ function verifyScale( scale ) {
     return result;
 }
 
+/*
+ * Retrieve one higher scale (:> 一つ上のスケールを取得する
+ *
+ * @param string scale (required)
+ *
+ * @return string higher_scale
+ */
+function getHigherScale( scale ) {
+    'use strict';
+    let higher_scale = scale;
+    switch ( true ) {
+        case /^millisec(|ond)s?$/i.test( scale ):
+            higher_scale = 'second';
+            break;
+        case /^seconds?$/i.test( scale ):
+            higher_scale = 'minute';
+            break;
+        case /^minutes?$/i.test( scale ):
+            higher_scale = 'hour';
+            break;
+        case /^hours?$/i.test( scale ):
+            higher_scale = 'day';
+            break;
+        case /^days?$/i.test( scale ):
+            higher_scale = 'week';
+            break;
+        case /^weeks?$/i.test( scale ):
+            higher_scale = 'month';
+            break;
+        case /^months?$/i.test( scale ):
+            higher_scale = 'year';
+            break;
+        case /^years?$/i.test( scale ):
+            higher_scale = 'lustrum';
+            break;
+        case /^lustrum$/i.test( scale ):
+            higher_scale = 'decade';
+            break;
+        case /^dec(ade|ennium)$/i.test( scale ):
+            higher_scale = 'century';
+            break;
+        case /^century$/i.test( scale ):
+            higher_scale = 'millennium';
+            break;
+        case /^millenniums?|millennia$/i.test( scale ):
+        default:
+            break;
+    }
+    return higher_scale;
+}
 
 /*
  * Acquire the difference between two dates with the specified scale value (:> 2つの日付の差分を指定したスケール値で取得する
@@ -424,18 +631,11 @@ function getCoordinateX( date, range_begin, range_end, scale, size_per_scale ) {
  * Render the view of the timeline (:> タイムラインのビューをレンダリングする
  *
  * @param DOM element elem (required)
- * @param string range_begin (required; begin date at the timeline range)
- * @param string range_end (required; end date at the timeline range)
- * @param string scale (required)
- * @param int size_per_scale (required; pixel value of one timecode on the timeline)
- * @param int rows (required)
- * @param int size_per_row (required; pixel value of one row of the timeline)
- * @param int width (optional; maximum width of visible region of timeline)
- * @param int height (optional; maximun height of visible region of timeline)
+ * @param object options (required)
  *
  * @return void
  */
-function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale, rows, size_per_row, width, height ) {
+function renderTimelineView( elem, options ) {
     'use strict';
     function validateDate( def, val ) {
         return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def;
@@ -443,19 +643,27 @@ function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale
     function validateNumeric( def, val ) {
         return typeof val === 'number' ? Number( val ) : def;
     }
-    let _begin  = supplement( null, range_begin, validateDate ),
-        _end    = supplement( null, range_end, validateDate ),
-        _scale  = verifyScale( scale ),
-        _rows   = supplement( null, rows, validateNumeric ),
-        _size_scale = supplement( null, size_per_scale, validateNumeric ),
-        _size_row   = supplement( null, size_per_row, validateNumeric );
-    elem   = supplement( null, elem );
-    width  = supplement( null, width, validateNumeric );
-    height = supplement( null, height, validateNumeric );
-    if ( ! elem || ! _begin || ! _end || ! _scale || ! _rows || ! _size_scale || ! _size_row  ) {
+    // Validate Options
+    elem = supplement( null, elem );
+    let _begin      = supplement( null, getPluggableDatetime( options.startDatetime ), validateDate ),
+        _end        = supplement( null, getPluggableDatetime( options.endDatetime ), validateDate ),
+        _scale      = verifyScale( options.scale ),
+        _size_scale = supplement( null, options.minGridSize, validateNumeric ),
+        _rows       = supplement( null, getPluggableRows( options.rows, options.sidebar.list ), validateNumeric ),
+        _size_row   = supplement( null, options.rowHeight, validateNumeric ),
+        headline    = supplement( null, options.headline ),
+        footer      = supplement( null, options.footer ),
+        sidebar     = supplement( null, options.sidebar ),
+        ruler       = supplement( null, options.ruler ),
+        width       = supplement( null, options.width, validateNumeric ),
+        height      = supplement( null, options.height, validateNumeric );
+    
+// console.log( elem, _begin, _end, _scale, _rows, _size_scale, _size_row, sidebar, ruler );
+    if ( ! elem || ! _begin || ! _end || ! _scale || ! _rows || ! _size_scale || ! _size_row || ! headline || ! footer || ! sidebar || ! ruler  ) {
         console.warn( 'Failed because exist undefined or invalid arguments.' );
         return false;
     }
+    
     // Calculate the full size of the timeline (:> タイムラインのフルサイズを算出
     let _cell_grids = Math.ceil( ( _end - _begin ) / _scale ),
         _fullwidth  = _cell_grids * _size_scale,
@@ -464,6 +672,7 @@ function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale
         console.warn( 'The range of the timeline to be rendered is incorrect.' );
         return false;
     }
+    
     // Define visible size according to full size of timeline (:> タイムラインのフルサイズに準じた可視サイズを定義
     let _visible_width  = '100%',
         _visible_height = 'auto';
@@ -473,6 +682,7 @@ function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale
     if ( height && height > 0 ) {
         _visible_height = ( height <= _fullheight ? height : _fullheight ) + 'px';
     }
+    
     // Render a timeline container (:> タイムラインコンテナの描画
     if ( $(elem).length == 0 ) {
         console.warn( 'Does not exist the element to render a timeline container.' );
@@ -482,17 +692,16 @@ function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale
     let _tl_container  = $('<div></div>', { class: 'jqtl-container', style: 'width: '+ _visible_width +'; height: '+ _visible_height +';' }),
         _tl_main       = $('<div></div>', { class: 'jqtl-main' }),
         hide_scrollbar = false;
-    console.log( _fullwidth, _fullheight, _visible_width, _visible_height );
+    console.log( 'Timeline:{ fullWidth: '+ _fullwidth +'px,', 'fullHeight: '+ _fullheight +'px,', 'viewWidth: '+ _visible_width, 'viewHeight: '+ _visible_height +' }' );
     $(elem).empty().css( 'position', 'relative' ); // initialize
     if ( hide_scrollbar ) {
         _tl_container.addClass( 'hide-scrollbar' );
     }
     
     // Create the timeline headline (:> タイムラインの見出しを生成
-    let title = 'jQuery Timeline Ver.2.0'; // '(Example Timeline)';
-    $(elem).prepend( createHeadline( title, range_begin, range_end ) );
+    $(elem).prepend( createHeadline( headline, _begin, _end ) );
     
-    // ローディング・アニメーションを表示
+    // Prerender the loading animation (:> ローディング・アニメーションを事前表示
     let _loading_margin_top = $(elem).find('.jqtl-headline').height();
     $(elem).prepend( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
     
@@ -500,27 +709,28 @@ function renderTimelineView( elem, range_begin, range_end, scale, size_per_scale
     _tl_main.append( createEventContainer( _fullwidth, _fullheight, _rows, _size_row, _cell_grids, _size_scale ) );
     
     // Create the timeline ruler (:> タイムラインの目盛を生成
-    _tl_main.prepend( createRuler( _cell_grids, _size_scale, _scale, _begin, scale, 'top', [ 'year', 'month', 'day', 'weekday' ] ) );
-    _tl_main.append( createRuler( _cell_grids, _size_scale, _scale, _begin, scale, 'bottom', [ 'day', 'week' ] ) );
+    if ( ruler.top ) {
+        _tl_main.prepend( createRuler( _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.top, 'top' ) );
+    }
+    if ( ruler.bottom ) {
+        _tl_main.append( createRuler( _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.bottom, 'bottom' ) );
+    }
     
     // Create the timeline side index (:> タイムラインのサイドインデックスを生成
     let _top_margin    = parseInt( _tl_main.find('.jqtl-ruler-top canvas').attr('height') ) - 1,
         _bottom_margin = parseInt( _tl_main.find('.jqtl-ruler-bottom canvas').attr('height') ) - 1,
-        _indices       = [
-            'Peter Benjamin Parker', 'Gwendolyn Stacy', 'Mary Jane Watson', 'Harry Osborn', 'May Parker', 'Elizabeth Allan', 'Kenny McFarlane', 'Norman Osborn', 'Otto Gunther Octavius', 'Mayday Parker',
-        ];
-    _tl_container.prepend( createSideIndex( _top_margin, _bottom_margin, _rows, _size_row, _indices ) );
+        _sticky        = sidebar.sticky || false,
+        _indices       = sidebar.list || [];
+    if ( _indices.length > 0 ) {
+        _tl_container.prepend( createSideIndex( _top_margin, _bottom_margin, _rows, _size_row, _sticky, _indices ) );
+    }
     
     // Append the timeline container in the timeline element (:> タイムライン要素にタイムラインコンテナを追加
     _tl_container.append( _tl_main );
     $(elem).append( _tl_container );
     
     // Create the timeline footer (:> タイムラインのフッタを生成
-    $(elem).append( createFooter() );
-    
-    // ローディング終了 & タイムラインコンテナを表示
-    $(elem).find('#jqtl-loading').remove();
-    $(elem).find('.jqtl-container').css( 'visibility', 'visible' );
+    $(elem).append( createFooter( footer, _begin, _end ) );
     
 }
 
@@ -545,30 +755,48 @@ function startLoading( width, height, margin_top ) {
 }
 
 /*
+ * Hide the loading animation then show the lineline (:> ローディング・アニメーションを非表示後、タイムラインを表示
+ *
+ * @param DOM element elem (required)
+ *
+ * @return void
+ */
+function endLoading( elem ) {
+    $(elem).find('#jqtl-loading').remove();
+    $(elem).find('.jqtl-container').css( 'visibility', 'visible' );
+}
+
+/*
  * Create the headline of the timeline (:> タイムラインの見出しを作成する
  *
- * @param string title (optional)
+ * @param object headline (required)
  * @param string range_begin (required)
  * @param string range_end (required)
  *
  * @return DOM element
  */
-function createHeadline( title, range_begin, range_end ) {
+function createHeadline( headline, range_begin, range_end ) {
     'use strict';
-    function validateDate( def, val ) {
-        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def;
-    }
-    title = supplement( null, title );
-    let _begin  = supplement( null, range_begin, validateDate ),
-        _end    = supplement( null, range_end, validateDate ),
+    let _display = supplement( true, headline.display ),
+        _title   = supplement( null, headline.title ),
+        _range   = supplement( true, headline.range ),
+        _locale  = supplement( 'en-US', headline.locale ),
+        _format  = supplement( { hour12: false }, headline.format ),
+        _begin   = supplement( null, range_begin ),
+        _end     = supplement( null, range_end ),
         _tl_headline = $('<div></div>', { class: 'jqtl-headline my-1', }),
         _wrapper     = $('<div></div>', { class: 'd-flex justify-content-between align-items-stretch' });
-    if ( title ) {
-        _wrapper.append( '<h3 class="jqtl-timeline-title">'+ title +'</h3>' );
+    if ( _title ) {
+        _wrapper.append( '<h3 class="jqtl-timeline-title">'+ _title +'</h3>' );
     }
-    if ( _begin && _end ) {
-        let _range = new Date( _begin ).toLocaleString( 'en-US', { hour12: false } ) +' ~ '+ new Date( _end ).toLocaleString( 'en-US', { hour12: false } );
-        _wrapper.append( '<div class="jqtl-range-meta align-self-center">'+ _range +'</div>' );
+    if ( _range ) {
+        if ( _begin && _end ) {
+            let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format );
+            _wrapper.append( '<div class="jqtl-range-meta align-self-center">'+ _meta +'</div>' );
+        }
+    }
+    if ( ! _display ) {
+        _tl_headline.addClass( 'jqtl-hide' );
     }
     return _tl_headline.append( _wrapper );
 }
@@ -581,31 +809,32 @@ function createHeadline( title, range_begin, range_end ) {
  * @param int scale (required)
  * @param int begin (required)
  * @param string min_scale (required)
- * @param string position (optional; defaults to "top")
- * @param array ruler_line (optional; defaults to [ min_scale ])
+ * @param object ruler (required)
+ * @param string position (required)
  * 
  * @return DOM element
  */
-function createRuler( grids, size_per_grid, scale, begin, min_scale, position, ruler_line ) {
+function createRuler( grids, size_per_grid, scale, begin, min_scale, ruler, position ) {
     'use strict';
-    function validatePosition( def, val ) {
-        return typeof val === 'string' && val !== 'bottom' ? def : val;
-    }
     function validateRulerLine( def, val ) {
-        return is_array( val ) ? val : def;
+        return is_array( val ) && val.length > 0 ? val : def;
     }
-    position   = supplement( 'top', position, validatePosition );
-    ruler_line = supplement( [ min_scale ], ruler_line, validateRulerLine );
-    
-    let _fullwidth  = grids * size_per_grid - 1,
-        _fullheight = ruler_line.length * size_per_grid,
+    let ruler_line  = supplement( [ min_scale ], ruler.lines, validateRulerLine ),
+        line_height = supplement( 30, ruler.height ),
+        font_size   = supplement( 14, ruler.fontSize ),
+        text_color  = supplement( '#777', ruler.color ),
+        background  = supplement( '#FFF', ruler.background ),
+        locale      = supplement( 'en-US', ruler.locale ),
+        format      = supplement( { hour12: false }, ruler.format ),
+        _fullwidth  = grids * size_per_grid - 1,
+        _fullheight = ruler_line.length * line_height,
         _ruler      = $('<div></div>', { class: 'jqtl-ruler-'+position }),
         _ruler_bg   = $('<canvas width="'+ _fullwidth +'" height="'+ _fullheight +'"></canvas>', { class: 'jqtl-ruler-bg-' + position, }),
         _ruler_body = $('<div></div>', { class: 'jqtl-ruler-content-' + position }),
         ctx_ruler   = _ruler_bg[0].getContext('2d');
-console.log( grids, size_per_grid, scale, begin, min_scale, position, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
+console.log( grids, size_per_grid, scale, begin, min_scale, ruler, position, ruler_line, line_height, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
     // Draw background of ruler
-    ctx_ruler.fillStyle = '#FFF';
+    ctx_ruler.fillStyle = background;
     ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
     // Draw stroke of ruler
     ctx_ruler.strokeStyle = 'rgba( 51, 51, 51, 0.1 )';
@@ -615,7 +844,7 @@ console.log( grids, size_per_grid, scale, begin, min_scale, position, ctx_ruler.
         ctx_ruler.beginPath();
         // Draw rows
         let _line_x = position === 'top' ? 0 : ctx_ruler.canvas.width,
-            _line_y = position === 'top' ? size_per_grid * ( idx + 1 ) - 0.5 : size_per_grid * idx + 0.5;
+            _line_y = position === 'top' ? line_height * ( idx + 1 ) - 0.5 : line_height * idx + 0.5;
         ctx_ruler.moveTo( 0, _line_y );
         ctx_ruler.lineTo( ctx_ruler.canvas.width, _line_y );
         // Draw cols
@@ -632,12 +861,12 @@ console.log( grids, size_per_grid, scale, begin, min_scale, position, ctx_ruler.
             if ( Math.ceil( _grid_x ) - _correction >= ctx_ruler.canvas.width ) {
                 break;
             }
-            ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - size_per_grid : _line_y );
-            ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + size_per_grid );
+            ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y );
+            ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height );
         }
         ctx_ruler.closePath();
         ctx_ruler.stroke();
-        _ruler_body.append( createRulerContent( _line_grids, line_scale, size_per_grid ) );
+        _ruler_body.append( createRulerContent( _line_grids, line_scale, size_per_grid, ruler ) );
     });
     
     return _ruler.append( _ruler_bg ).append( _ruler_body );
@@ -705,52 +934,28 @@ function getGridsPerScale( grids, begin, scale, target_scale ) {
  * @param object line_scope (required; return value of "getGridsPerScale()")
  * @param string line_scale (required)
  * @param int size_per_grid (required)
+ * @param object ruler (required)
  *
  * @return DOM element
  */
-function createRulerContent( line_scope, line_scale, size_per_grid ) {
+function createRulerContent( line_scope, line_scale, size_per_grid, ruler ) {
     'use strict';
-    let _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ size_per_grid +'px;' }),
-        _weekday = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
+    function validateString( def, val ) {
+        return typeof val === 'string' && val !== '' ? val : def;
+    }
+    function validateFormat( def, val ) {
+        return typeof val === 'object' ? val : def;
+    }
+    let line_height  = supplement( 30, ruler.height ),
+        font_size    = supplement( 14, ruler.fontSize ),
+        text_color   = supplement( '#777', ruler.color ),
+        locale       = supplement( 'en-US', ruler.locale, validateString ),
+        format       = supplement( { hour12: false }, ruler.format, validateFormat ),
+        _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ line_height +'px;' });
     for ( let _key in line_scope ) {
-        let _line = $('<div></div>', { class: 'jqtl-ruler-line-item', style: 'width:'+ (line_scope[_key] * size_per_grid) +'px;height:'+ size_per_grid +'px;line-height:'+ size_per_grid +'px;font-size:'+ (size_per_grid / 2) +'px;' }),
-            _ruler_string = '', _data_ruler_item = '', _tmp;
-        switch ( line_scale ) {
-            case 'millennium':
-            case 'century':
-            case 'decade':
-            case 'lustrum':
-                _ruler_string = _key;
-                break;
-            case 'year':
-                _ruler_string = _key;
-                break;
-            case 'month':
-                _ruler_string = new Date( _key ).getMonth() + 1;
-                break;
-            case 'week':
-                _tmp = _key.split(',');
-                _ruler_string = _tmp[1];
-                _data_ruler_item = _ruler_string;
-                break;
-            case 'weekday':
-                _tmp = _key.split(',');
-                _ruler_string = _weekday[_tmp[1]];
-                _data_ruler_item = _ruler_string.toLowerCase();
-                break;
-            case 'day':
-                _ruler_string = new Date( _key ).getDate();
-                break;
-            case 'hour':
-                _ruler_string = new Date( _key ).getHours();
-                break;
-            case 'minute':
-                _ruler_string = new Date( _key ).getMinutes();
-                break;
-            case 'second':
-                _ruler_string = new Date( _key ).getSeconds();
-                break;
-        }
+        let _line = $('<div></div>', { class: 'jqtl-ruler-line-item', style: 'width:'+ (line_scope[_key] * size_per_grid) +'px;height:'+ line_height +'px;line-height:'+ line_height +'px;font-size:'+ font_size +'px;color:'+ text_color +';' }),
+            _ruler_string = getLocaleString( _key, line_scale, locale, format, ),
+            _data_ruler_item = '';
         _data_ruler_item  = line_scale +'-'+ ( _data_ruler_item === '' ? String( _key ) : _data_ruler_item );
         _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string );
         _ruler_lines.append( _line ).attr( 'data-ruler-scope', line_scale );
@@ -839,34 +1044,60 @@ function createEventContainer( width, height, rows, size_per_row, grids, size_pe
  * @param int bottom_margin (required)
  * @param int rows (required)
  * @param int size_per_row (required)
+ * @param bool sticky (required)
  * @param array indices (required)
  *
  * @return DOM element
  */
-function createSideIndex( top_margin, bottom_margin, rows, size_per_row, indices ) {
+function createSideIndex( top_margin, bottom_margin, rows, size_per_row, sticky, indices ) {
     'use strict';
     let _wrapper = $('<div></div>', { class: 'jqtl-side-index' }),
-        _list    = $('<div></div>', { class: 'jqtl-side-index-item' });
+        _list    = $('<div></div>', { class: 'jqtl-side-index-item' }),
+        _c       = 0.5;
+    if ( sticky ) {
+        _wrapper.addClass( 'jqtl-sticky-left' );
+    }
     _wrapper.css( 'margin-top', top_margin + 'px' ).css( 'margin-bottom', bottom_margin + 'px' ); //.css( 'grid-template-rows', 'repeat('+ rows +', '+ ( size_per_row + 0.25 ) +')' );
     for ( let i = 0; i < rows; i++ ) {
         let _item = _list.clone().html( indices[i] );
         _wrapper.append( _item );
     }
-    _wrapper.find('.jqtl-side-index-item').css( 'height', ( size_per_row + 0.25 ) + 'px' ).css( 'line-height', ( size_per_row + 0.25 ) + 'px' );
+    _wrapper.find('.jqtl-side-index-item').css( 'height', ( size_per_row + _c ) + 'px' ).css( 'line-height', ( size_per_row + _c ) + 'px' );
     return _wrapper;
 }
 
 /*
  * Create the footer of the timeline (:> タイムラインのフッターを作成する
  *
- * @param 
+ * @param object footer (required)
+ * @param string range_begin (required)
+ * @param string range_end (required)
  *
  * @return DOM element
  */
-function createFooter() {
+function createFooter( footer, range_begin, range_end ) {
     'use strict';
-    let _footer = $('<div></div>', { class: 'jqtl-footer' });
-    return _footer.append( '<div class="my-3 text-center">Footer</div>' );
+    let _display = supplement( true, footer.display ),
+        _content = supplement( null, footer.content ),
+        _range   = supplement( false, footer.range ),
+        _locale  = supplement( 'en-US', footer.locale ),
+        _format  = supplement( { hour12: false }, footer.format ),
+        _begin   = supplement( null, range_begin ),
+        _end     = supplement( null, range_end ),
+        _tl_footer = $('<div></div>', { class: 'jqtl-footer', });
+    if ( _range ) {
+        if ( _begin && _end ) {
+            let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format );
+            _tl_footer.append( '<div class="jqtl-range-meta jqtl-align-self-right">'+ _meta +'</div>' );
+        }
+    }
+    if ( _content ) {
+        _tl_footer.append( '<div class="jqtl-footer-content">'+ _content +'</div>' );
+    }
+    if ( ! _display ) {
+        _tl_footer.addClass( 'jqtl-hide' );
+    }
+    return _tl_footer;
 }
 
 
