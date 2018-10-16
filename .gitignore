@@ -5,3 +5,4 @@ docs/debug.php
 *.orig
 
 # src/custom_datetime.js
+docs/imgs/thumb_*.png

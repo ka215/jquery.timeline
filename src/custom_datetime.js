@@ -11,7 +11,7 @@
  * Support the CommonJS because like registable to the npm (:> npmに登録できるように、CommonJSをサポート
  * See: https://blog.npmjs.org/post/112712169830/making-your-jquery-plugin-work-better-with-npm
  */
-(function( factory ) {
+;(function( factory ) {
     'use strict';
     if ( typeof module === 'object' && typeof module.exports === 'object' ) {
         factory( require( 'jquery' ), window, document );
@@ -19,20 +19,24 @@
         factory( jQuery, window, document );
     }
 }(function( $, window, document, undefined ) {
-    
+    'use strict';
+    /*
+     * The dispatcher of plugin for the jQuery Timeline
+     * @public
+     */
     $.fn.timeline = function( arg ) {
         let methodArgs = Array.prototype.slice.call( arguments, 1 );
         
         return this.each(function() {
-            // Call the instance if plugin has been applied
+            // Call the instance if plugin has been applied (:> プラグイン適用済みならインスタンスを呼び出す
             let instance = $(this).data( 'timeline' );
             
             if ( instance && arg in instance && arg.charAt(0) != '_' ) {
-                // Call public method
-                instance[arg].apply( instance && methodArgs );
+                // Call public method (:> （インスタンスがpublicメソッドを持っている場合）メソッドを呼び出す
+                instance[arg].apply( instance, methodArgs );
             } else 
             if ( typeof arg === 'object' || ! arg ) {
-                // Apply the plugin and store the instance in data
+                // Apply the plugin and store the instance in data (:> プラグインを適用する
                 $(this).data( 'timeline', new $.timeline( this, arg ) );
             } else {
                 // Error
@@ -41,24 +45,44 @@
         });
     };
     
-    // Class of the plugin core
+    /*
+     * The plugin core class of the jQuery Timeline
+     */
     $.timeline = function( elem, option ) {
+        // Constants
+        this.pluginName = 'jQuery.Timeline',
+        this.version    = '2.0.0';
+        
         // Proparties
-        this.elem = elem;
-        this.option = this._initOption( option );
-        this._renderView();
+        this.elem          = elem;
+        this.option        = this._initOption( option );
+        this.isInitialized = null;
+        this.isShown       = null;
         
+        if ( this.option.remote ) {
+            $(this.elem).find('.jqtl-content')
+            .load( this.option.remote, $.proxy(function() {
+                $(this.elem).trigger('loaded.jqtl');
+            }, this));
+        }
         
+        this._init();
+        /*
+        //this.initialized();
+        $(this.elem).trigger( 'initialized.jqtl', [] );
+        */
     };
     
     // Methods of the plugin
     $.extend( $.timeline.prototype, {
         /*
-         * @private
+         * @private: Define the default options of this plugin
          */
         _initOption: function( option ) {
-console.log( 'Called method "_initOption".', arguments );
-            return $.extend({
+            if ( typeof option !== 'undefined' && option.hasOwnProperty('debug') && option.debug ) {
+                console.log( 'Called method "_initOption".', arguments );
+            }
+            let defaults = {
                 type            : "bar", // View type of timeline event is either "bar" or "point"
                 scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute", "second"; Enhanced since v2.0.0
                 startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
@@ -95,6 +119,7 @@ console.log( 'Called method "_initOption".', arguments );
                 // range           : 3, // --> Deprecated since v2.0.0
                 sidebar         : { // Settings of sidebar; Added new since v2.0.0
                     sticky      : false,
+                    overlay     : false,
                     list        : [],
                 },
                 rows            : "auto", // Rows of timeline event area. defaults to "auto"; Enhanced since v2.0.0
@@ -123,53 +148,177 @@ console.log( 'Called method "_initOption".', arguments );
                 // i18n            : {}, // --> Deprecated since v1.0.6
                 // langsDir        : "./langs/", // --> Deprecated since v1.0.6
                 // httpLanguage    : false, // --> Deprecated since v1.0.6
-                duration        : 150 // duration of animate as each transition effects; Added v1.0.6
-            }, option );
+                // duration        : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
+                debug           : true,
+            };
+            return $.extend( true, {}, defaults, option );
         },
+        /*
+         * @private: Render the view of timeline container
+         */
         _renderView: function() {
-console.log( 'Called method "_renderView".', arguments );
+            if ( this.option.debug ) {
+                console.log( 'Called method "_renderView".', arguments );
+/*
 console.log( 
-    getPluggableDatetime( this.option.startDatetime ) + "\n", 
-    getPluggableDatetime( this.option.endDatetime ) + "\n", 
+    getPluggableDatetime( _self.option.startDatetime ) + "\n", 
+    getPluggableDatetime( _self.option.endDatetime ) + "\n", 
     getPluggableDatetime( '2018/10/1 00:00:00' ) + "\n", 
     getPluggableDatetime( '2018-12-31 23:59:59' ) + "\n", 
     getPluggableDatetime( '167-1-1 1:2:3' ) + "\n",
     getPluggableDatetime( '77' ) + "\n",
     getPluggableDatetime( '12345-3' ) + "\n",
 );
-            
-            
-            
+*/
+            }
             renderTimelineView( this.elem, this.option );
-            /*
-                getPluggableDatetime( this.option.startDatetime ), 
-                getPluggableDatetime( this.option.endDatetime ), 
-                this.option.scale, 
-                this.option.minGridSize, 
-                getPluggableRows( this.option.rows, this.option.sidebar.list ), 
-                this.option.rowHeight, 
-                this.option.headline, 
-                this.option.sidebar, 
-                this.option.ruler, 
-                this.option.width, 
-                this.option.height, 
-            ); */
-            
-            this.initialized();
+            this.isShown = true;
+            return this;
         },
         /*
-         * @public
+         * @private: Initialize the plugin
          */
-        initialized: function() {
-            let _self = this;
-console.log( 'Called method "initialized".', _self );
-            endLoading( _self.elem );
-            /*
-            $.get( this.option.url, {q: this.option.q}, function( res ) {
-                $(_self.elem).text( res );
-            });
-            */
+        _init: function() {
+            if ( this.option.debug ) {
+                console.log( 'Called method "init".', arguments );
+            }
+            let _self = $(this.elem),
+                e     = $.Event( 'initialized.jqtl' );
+//console.log( 'init:', _self, this );
+            // Assign events
+            //$(window).on( 'initialized.jqtl', $.timeline.prototype.initialized );
+            this._renderView();
+            //_self.on( 'initialized.jqtl', $.timeline.prototype.initialized );
+            if ( ! this.isInitialized || e.isDefaultPrevented() ) {
+                e.stopPropagation();
+            } else {
+                this.isInitialized = true;
+                _self.trigger( e );
+            }
+            //this._renderView();
+            //this.initialized();
+            //return this._renderView();
         },
+        /*
+         * @public: This method is able to call only once after completed an initializing of the plugin
+         */
+        initialized: function( callback ) {
+            if ( this.option.debug ) {
+                let _message = this.isInitialized ? 'Skipped because method "initialized" already has been called once' : 'Called method "initialized".';
+                console.log( _message, arguments );
+            }
+            let _self = $(this.elem),
+                _opts = this.option;
+            if ( _self.find('.jqtl-container').length > 0 && ! this.isInitialized ) {
+                //endLoading( _self );
+                if ( typeof callback === 'function' ) {
+                    if ( _opts.debug ) {
+                        console.log( 'Fired the "initialized" method after initializing this plugin.' );
+                    }
+                    callback( _self, _opts );
+                }
+                _self.off( 'initialized.jqtl' );
+                this.isInitialized = true;
+            }
+            // return this;
+        },
+        /*
+         * @public: Destroy the object to which the plugin is applied
+         */
+        destroy: function() {
+            let _self = $(this.elem),
+                _opts = this.option,
+                _instance = _self.data( 'timeline' );
+            if ( _opts.debug ) {
+                console.log( 'Called method "destroy".', this );
+            }
+            
+            _self.off( '.jqtl' );
+            if ( _instance ) {
+                _instance.elem.remove();
+                _self.removeData( 'timeline' );
+            }
+            //return this;
+        },
+        /*
+         * @public: This method has been deprecated since version 2.0.0
+         */
+        render: function() {},
+        /*
+         * @public: Show hidden timeline
+         */
+        show: function() {
+            let _self = $(this.elem),
+                _opts = this.option;
+            if ( _opts.debug ) {
+                console.log( 'Called method "show".', this );
+            }
+            if ( ! this.isShown ) {
+                _self.removeClass( 'jqtl-hide' );
+                this.isShown = true;
+            }
+        },
+        /*
+         * @public: Hide shown timeline
+         */
+        hide: function() {
+            let _self = $(this.elem),
+                _opts = this.option;
+            if ( _opts.debug ) {
+                console.log( 'Called method "hide".', this );
+            }
+            if ( this.isShown ) {
+                _self.addClass( 'jqtl-hide' );
+                this.isShown = false;
+            }
+        },
+        /*
+         * @public: 
+         */
+        dateback: function() {
+            
+        },
+        /*
+         * @public: 
+         */
+        dateforth: function() {
+            
+        },
+        /*
+         * @public: 
+         */
+        alignment: function() {
+            
+        },
+        /*
+         * @public: This method has been deprecated since version 2.0.0
+         */
+        getOptions: function() { return this.option; },
+        /*
+         * @public: 
+         */
+        addEvent: function() {
+            
+        },
+        /*
+         * @public: 
+         */
+        removeEvent: function() {
+            
+        },
+        /*
+         * @public: 
+         */
+        updateEvent: function() {
+            
+        },
+        /*
+         * @public: 
+         */
+        openEvent: function() {
+            
+        },
+        
     });
     
     // Helper functions
@@ -692,7 +841,9 @@ function renderTimelineView( elem, options ) {
     let _tl_container  = $('<div></div>', { class: 'jqtl-container', style: 'width: '+ _visible_width +'; height: '+ _visible_height +';' }),
         _tl_main       = $('<div></div>', { class: 'jqtl-main' }),
         hide_scrollbar = false;
-    console.log( 'Timeline:{ fullWidth: '+ _fullwidth +'px,', 'fullHeight: '+ _fullheight +'px,', 'viewWidth: '+ _visible_width, 'viewHeight: '+ _visible_height +' }' );
+    if ( options.debug ) {
+        console.log( 'Timeline:{ fullWidth: '+ _fullwidth +'px,', 'fullHeight: '+ _fullheight +'px,', 'viewWidth: '+ _visible_width, 'viewHeight: '+ _visible_height +' }' );
+    }
     $(elem).empty().css( 'position', 'relative' ); // initialize
     if ( hide_scrollbar ) {
         _tl_container.addClass( 'hide-scrollbar' );
@@ -701,9 +852,9 @@ function renderTimelineView( elem, options ) {
     // Create the timeline headline (:> タイムラインの見出しを生成
     $(elem).prepend( createHeadline( headline, _begin, _end ) );
     
-    // Prerender the loading animation (:> ローディング・アニメーションを事前表示
-    let _loading_margin_top = $(elem).find('.jqtl-headline').height();
-    $(elem).prepend( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
+    // // Prerender the loading animation (:> ローディング・アニメーションを事前表示
+    // let _loading_margin_top = $(elem).find('.jqtl-headline').height();
+    // $(elem).prepend( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
     
     // Create the timeline event container (:> タイムラインのイベントコンテナを生成
     _tl_main.append( createEventContainer( _fullwidth, _fullheight, _rows, _size_row, _cell_grids, _size_scale ) );
@@ -763,7 +914,7 @@ function startLoading( width, height, margin_top ) {
  */
 function endLoading( elem ) {
     $(elem).find('#jqtl-loading').remove();
-    $(elem).find('.jqtl-container').css( 'visibility', 'visible' );
+    // $(elem).find('.jqtl-container').css( 'visibility', 'visible' );
 }
 
 /*
@@ -832,7 +983,7 @@ function createRuler( grids, size_per_grid, scale, begin, min_scale, ruler, posi
         _ruler_bg   = $('<canvas width="'+ _fullwidth +'" height="'+ _fullheight +'"></canvas>', { class: 'jqtl-ruler-bg-' + position, }),
         _ruler_body = $('<div></div>', { class: 'jqtl-ruler-content-' + position }),
         ctx_ruler   = _ruler_bg[0].getContext('2d');
-console.log( grids, size_per_grid, scale, begin, min_scale, ruler, position, ruler_line, line_height, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
+//console.log( grids, size_per_grid, scale, begin, min_scale, ruler, position, ruler_line, line_height, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
     // Draw background of ruler
     ctx_ruler.fillStyle = background;
     ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height );

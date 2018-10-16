@@ -144,6 +144,8 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 /* Loading Animation : end */
 .jqtl-hide {
     display: none;
+    visibility: hidden;
+    opacity: 0;
 }
 .jqtl-align-self-left {
     clear: both;
@@ -196,7 +198,6 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     overflow-x: auto;
     overflow-y: hidden;
     background-color: #FFFFFF;
-    visibility: hidden;
 }
 .hide-scrollbar {
     -ms-overflow-style: -ms-autohiding-scrollbar;
@@ -258,28 +259,6 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 .jqtl-ruler-line-item:nth-child(even) {
     background-color: rgba(240,240,240,.25);
 }
-/* Custom ruler items */
-.jqtl-ruler-line-item[data-ruler-item^="year-"] {
-    text-align: left;
-    padding-left: 2em;
-}
-.jqtl-ruler-line-item[data-ruler-item^="month-"] {
-    text-align: left;
-    padding-left: 4em;
-}
-*/
-.jqtl-ruler-line-item[data-ruler-item^="week-"]:before {
-    content: '第';
-}
-.jqtl-ruler-line-item[data-ruler-item^="week-"]:after {
-    content: '週';
-}
-.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",6"] {
-    background-color: rgba(51,51,247,.08);
-}
-.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",0"] {
-    background-color: rgba(247,51,51,.08);
-}
 .jqtl-event-container {
     position: relative;
     z-index: 1;
@@ -314,6 +293,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     position: sticky;
 }
 .jqtl-side-index-item {
+    display: table-cell;
     padding-left: 10px;
     padding-right: 10px;
     width: 100%;
@@ -321,9 +301,6 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     vertical-align: middle;
     border-bottom: solid 1px #DDD;
     white-space: nowrap;
-}
-.jqtl-side-index-item a {
-    text-decoration: none;
 }
 .jqtl-side-index-item:first-child {
     border-top: solid 1px #DDD;
@@ -340,6 +317,50 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     clear: both;
     text-align: center;
 }
+/* Custom for DEMO: start */
+.jqtl-ruler-line-item[data-ruler-item^="year-"] {
+    text-align: left;
+    padding-left: 2em;
+}
+.jqtl-ruler-line-item[data-ruler-item^="month-"] {
+    text-align: left;
+    padding-left: 4em;
+}
+/*
+.jqtl-ruler-line-item[data-ruler-item^="week-"]:before {
+    content: '第';
+}
+*/
+.jqtl-ruler-line-item[data-ruler-item^="week-"]:after {
+    content: '週';
+}
+.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",6"] {
+    background-color: rgba(51,51,247,.08);
+}
+.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",0"] {
+    background-color: rgba(247,51,51,.08);
+}
+.jqtl-side-index-item a {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    padding-right: 5px;
+    text-decoration: none;
+}
+.avatar-icon {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    margin-top: -3px;
+    margin-right: 10px;
+}
+.avatar-icon img {
+    width: 100%;
+    height: 100%;
+}
+/* Custom for DEMO: end */
   </style>
 </head>
 <body>
@@ -519,7 +540,7 @@ test_scales.forEach(function( scale ){
 
 //console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
 
-$('#my-timeline2').timeline({
+$('#my-timeline').timeline({
     startDatetime : '2018-10-1',
     endDatetime   : '2018-12-31',
     showHeadline  : true,
@@ -540,16 +561,26 @@ $('#my-timeline2').timeline({
     sidebar       : {
         sticky : true,
         list   : [ 
-            '<a href="#"><span><img src="dmy.jpg"></span> Peter Benjamin Parker</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Gwendolyn Stacy</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Mary Jane Watson</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Harry Osborn</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> May Parker</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Elizabeth Allan</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Kenny McFarlane</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Norman Osborn</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Otto Gunther Octavius</a>', 
-            '<a href="#"><span><img src="dmy.jpg"></span> Mayday Parker</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_002.png" class="rounded"></span> "Tony" Stark</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_003.png" class="rounded"></span> Steve Rogers</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_004.png" class="rounded"></span> Thor</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_005.png" class="rounded"></span> Hulk</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_006.png" class="rounded"></span> Natasha Romanoff</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_007.png" class="rounded"></span> Stephen Strange</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_008.png" class="rounded"></span> Peter Quill</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_013.png" class="rounded"></span> T\'Challa</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_001.png" class="rounded"></span> Peter Parker</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_015.png" class="rounded"></span> Wanda Maximoff</a>', 
+/*
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_018.png" class="rounded"></span> Vision</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_009.png" class="rounded"></span> Groot</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_010.png" class="rounded"></span> Rocket Raccoon</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_011.png" class="rounded"></span> Gamora</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_012.png" class="rounded"></span> Drax the Destroyer</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_014.png" class="rounded"></span> "Bucky" Barnes</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_016.png" class="rounded"></span> Samuel Wilson</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_017.png" class="rounded"></span> James "Rhodey" Rhodes</a>', 
+*/
         ]
     },
     ruler         : {
@@ -565,8 +596,28 @@ $('#my-timeline2').timeline({
         // bottom : {}
     },
     
-});
+    debug         : true
+})
+//.timeline('initialized', function(elem,opt){ alert( 'initialized!' ); } )
+//.timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
+//.timeline('destroy')
+//.timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
+.css( 'border', 'solid 3px blue' )
+//.css({ width: '100%', height: '200px' })
+;
 
+$('#my-timeline')
+//.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
+.timeline('hide')
+.timeline('show')
+.css( 'borderColor', 'red' )
+;
+
+console.log( $('#my-timeline').timeline('getOptions') );
+
+//$('#my-timeline2').timeline()
+//.timeline('initialized', function(elem,opt){ alert( '#my-timeline2' ); } )
+//;
 
 </script>
 </body>
