@@ -1,25 +1,28 @@
 /*!
- * Custom Datetime Lib
+ * jQuery Timeline
  * ------------------------
- * Version: 0.0.1
- * Author: Ka2 ( https://ka2.org/ )
- * Repository: -
+ * Version: 2.0.0
+ * Author: Ka2 (https://ka2.org/)
+ * Repository: https://github.com/ka215/jquery.timeline/tree/develop
  * Lisenced: MIT
  */
-
 /*
- * Support the CommonJS because like registable to the npm (:> npmに登録できるように、CommonJSをサポート
+ * Support the CommonJS because like registable to the npm
+(:> npmに登録できるように、CommonJSをサポート
  * See: https://blog.npmjs.org/post/112712169830/making-your-jquery-plugin-work-better-with-npm
  */
 ;(function( factory ) {
     'use strict';
+    
     if ( typeof module === 'object' && typeof module.exports === 'object' ) {
         factory( require( 'jquery' ), window, document );
     } else {
         factory( jQuery, window, document );
     }
+    
 }(function( $, window, document, undefined ) {
     'use strict';
+    
     /*
      * The dispatcher of plugin for the jQuery Timeline
      * @public
@@ -46,7 +49,7 @@
     };
     
     /*
-     * The plugin core class of the jQuery Timeline
+     * The plugin core class of the jQuery Timeline as controller
      */
     $.timeline = function( elem, option ) {
         // Constants
@@ -58,30 +61,28 @@
         this.option        = this._initOption( option );
         this.isInitialized = null;
         this.isShown       = null;
+        this.isCompleted   = null;
         
+        /*
         if ( this.option.remote ) {
             $(this.elem).find('.jqtl-content')
-            .load( this.option.remote, $.proxy(function() {
+            .on( 'load', this.option.remote, $.proxy(function() {
                 $(this.elem).trigger('loaded.jqtl');
             }, this));
         }
+        */
         
         this._init();
-        /*
-        //this.initialized();
-        $(this.elem).trigger( 'initialized.jqtl', [] );
-        */
     };
     
-    // Methods of the plugin
+    /*
+     * Methods of the jQuery Timeline plugin
+     */
     $.extend( $.timeline.prototype, {
         /*
          * @private: Define the default options of this plugin
          */
         _initOption: function( option ) {
-            if ( typeof option !== 'undefined' && option.hasOwnProperty('debug') && option.debug ) {
-                console.log( 'Called method "_initOption".', arguments );
-            }
             let defaults = {
                 type            : "bar", // View type of timeline event is either "bar" or "point"
                 scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute", "second"; Enhanced since v2.0.0
@@ -157,20 +158,8 @@
          * @private: Render the view of timeline container
          */
         _renderView: function() {
-            if ( this.option.debug ) {
-                console.log( 'Called method "_renderView".', arguments );
-/*
-console.log( 
-    getPluggableDatetime( _self.option.startDatetime ) + "\n", 
-    getPluggableDatetime( _self.option.endDatetime ) + "\n", 
-    getPluggableDatetime( '2018/10/1 00:00:00' ) + "\n", 
-    getPluggableDatetime( '2018-12-31 23:59:59' ) + "\n", 
-    getPluggableDatetime( '167-1-1 1:2:3' ) + "\n",
-    getPluggableDatetime( '77' ) + "\n",
-    getPluggableDatetime( '12345-3' ) + "\n",
-);
-*/
-            }
+            this._debug( '_renderView', arguments );
+            
             renderTimelineView( this.elem, this.option );
             this.isShown = true;
             return this;
@@ -179,34 +168,90 @@ console.log(
          * @private: Initialize the plugin
          */
         _init: function() {
-            if ( this.option.debug ) {
-                console.log( 'Called method "init".', arguments );
-            }
+            this._debug( '_init', arguments );
+            
             let _self = $(this.elem),
-                e     = $.Event( 'initialized.jqtl' );
-//console.log( 'init:', _self, this );
+                _after_init = $.Event( 'initialized.jqtl', $.timeline.prototype.initialized ),
+                _load_event = $.Event( 'load.jqtl', $.timeline.prototype._loadEvent );
+console.log( _after_init, _load_event );
             // Assign events
-            //$(window).on( 'initialized.jqtl', $.timeline.prototype.initialized );
+            // $(window).on( 'initialized.jqtl', $.timeline.prototype.initialized );
             this._renderView();
-            //_self.on( 'initialized.jqtl', $.timeline.prototype.initialized );
-            if ( ! this.isInitialized || e.isDefaultPrevented() ) {
-                e.stopPropagation();
+            _self.on( 'initialized.jqtl', $.timeline.prototype.initialized );
+            _self.on( 'loadEvent.jqtl', $.timeline.prototype._loadEvent );
+            if ( ! this.isInitialized || _after_init.isDefaultPrevented() ) {
+                _after_init.stopPropagation();
             } else {
                 this.isInitialized = true;
-                _self.trigger( e );
+                _self.trigger( 'initialized.jqtl' );
             }
+            //_self.trigger( 'loadEvent.jqtl' );
+            this._loadEvent();
             //this._renderView();
             //this.initialized();
             //return this._renderView();
         },
         /*
+         * @private: Load all enabled events markuped on target element to the timeline object
+         */
+        _loadEvent: function() {
+            this._debug( '_loadEvent', arguments );
+            
+            let _self       = $(this.elem),
+                _opts       = this.option,
+                _event_list = _self.find('.timeline-events'),
+                _cnt        = 0,
+                events      = [];
+            _event_list.children().each(function(){
+                let _attr = $(this).attr('data-timeline-node');
+                if ( typeof _attr !== 'undefined' && _attr !== false ) {
+                    _cnt++;
+                }
+            });
+console.log( _event_list.length, _event_list.children(), _event_list.children().length, _cnt );
+            if ( _event_list.length == 0 || _cnt == 0 ) {
+                this._debug( 'Enable event does not exist.', this );
+                return;
+            }
+            
+            let _visible_width = 900, _visible_height = 480, _loading_margin_top = 60;
+            _self.find('.jqtl-event-container').append( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
+            //endLoading( _self );
+            
+            _event_list.each(function() {
+                if ( $(this).data('timelineNode') ) {
+                    let _event = ( new Function( 'return ' + $(this).data('timelineNode') ) )();
+console.log( _event );
+                }
+            });
+            
+        },
+        /*
+         * @private: Echo the log of plugin for debugging
+         */
+        _debug: function() {
+            if ( arguments.length > 0 ) {
+                let args = Array.prototype.slice.call( arguments ),
+                    _msg = /\./i.test(args[0]) ? args[0] : 'Called method "'+ args[0] +'".',
+                    _sty = /^Called method \"/.test(_msg) ? 'font-weight:600;color:blue;' : '',
+                    _rst = '';
+                
+                if ( this.option.debug && window.console && window.console.log ) {
+                    if ( args.length > 1 ) {
+                        window.console.log( '%c%s%c', _sty, _msg, _rst, args.slice(1) );
+                    } else {
+                        window.console.log( '%c%s%c', _sty, _msg, _rst );
+                    }
+                }
+            }
+        },
+        /*
          * @public: This method is able to call only once after completed an initializing of the plugin
          */
         initialized: function( callback ) {
-            if ( this.option.debug ) {
-                let _message = this.isInitialized ? 'Skipped because method "initialized" already has been called once' : 'Called method "initialized".';
-                console.log( _message, arguments );
-            }
+            let _message = this.isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized';
+            this._debug( _message, arguments );
+            
             let _self = $(this.elem),
                 _opts = this.option;
             if ( _self.find('.jqtl-container').length > 0 && ! this.isInitialized ) {
@@ -226,12 +271,11 @@ console.log(
          * @public: Destroy the object to which the plugin is applied
          */
         destroy: function() {
+            this._debug( 'destroy', this );
+            
             let _self = $(this.elem),
                 _opts = this.option,
                 _instance = _self.data( 'timeline' );
-            if ( _opts.debug ) {
-                console.log( 'Called method "destroy".', this );
-            }
             
             _self.off( '.jqtl' );
             if ( _instance ) {
@@ -248,11 +292,9 @@ console.log(
          * @public: Show hidden timeline
          */
         show: function() {
-            let _self = $(this.elem),
-                _opts = this.option;
-            if ( _opts.debug ) {
-                console.log( 'Called method "show".', this );
-            }
+            this._debug( 'show', this );
+            
+            let _self = $(this.elem);
             if ( ! this.isShown ) {
                 _self.removeClass( 'jqtl-hide' );
                 this.isShown = true;
@@ -262,11 +304,9 @@ console.log(
          * @public: Hide shown timeline
          */
         hide: function() {
-            let _self = $(this.elem),
-                _opts = this.option;
-            if ( _opts.debug ) {
-                console.log( 'Called method "hide".', this );
-            }
+            this._debug( 'hide', this );
+            
+            let _self = $(this.elem);
             if ( this.isShown ) {
                 _self.addClass( 'jqtl-hide' );
                 this.isShown = false;
@@ -293,7 +333,7 @@ console.log(
         /*
          * @public: This method has been deprecated since version 2.0.0
          */
-        getOptions: function() { return this.option; },
+        getOptions: function() {},
         /*
          * @public: 
          */
@@ -844,7 +884,7 @@ function renderTimelineView( elem, options ) {
     if ( options.debug ) {
         console.log( 'Timeline:{ fullWidth: '+ _fullwidth +'px,', 'fullHeight: '+ _fullheight +'px,', 'viewWidth: '+ _visible_width, 'viewHeight: '+ _visible_height +' }' );
     }
-    $(elem).empty().css( 'position', 'relative' ); // initialize
+    $(elem).css( 'position', 'relative' ); // initialize; not .empty()
     if ( hide_scrollbar ) {
         _tl_container.addClass( 'hide-scrollbar' );
     }
@@ -1250,6 +1290,7 @@ function createFooter( footer, range_begin, range_end ) {
     }
     return _tl_footer;
 }
+
 
 
 })

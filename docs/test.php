@@ -142,6 +142,17 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     }
 }
 /* Loading Animation : end */
+.timeline-events {
+    display: none;
+    visibility: hidden;
+    position: asolute;
+    left: -9999px;
+    top: -9999px;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    z-index: -9999;
+}
 .jqtl-hide {
     display: none;
     visibility: hidden;
@@ -411,7 +422,12 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
       * </{{ Element with selector specified by user }}>
       *
       */ -->
-        <div id="my-timeline"></div>
+        <div id="my-timeline">
+          <ul class="timeline-events">
+            <li>disallow</li>
+            <li data-timeline-node="">event test</li>
+          </ul>
+        </div>
         
         <div id="my-timeline2"></div>
         
@@ -602,7 +618,7 @@ $('#my-timeline').timeline({
 //.timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
 //.timeline('destroy')
 //.timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
-.css( 'border', 'solid 3px blue' )
+.css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
 ;
 
@@ -610,7 +626,7 @@ $('#my-timeline')
 //.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
 .timeline('hide')
 .timeline('show')
-.css( 'borderColor', 'red' )
+.css( 'border', 'dotted 1px #DDD' )
 ;
 
 console.log( $('#my-timeline').timeline('getOptions') );
