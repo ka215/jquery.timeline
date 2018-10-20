@@ -7,8 +7,7 @@
  * Lisenced: MIT
  */
 /*
- * Support the CommonJS because like registable to the npm
-(:> npmに登録できるように、CommonJSをサポート
+ * Support the CommonJS because like registable to the npm (:> npmに登録できるように、CommonJSをサポート
  * See: https://blog.npmjs.org/post/112712169830/making-your-jquery-plugin-work-better-with-npm
  */
 ;(function( factory ) {
@@ -24,9 +23,112 @@
     'use strict';
     
     /*
+     * Constants
+     */
+    const NAME               = 'timeline'
+    const VERSION            = '2.0.0'
+    const DATA_KEY           = 'jq.timeline'
+    const EVENT_KEY          = `.${DATA_KEY}`
+    const DATA_API_KEY       = '.data-api'
+    const JQUERY_NO_CONFLICT = $.fn[NAME]
+    const ESCAPE_KEYCODE     = 27 // KeyboardEvent.which value for Escape (Esc) key
+    
+    const Default = {
+        type            : "bar", // View type of timeline event is either "bar" or "point"
+        scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute", "second"; Enhanced since v2.0.0
+        startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
+        endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
+        datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
+        // showHeadline : true, // --> Deprecated since v2.0.0
+        headline        : { // Content in the headline; Added new since v2.0.0
+            display     : true, // Whether to display headline is instead of former showHeadline
+            title       : "",
+            range       : true, // Hide if false
+            locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+            format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+        },
+        footer          : { // Content in the footer; Added new since v2.0.0
+            display     : true, // Whether to display footer
+            content     : "",
+            range       : false, // Visible if true
+            locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+            format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+        },
+        datetimeFormat  : {
+            full        : "j M Y", // or "Y/m/d" etc.
+            year        : "Y",
+            month       : "M Y", // or "F" etc.
+            day         : "D, j M", // or "j" etc.
+            years       : "Y", 
+            months      : "F", 
+            days        : "j",
+            meta        : "Y/m/d H:i", // start datetime in meta of Event Detail; or "g:i A, D F j, Y"
+            metato      : "" // --> Deprecated since v2.0.0
+        },
+        // minuteInterval : 30, // --> Deprecated since v2.0.0
+        zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
+        // range        : 3, // --> Deprecated since v2.0.0
+        sidebar         : { // Settings of sidebar; Added new since v2.0.0
+            sticky      : false,
+            overlay     : false,
+            list        : [],
+        },
+        rows            : "auto", // Rows of timeline event area. defaults to "auto"; Enhanced since v2.0.0
+        rowHeight       : 48, // Height of one row
+        width           : "auto", // Fixed width (pixel) of timeline view. defaults to "auto"; Added new since v2.0.0
+        height          : "auto", // Fixed height (pixel) of timeline view. defaults to "auto" ( rows * rowHeight )
+        // minGridPer   : 2, // --> Deprecated since v2.0.0
+        minGridSize     : 32, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
+        ruler           : { // Settings of ruler; Added new since v2.0.0
+            top         : { // Can define the ruler position to top or bottom and both
+                lines      : [], // defaults to this.option.scale
+                height     : 30,
+                fontSize   : 14,
+                color      : "#777777",
+                background : "#FFFFFF",
+                locale     : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+                format     : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+            },
+        },
+        rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
+        naviIcon        : { // Define class name
+            left        : "jqtl-circle-left",
+            right       : "jqtl-circle-right"
+        },
+        loader          : "default", // Custom loader definition, possible values are "default", false and selector of loader element; Added new since v2.0.0
+        showPointer     : true,
+        // i18n         : {}, // --> Deprecated since v1.0.6
+        // langsDir     : "./langs/", // --> Deprecated since v1.0.6
+        // httpLanguage : false, // --> Deprecated since v1.0.6
+        // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
+        debug           : true,
+    }
+    
+    const DefaultType = {
+        
+    }
+    
+    const Event = {
+        INITIALIZED : `initialized${EVENT_KEY}`,
+        HIDE        : `hide${EVENT_KEY}`,
+        HIDDEN      : `hidden${EVENT_KEY}`,
+        SHOW        : `show${EVENT_KEY}`,
+        SHOWN       : `shown${EVENT_KEY}`,
+    }
+    
+    const ClassName = {
+        
+    }
+    
+    const Selector = {
+        
+    }
+    
+    /*
      * The dispatcher of plugin for the jQuery Timeline
      * @public
      */
+    /*
     $.fn.timeline = function( arg ) {
         let methodArgs = Array.prototype.slice.call( arguments, 1 );
         
@@ -47,196 +149,184 @@
             }
         });
     };
+    */
     
     /*
      * The plugin core class of the jQuery Timeline as controller
      */
-    $.timeline = function( elem, option ) {
-        // Constants
-        this.pluginName = 'jQuery.Timeline',
-        this.version    = '2.0.0';
-        
+    class Timeline {
+        constructor( element, config ) {
+            this._config        = this._getConfig( config )
+            this._element       = element
+            this._selector      = null
+            this._isInitialized = false
+            this._isShown       = false
+            this._isCached      = false
+            this._isCompleted   = false
+        /*
         // Proparties
         this.elem          = elem;
         this.option        = this._initOption( option );
+        this.selector      = null;
         this.isInitialized = null;
         this.isShown       = null;
+        this.isCached      = null;
         this.isCompleted   = null;
         
-        /*
-        if ( this.option.remote ) {
-            $(this.elem).find('.jqtl-content')
-            .on( 'load', this.option.remote, $.proxy(function() {
-                $(this.elem).trigger('loaded.jqtl');
-            }, this));
-        }
-        */
-        
         this._init();
-    };
-    
-    /*
-     * Methods of the jQuery Timeline plugin
-     */
-    $.extend( $.timeline.prototype, {
+        //this.initialized();
+        //this._loadEvent();
+        */
+        }
+        
+        // Getters
+        
+        static get VERSION() {
+            return VERSION
+        }
+        
+        static get Default() {
+            return Default
+        }
+        
+        // Private
+        
         /*
          * @private: Define the default options of this plugin
          */
-        _initOption: function( option ) {
-            let defaults = {
-                type            : "bar", // View type of timeline event is either "bar" or "point"
-                scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute", "second"; Enhanced since v2.0.0
-                startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
-                endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
-                datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
-                // showHeadline    : true, // --> Deprecated since v2.0.0
-                headline        : { // Content in the headline; Added new since v2.0.0
-                    display     : true, // Whether to display headline is instead of former showHeadline
-                    title       : "",
-                    range       : true, // Hide if false
-                    locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-                    format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
-                },
-                footer          : { // Content in the footer; Added new since v2.0.0
-                    display     : true, // Whether to display footer
-                    content     : "",
-                    range       : false, // Visible if true
-                    locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-                    format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
-                },
-                datetimeFormat  : {
-                    full        : "j M Y", // or "Y/m/d" etc.
-                    year        : "Y",
-                    month       : "M Y", // or "F" etc.
-                    day         : "D, j M", // or "j" etc.
-                    years       : "Y", 
-                    months      : "F", 
-                    days        : "j",
-                    meta        : "Y/m/d H:i", // start datetime in meta of Event Detail; or "g:i A, D F j, Y"
-                    metato      : "" // --> Deprecated since v2.0.0
-                },
-                // minuteInterval  : 30, // --> Deprecated since v2.0.0
-                zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
-                // range           : 3, // --> Deprecated since v2.0.0
-                sidebar         : { // Settings of sidebar; Added new since v2.0.0
-                    sticky      : false,
-                    overlay     : false,
-                    list        : [],
-                },
-                rows            : "auto", // Rows of timeline event area. defaults to "auto"; Enhanced since v2.0.0
-                rowHeight       : 48, // Height of one row
-                width           : "auto", // Fixed width (pixel) of timeline view. defaults to "auto"; Added new since v2.0.0
-                height          : "auto", // Fixed height (pixel) of timeline view. defaults to "auto" ( rows * rowHeight )
-                // minGridPer      : 2, // --> Deprecated since v2.0.0
-                minGridSize     : 32, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
-                ruler           : { // Settings of ruler; Added new since v2.0.0
-                    top         : { // Can define the ruler position to top or bottom and both
-                        lines      : [], // defaults to this.option.scale
-                        height     : 30,
-                        fontSize   : 14,
-                        color      : "#777777",
-                        background : "#FFFFFF",
-                        locale     : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-                        format     : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
-                    },
-                },
-                rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
-                naviIcon        : { // Define class name
-                    left        : "jqtl-circle-left",
-                    right       : "jqtl-circle-right"
-                },
-                showPointer     : true,
-                // i18n            : {}, // --> Deprecated since v1.0.6
-                // langsDir        : "./langs/", // --> Deprecated since v1.0.6
-                // httpLanguage    : false, // --> Deprecated since v1.0.6
-                // duration        : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
-                debug           : true,
-            };
-            return $.extend( true, {}, defaults, option );
-        },
+        _getConfig( config ) {
+            config = {
+                ...Default,
+                ...config
+            }
+            return config;
+        }
+        
         /*
          * @private: Render the view of timeline container
          */
-        _renderView: function() {
-            this._debug( '_renderView', arguments );
+        _renderView() {
+            this._debug( '_renderView', arguments )
             
-            renderTimelineView( this.elem, this.option );
-            this.isShown = true;
-            return this;
-        },
+            renderTimelineView( this._element, this._config )
+            
+            this._isShown = true
+        }
+        
         /*
          * @private: Initialize the plugin
          */
-        _init: function() {
-            this._debug( '_init', arguments );
+        _init() {
+            this._debug( '_init', arguments )
             
-            let _self = $(this.elem),
-                _after_init = $.Event( 'initialized.jqtl', $.timeline.prototype.initialized ),
-                _load_event = $.Event( 'load.jqtl', $.timeline.prototype._loadEvent );
-console.log( _after_init, _load_event );
-            // Assign events
-            // $(window).on( 'initialized.jqtl', $.timeline.prototype.initialized );
-            this._renderView();
-            _self.on( 'initialized.jqtl', $.timeline.prototype.initialized );
-            _self.on( 'loadEvent.jqtl', $.timeline.prototype._loadEvent );
-            if ( ! this.isInitialized || _after_init.isDefaultPrevented() ) {
-                _after_init.stopPropagation();
-            } else {
-                this.isInitialized = true;
-                _self.trigger( 'initialized.jqtl' );
+            let _elem       = this._element,
+                _selector   = _elem.tagName + ( _elem.id ? '#' + _elem.id : '' ) + ( _elem.className ? '.' + _elem.className.replace(/\s/g, '.') : '' )
+            this._selector = _selector.toLowerCase()
+            
+            if ( this._isCompleted || this._isShown ) {
+                return
             }
-            //_self.trigger( 'loadEvent.jqtl' );
-            this._loadEvent();
-            //this._renderView();
-            //this.initialized();
-            //return this._renderView();
-        },
+            
+            const afterInitEvent = $.Event( Event.INITIALIZED )
+            
+            if ( ! this._isInitialized ) {
+                this._renderView()
+                
+                $(_elem).trigger( afterInitEvent )
+                
+                this._isInitialized = true;
+            }
+            
+            if ( ! this._isCompleted || ! this._isShown || ! this._isCached ) {
+                this._loadEvent( )
+            }
+            
+        }
+        
         /*
          * @private: Load all enabled events markuped on target element to the timeline object
          */
-        _loadEvent: function() {
-            this._debug( '_loadEvent', arguments );
+        _loadEvent() {
+            this._debug( '_loadEvent', arguments )
             
-            let _self       = $(this.elem),
-                _opts       = this.option,
-                _event_list = _self.find('.timeline-events'),
-                _cnt        = 0,
-                events      = [];
-            _event_list.children().each(function(){
-                let _attr = $(this).attr('data-timeline-node');
+            let _elem         = this._element,
+                _opts         = this._config,
+                _container    = $(_elem).find('.jqtl-container'),
+                _ruler_top    = $(_elem).find('.jqtl-ruler-top'),
+                _ruler_bottom = $(_elem).find('.jqtl-ruler-bottom'),
+                _event_list   = $(_elem).find('.timeline-events'),
+                _cnt          = 0,
+                events        = []
+            
+            _event_list.children().each(function() {
+                let _attr = $(this).attr('data-timeline-node')
+                
                 if ( typeof _attr !== 'undefined' && _attr !== false ) {
-                    _cnt++;
+                    _cnt++
                 }
-            });
-console.log( _event_list.length, _event_list.children(), _event_list.children().length, _cnt );
+            })
+            
             if ( _event_list.length == 0 || _cnt == 0 ) {
-                this._debug( 'Enable event does not exist.', this );
-                return;
+                throw new UserException( 'Enable event does not exist.' )
             }
             
-            let _visible_width = 900, _visible_height = 480, _loading_margin_top = 60;
-            _self.find('.jqtl-event-container').append( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
-            //endLoading( _self );
+            // Show loader
+            if ( _opts.loader !== false ) {
+                let _visible_width  = _container.width(),
+                    _visible_height = _container.height(),
+                    _margin_top     = ( _visible_height - ( _ruler_top.height() || 0 ) - ( _ruler_bottom.height() || 0 ) ) / 2;
+                _self.find('.jqtl-container').append( showLoading( _opts.loader, _visible_width, _visible_height, _margin_top ) );
+            }
             
-            _event_list.each(function() {
-                if ( $(this).data('timelineNode') ) {
-                    let _event = ( new Function( 'return ' + $(this).data('timelineNode') ) )();
-console.log( _event );
+console.log( _opts );
+            // Register Event Data
+            _event_list.children().each(function() {
+                let _evt_params = getPluggableParams( $(this).attr('data-timeline-node') );
+                if ( Object.keys( _evt_params ).length > 0 ) {
+                    events.push( registerEventData( this, _evt_params, _opts ) );
+                    /*
+                    let _x = 0, _y = 0, _w = 0, _h = 0, _gap = 2;
+                    if ( _evt_params.hasOwnProperty('start') ) {
+                        _x = getCoordinateX( _evt_params.start, _opts.startDatetime, _opts.endDatetime, _opts.scale, _opts.minGridSize );
+                        if ( _evt_params.hasOwnProperty('end') ) {
+                            _w = getCoordinateX( _evt_params.end, _opts.startDatetime, _opts.endDatetime, _opts.scale, _opts.minGridSize ) - _x;
+                        }
+                    }
+                    if ( _evt_params.hasOwnProperty('row') ) {
+                        // _y = getCoordinateY( );
+                        _y = ( ( _evt_params.row || 0 ) - 1 ) * _opts.rowHeight + _gap;
+                    }
+                    _h = _opts.rowHeight - _gap * 2;
+console.log( _x, _y, _w, _h );
+                    _self.find('.jqtl-events').append( '<div style="position:absolute;top:'+_y+'px;left:'+_x+'px;width:'+_w+'px;height:'+_h+'px;background:'+ _evt_params.bgColor +';">'+ _evt_params.content +'</div>' );
+                    */
                 }
             });
+            // Set event id with auto increment (:> イベントIDを自動採番
+            events.forEach(function( _evt, _i, _this ){
+                _this[_i].eventId = _i + 1;
+            });
+            // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
+            if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+                sessionStorage.setItem( this.selector, JSON.stringify( events ) );
+            }
             
-        },
+            
+            //hideLoading( _self );
+        }
+        
         /*
          * @private: Echo the log of plugin for debugging
          */
-        _debug: function() {
+        _debug() {
+//console.log( this, arguments )
             if ( arguments.length > 0 ) {
                 let args = Array.prototype.slice.call( arguments ),
                     _msg = /\./i.test(args[0]) ? args[0] : 'Called method "'+ args[0] +'".',
                     _sty = /^Called method \"/.test(_msg) ? 'font-weight:600;color:blue;' : '',
                     _rst = '';
                 
-                if ( this.option.debug && window.console && window.console.log ) {
+                if ( this._config.debug && window.console && window.console.log ) {
                     if ( args.length > 1 ) {
                         window.console.log( '%c%s%c', _sty, _msg, _rst, args.slice(1) );
                     } else {
@@ -244,11 +334,15 @@ console.log( _event );
                     }
                 }
             }
-        },
+        }
+        
+        // Public
+        
         /*
          * @public: This method is able to call only once after completed an initializing of the plugin
          */
-        initialized: function( callback ) {
+        initialized( callback ) {
+console.log( this, arguments );
             let _message = this.isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized';
             this._debug( _message, arguments );
             
@@ -266,11 +360,12 @@ console.log( _event );
                 this.isInitialized = true;
             }
             // return this;
-        },
+        }
+        
         /*
          * @public: Destroy the object to which the plugin is applied
          */
-        destroy: function() {
+        destroy() {
             this._debug( 'destroy', this );
             
             let _self = $(this.elem),
@@ -283,15 +378,18 @@ console.log( _event );
                 _self.removeData( 'timeline' );
             }
             //return this;
-        },
+        }
+        
         /*
          * @public: This method has been deprecated since version 2.0.0
          */
-        render: function() {},
+        render() {
+        }
+        
         /*
          * @public: Show hidden timeline
          */
-        show: function() {
+        show() {
             this._debug( 'show', this );
             
             let _self = $(this.elem);
@@ -299,11 +397,12 @@ console.log( _event );
                 _self.removeClass( 'jqtl-hide' );
                 this.isShown = true;
             }
-        },
+        }
+        
         /*
          * @public: Hide shown timeline
          */
-        hide: function() {
+        hide() {
             this._debug( 'hide', this );
             
             let _self = $(this.elem);
@@ -311,55 +410,106 @@ console.log( _event );
                 _self.addClass( 'jqtl-hide' );
                 this.isShown = false;
             }
-        },
+        }
+        
         /*
          * @public: 
          */
-        dateback: function() {
+        dateback() {
             
-        },
+        }
+        
         /*
          * @public: 
          */
-        dateforth: function() {
+        dateforth() {
             
-        },
+        }
+        
         /*
          * @public: 
          */
-        alignment: function() {
+        alignment() {
             
-        },
+        }
+        
         /*
          * @public: This method has been deprecated since version 2.0.0
          */
-        getOptions: function() {},
-        /*
-         * @public: 
-         */
-        addEvent: function() {
-            
-        },
-        /*
-         * @public: 
-         */
-        removeEvent: function() {
-            
-        },
-        /*
-         * @public: 
-         */
-        updateEvent: function() {
-            
-        },
-        /*
-         * @public: 
-         */
-        openEvent: function() {
-            
-        },
+        getOptions() {
+        }
         
-    });
+        /*
+         * @public: 
+         */
+        addEvent() {
+            
+        }
+        
+        /*
+         * @public: 
+         */
+        removeEvent() {
+            
+        }
+        
+        /*
+         * @public: 
+         */
+        updateEvent() {
+            
+        }
+        
+        /*
+         * @public: 
+         */
+        openEvent() {
+            
+        }
+        
+        // Static
+        
+        static _jQueryInterface( config, relatedTarget ) {
+            // relatedTarget = undefined why?
+            return this.each(function () {
+                let data = $(this).data( DATA_KEY )
+                const _config = {
+                    ...Default,
+                    ...$(this).data(),
+                    ...typeof config === 'object' && config ? config : {}
+                }
+//console.log( config, relatedTarget, _config, DATA_KEY, data )
+                
+                if ( ! data ) {
+                    data = new Timeline( this, _config )
+                    $(this).data( DATA_KEY, data )
+                }
+                
+                if ( typeof config === 'string' ) {
+                    if ( typeof data[config] === 'undefined' ) {
+                        throw new TypeError( `No method named "${config}"` )
+                    }
+                    data[config]( relatedTarget )
+                } else {
+                    data._init( relatedTarget )
+                }
+            })
+        }
+        
+    }
+    
+    
+    /*
+     * jQuery
+     */
+    $.fn[NAME] = Timeline._jQueryInterface
+    $.fn[NAME].Constructor = Timeline
+    $.fn[NAME].noConflict = () => {
+        $.fn[NAME] = JQUERY_NO_CONFLICT
+        return Timelin._jQueryInterface
+    }
+    
+    //export default Timeline
     
     // Helper functions
 
@@ -393,6 +543,51 @@ function supplement( default_value, opt_arg, opt_callback ) {
 function is_array( val ) {
     'use strict';
     return Object.prototype.toString.call( val ) === '[object Array]';
+}
+
+/*
+ * Generate the pluggable unique id (:> プラガブルな一意のIDを生成する
+ *
+ * @param int digit (optional)
+ *
+ * @return string
+ */
+function generateUniqueID( digit ) {
+    'use strict';
+    digit = supplement( 1000, digit );
+    return new Date().getTime().toString(16) + Math.floor( digit * Math.random() ).toString(16);
+}
+
+/*
+ * Round a number with specific digit (:> 桁指定して数値を丸める
+ *
+ * @param numeric number (required)
+ * @param int digit (optional)
+ * @param string round_type (optional; defaults to "round")
+ *
+ * @return numeric
+ */
+function numRound( number, digit, round_type ) {
+    'use strict';
+    function validateNumeric( def, val ) {
+        return typeof val === 'number' ? Number( val ) : def;
+    }
+    digit  = supplement( 0, digit, validateNumeric );
+    let _pow = Math.pow( 10, digit ),
+        retval;
+    switch( true ) {
+        case /^ceil$/i.test( round_type ):
+            retval = Math.ceil( number * _pow ) / _pow;
+            break;
+        case /^floor$/i.test( round_type ):
+            retval = Math.floor( number * _pow ) / _pow;
+            break;
+        case /^round$/i.test( round_type ):
+        default:
+            retval = Math.round( number * _pow ) / _pow;
+            break;
+    }
+    return retval;
 }
 
 /*
@@ -573,6 +768,25 @@ function getPluggableRows( option_rows, sidebar_list ) {
         fixed_rows = sidebar_list.length;
     }
     return fixed_rows > 0 ? fixed_rows : 1;
+}
+
+/*
+ * Retrieve the pluggable parameter as an object (:> プラガブルなパラメータオブジェクトを取得する
+ *
+ * @param string param_str (required)
+ *
+ * @return object params
+ */
+function getPluggableParams( param_str ) {
+    let params = {};
+    if ( typeof param_str === 'string' && param_str ) {
+        try {
+            params = JSON.parse( JSON.stringify( ( new Function( 'return ' + param_str ) )() ) );
+        } catch( e ) {
+            console.warn( 'Can not parse to object therefor invalid param.' );
+        }
+    }
+    return params;
 }
 
 /*
@@ -775,7 +989,9 @@ function getCoordinateX( date, range_begin, range_end, scale, size_per_scale ) {
     
     if ( _date - _begin >= 0 && _end - _date >= 0 ) {
         // When the given date is within the range of timeline_range_begin and timeline_range_end (:> 指定された日付がタイムラインの範囲内にある場合
-        coordinate_x = Math.ceil( Math.abs( _date - _begin ) / _scale ) * _size;
+        //coordinate_x = Math.ceil( Math.abs( _date - _begin ) / _scale ) * _size; // 切り上げ
+        //coordinate_x = Math.floor( Math.abs( _date - _begin ) / _scale ) * _size; // 切り捨て
+        coordinate_x = ( Math.abs( _date - _begin ) / _scale ) * _size;
     } else {
         console.warn( 'The given date is out of range in timeline' );
         return false;
@@ -928,33 +1144,38 @@ function renderTimelineView( elem, options ) {
 /*
  * Show the loading animation of the lineline creation (:> タイムライン作成のローディング・アニメーションを表示
  *
+ * @param string selector (required)
  * @param string width (required)
  * @param string height (required)
  * @param int margin_top (required)
  *
  * @return DOM element
  */
-function startLoading( width, height, margin_top ) {
-    height = height === 'auto' ? '360px' : height;
-    let _loading = $('<div></div>', { id: 'jqtl-loading', style: 'width:'+ width +';height:'+ height + ';top:' + margin_top + 'px;' }),
-        _loading_text = 'Loading...'.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter(Boolean);
-    _loading_text.forEach(function( str,idx ) {
-        let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: 'jqtl-loading' }).text( str );
-        _loading.append( _fountain_text );
-    });
+function showLoading( selector, width, height, margin_top ) {
+    let _loading = $('<div></div>', { id: 'jqtl-loading', style: 'width:'+ width +';height:'+ height + ';top:' + margin_top + 'px;' });
+    if ( $(selector).length == 0 ) {
+        height = height === 'auto' ? '240px' : height;
+        let _loading_text = 'Loading...'.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter(Boolean);
+        _loading_text.forEach(function( str,idx ) {
+            let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: 'jqtl-loading' }).text( str );
+            _loading.append( _fountain_text );
+        });
+    } else {
+        let _custom_loader = $(selector).clone().prop('hidden', false).css('display', 'block');
+        _loading.append( _custom_loader );
+    }
     return _loading;
 }
 
 /*
  * Hide the loading animation then show the lineline (:> ローディング・アニメーションを非表示後、タイムラインを表示
  *
- * @param DOM element elem (required)
+ * @param object of jQuery (required)
  *
  * @return void
  */
-function endLoading( elem ) {
-    $(elem).find('#jqtl-loading').remove();
-    // $(elem).find('.jqtl-container').css( 'visibility', 'visible' );
+function hideLoading( $elem ) {
+    $elem.find('#jqtl-loading').remove();
 }
 
 /*
@@ -1291,7 +1512,77 @@ function createFooter( footer, range_begin, range_end ) {
     return _tl_footer;
 }
 
-
+/*
+ * Register one event data as object (:> イベントデータをオブジェクトとして登録する
+ *
+ * @param DOM Element elem (required)
+ * @param object params (required)
+ * @param object options (required)
+ *
+ * @return object event_data
+ */
+function registerEventData( elem, params, options ) {
+    //console.log( elem, params );
+    let _self      = $(elem),
+        _gap       = 2,
+        event_data = { // Default parameters of the timeline event
+            uid      : generateUniqueID(),
+            eventId  : '',
+            x        : 0,
+            y        : _gap,
+            width    : options.minGridSize,
+            height   : options.rowHeight - _gap * 2,
+            bgColor  : '#FAFAFA',
+            color    : 'inherit',
+            label    : _self.html(),
+            content  : '',
+            image    : '',
+            margin   : _gap,
+            extend   : {},
+            callback : function() {},
+            relation : {},
+        };
+    
+    if ( params.hasOwnProperty( 'start' ) ) {
+        event_data.x = numRound( getCoordinateX( params.start, options.startDatetime, options.endDatetime, options.scale, options.minGridSize ), 2 );
+        if ( params.hasOwnProperty( 'end' ) ) {
+            event_data.width = numRound( getCoordinateX( params.end, options.startDatetime, options.endDatetime, options.scale, options.minGridSize ) - event_data.x, 2 );
+        }
+        if ( params.hasOwnProperty( 'row' ) ) {
+            event_data.y = ( params.row - 1 ) * options.rowHeight + _gap;
+        }
+        
+        Object.keys( event_data ).forEach(function( _prop ){
+            switch( _prop ) {
+                case 'eventId':
+                case 'bgColor':
+                case 'color':
+                case 'image':
+                case 'margin':
+                case 'extend':
+                case 'callback':
+                case 'relation':
+                    if ( params.hasOwnProperty( _prop ) && params[_prop] && params[_prop] !== '' ) {
+                        event_data[_prop] = params[_prop];
+                    }
+                    break;
+                case 'label':
+                case 'content':
+                    if ( params.hasOwnProperty( _prop ) && params[_prop] && params[_prop] !== '' ) {
+                        event_data[_prop] = params[_prop];
+                    }
+                    // Override the children element to label or content setting
+                    if ( _self.children('.event-' + _prop).length > 0 ) {
+                        event_data[_prop] = _self.children('.event-' + _prop).html();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        });
+    }
+    return event_data;
+}
 
 })
 );

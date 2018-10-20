@@ -74,7 +74,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <style>
 /* Loading Animation : start */
 #jqtl-loading {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -371,6 +371,19 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     width: 100%;
     height: 100%;
 }
+.custom-loader {
+    display: none;
+    border: 16px solid #DDD;
+    border-top: 16px solid #3498db;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 /* Custom for DEMO: end */
   </style>
 </head>
@@ -422,14 +435,24 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
       * </{{ Element with selector specified by user }}>
       *
       */ -->
-        <div id="my-timeline">
+        <div id="my-timeline" class="test-timeline test-1">
           <ul class="timeline-events">
             <li>disallow</li>
-            <li data-timeline-node="">event test</li>
+            <li data-timeline-node="">event test 1</li>
+            <li data-timeline-node="{}">event test 2</li>
+            <li data-timeline-node="{start:'2018-10-19 10:00',end:'2018-10-19 13:00',content:'text text text text ...'}">event test 3</li>
+            <li data-timeline-node="{start:'2018-10-20 0:00',end:'2018-10-20 3:00',content:'text text text text ...'}">event test 4</li>
+            <li data-timeline-node="{start:'2018-10-20 8:30',end:'2018-10-20 15:00',content:'text text text text ...'}">event test 5</li>
+            <li data-timeline-node="{eventId:null,start:'2018-10-16 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'set label at attribute',content:'set content at attribute',bgColor:'#CFC',color:'#33E'}">full params</li>
+            <li data-timeline-node="{eventId:null,start:'2018-10-16 00:00:00',end:'2018-10-21 23:59:59',row:3,bgColor:'#CCF',color:'#3EE'}"><p class="event-label">Set label on .event-label</p><p class="event-content">Set content on .event-content</p></li>
+            <li data-timeline-node="{eventId:null,start:'2018-10-16 00:00:00',end:'2018-10-21 23:59:59',row:4,label:'set label at attribute',content:'set content at attribute',bgColor:'#CCF',color:'#3EE'}"><p class="event-label">Set label on .event-label</p><span class="event-label">double label</span><p class="event-content">Set content on .event-content</p></li>
           </ul>
         </div>
         
-        <div id="my-timeline2"></div>
+        <div id="my-timeline2" class="test-timeline test-2"></div>
+        
+        <div class="my-timeline"></div>
+        <div class="my-timeline"></div>
         
     </div>
     <!-- /.content-main -->
@@ -475,6 +498,8 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 </div>
 <!-- /.modal -->
 
+<div class="custom-loader"></div>
+
 <!-- REQUIRED JS SCRIPTS -->
 
 <!-- jQuery (latest 3.3.1) -->
@@ -483,7 +508,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 <!-- Bootstrap 4.1.3 -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!-- custom_datetime.js -->
-<script src="../src/custom_datetime.js?v=<?= filemtime( CURRENT_DIR . '/src/custom_datetime.js' ); ?>"></script>
+<script src="../src/timeline_v2.js?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2.js' ); ?>"></script>
 <!-- local scripts -->
 <script>
 const date1 = new Date();
@@ -623,13 +648,16 @@ $('#my-timeline').timeline({
 ;
 
 $('#my-timeline')
-//.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
+.timeline('hey')
+.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
 .timeline('hide')
 .timeline('show')
 .css( 'border', 'dotted 1px #DDD' )
 ;
 
 console.log( $('#my-timeline').timeline('getOptions') );
+
+//$('.my-timeline').timeline();
 
 //$('#my-timeline2').timeline()
 //.timeline('initialized', function(elem,opt){ alert( '#my-timeline2' ); } )
