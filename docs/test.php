@@ -72,7 +72,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <!-- jQuery Timeline -->
   <link rel="stylesheet" href="./css/timeline.min.css?v=<?= filemtime( CURRENT_DIR . '/docs/css/timeline.min.css' ); ?>">
   <style>
-/* Loading Animation : start */
+/* Builtin Loader : start */
 #jqtl-loading {
     position: fixed;
     top: 0;
@@ -141,7 +141,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
         color: rgb(255,255,255);
     }
 }
-/* Loading Animation : end */
+/* Builtin Loader : end */
 .timeline-events {
     display: none;
     visibility: hidden;
@@ -280,11 +280,49 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 }
 .jqtl-events {
     position: absolute;
+    display: none;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     z-index: 3;
+}
+.jqtl-event-node {
+    position: absolute;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding: 2px;
+    font-size: 14px;
+    line-height: 1.428571429; /* calc( 20px / 14px ) */
+    overflow: hidden;
+    /* white-space: nowrap; */
+    text-overflow: ellipsis;
+    border-radius: 2px;
+    z-index: 5;
+    cursor: pointer;
+    transition: all .5s ease;
+}
+.jqtl-event-node:hover {
+    color: #FEFEFE;/* !important;*/
+    background-color: #F73333;/* !important;*/
+}
+.jqtl-event-node:before {
+    content: '';
+    position: absolute;
+    display: block;
+    z-index: 4;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 2px;
+    background-color: transparent;
+    transition: all .5s ease;
+}
+.jqtl-event-node:hover:before {
+    z-index: 4;
+    background-color: rgba(0, 0, 0, 0.1);
 }
 .jqtl-side-index {
     position: relative;
@@ -440,12 +478,13 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
             <li>disallow</li>
             <li data-timeline-node="">event test 1</li>
             <li data-timeline-node="{}">event test 2</li>
-            <li data-timeline-node="{start:'2018-10-19 10:00',end:'2018-10-19 13:00',content:'text text text text ...'}">event test 3</li>
-            <li data-timeline-node="{start:'2018-10-20 0:00',end:'2018-10-20 3:00',content:'text text text text ...'}">event test 4</li>
-            <li data-timeline-node="{start:'2018-10-20 8:30',end:'2018-10-20 15:00',content:'text text text text ...'}">event test 5</li>
-            <li data-timeline-node="{eventId:null,start:'2018-10-16 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'set label at attribute',content:'set content at attribute',bgColor:'#CFC',color:'#33E'}">full params</li>
-            <li data-timeline-node="{eventId:null,start:'2018-10-16 00:00:00',end:'2018-10-21 23:59:59',row:3,bgColor:'#CCF',color:'#3EE'}"><p class="event-label">Set label on .event-label</p><p class="event-content">Set content on .event-content</p></li>
-            <li data-timeline-node="{eventId:null,start:'2018-10-16 00:00:00',end:'2018-10-21 23:59:59',row:4,label:'set label at attribute',content:'set content at attribute',bgColor:'#CCF',color:'#3EE'}"><p class="event-label">Set label on .event-label</p><span class="event-label">double label</span><p class="event-content">Set content on .event-content</p></li>
+            <li data-timeline-node="{start:'2018-10-21 9:50',end:'2018-10-21 13:15',content:'text text text text ...'}">event test 3</li>
+            <li data-timeline-node="{eventId:'7',start:'2018-10-22 0:00',end:'2018-10-22 3:00',content:'text text text text ...'}">event test 4</li>
+            <li data-timeline-node="{eventId:0,start:'2018-10-23 8:30',end:'2018-10-23 15:45',content:'text text text text ...'}">event test 5</li>
+            <li data-timeline-node="{eventId:1,start:'2018-10-16 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'set label at attribute',content:'set content at attribute',bgColor:'#CFC',color:'#33E'}">full params</li>
+            <li data-timeline-node="{eventId:4,start:'2018-10-16 00:00:00',end:'2018-10-20 23:59:59',row:3,bgColor:'#CCF',color:'#E3E'}"><p class="event-label">Set label on .event-label</p><p class="event-content">Set content on .event-content</p></li>
+            <li data-timeline-node="{eventId:null,start:'2018-10-21 00:00:00',end:'2018-10-24 23:59:59',row:4,label:'set label at attribute',content:'set content at attribute',extend:'{toggle:\'popover\',placement:\'top\',trigger:\'hover\'}'}"><p class="event-label">Bootstrap Popover</p><span class="event-label">double label</span><p class="event-content">Set content on .event-content</p></li>
+            <li data-timeline-node="{start:'2018-10-25 00:00:00',end:'2018-10-31 23:59:59',row:5,callback:'myCallback'}"><h4 class="event-label">Bootstrap Modal</h4><p class="event-content">Event content...</p></li>
           </ul>
         </div>
         
@@ -511,6 +550,8 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 <script src="../src/timeline_v2.js?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2.js' ); ?>"></script>
 <!-- local scripts -->
 <script>
+$(function () {
+
 const date1 = new Date();
 //console.log( date1.toLocaleString() );
 
@@ -582,8 +623,9 @@ test_scales.forEach(function( scale ){
 //console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
 
 $('#my-timeline').timeline({
-    startDatetime : '2018-10-1',
-    endDatetime   : '2018-12-31',
+    startDatetime : '2018-10-21 0:00:00',
+    endDatetime   : '2018-11-1 23:59:59',
+    scale         : 'hour',
     showHeadline  : true,
     headline      : {
         display   : true,
@@ -626,13 +668,13 @@ $('#my-timeline').timeline({
     },
     ruler         : {
         top    : {
-            lines      : [ 'year', 'month', 'week', 'day', 'weekday' ],
+            lines      : [ 'year', 'month', 'day', 'hour' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
             background : '#FFF',
             locale     : 'ja-JP',
-            format     : { timeZone: 'Asia/Tokyo', hour12: false, year: 'numeric', month: 'long', weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' },
+            format     : { timeZone: 'Asia/Tokyo', hour12: false, year: 'numeric', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
         },
         // bottom : {}
     },
@@ -640,29 +682,41 @@ $('#my-timeline').timeline({
     debug         : true
 })
 //.timeline('initialized', function(elem,opt){ alert( 'initialized!' ); } )
-//.timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
+.timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
 //.timeline('destroy')
-//.timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
+//.timeline('_init')
+.timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
 .css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
 ;
 
+/*
 $('#my-timeline')
-.timeline('hey')
-.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
+//.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
 .timeline('hide')
 .timeline('show')
 .css( 'border', 'dotted 1px #DDD' )
 ;
+*/
 
-console.log( $('#my-timeline').timeline('getOptions') );
+//console.log( $('#my-timeline').VERSION );
 
 //$('.my-timeline').timeline();
 
-//$('#my-timeline2').timeline()
-//.timeline('initialized', function(elem,opt){ alert( '#my-timeline2' ); } )
-//;
+/*
+$('#my-timeline2').timeline()
+.timeline('initialized', function(elem,opt){ console.log( elem, opt ) } )
+.css( 'border', 'solid 1px #F03333' )
+;
+*/
 
+$('[data-toggle="popover"]').popover()
+
+function myCallback() {
+    alert( 'Custom Callback Function!' )
+}
+
+})
 </script>
 </body>
 </html>

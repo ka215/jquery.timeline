@@ -1,3 +1,4 @@
+// import Util from './timeline-utils.js'
 /*!
  * jQuery Timeline
  * ------------------------
@@ -11,16 +12,14 @@
  * See: https://blog.npmjs.org/post/112712169830/making-your-jquery-plugin-work-better-with-npm
  */
 ;(function( factory ) {
-    'use strict';
     
     if ( typeof module === 'object' && typeof module.exports === 'object' ) {
-        factory( require( 'jquery' ), window, document );
+        factory( require( 'jquery' ), window, document )
     } else {
-        factory( jQuery, window, document );
+        factory( jQuery, window, document )
     }
     
 }(function( $, window, document, undefined ) {
-    'use strict';
     
     /*
      * Constants
@@ -31,11 +30,15 @@
     const EVENT_KEY          = `.${DATA_KEY}`
     const DATA_API_KEY       = '.data-api'
     const JQUERY_NO_CONFLICT = $.fn[NAME]
+    const LIMIT_GRIDS        = 546 // 
     const ESCAPE_KEYCODE     = 27 // KeyboardEvent.which value for Escape (Esc) key
     
     const Default = {
+        /*
+         * Defaults of plugin options
+         */
         type            : "bar", // View type of timeline event is either "bar" or "point"
-        scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute", "second"; Enhanced since v2.0.0
+        scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute"; Enhanced since v2.0.0
         startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
         endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
         datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
@@ -78,7 +81,8 @@
         width           : "auto", // Fixed width (pixel) of timeline view. defaults to "auto"; Added new since v2.0.0
         height          : "auto", // Fixed height (pixel) of timeline view. defaults to "auto" ( rows * rowHeight )
         // minGridPer   : 2, // --> Deprecated since v2.0.0
-        minGridSize     : 32, // Minimum size (pixel) of timeline grid; It needs 5 pixels or more
+        minGridSize     : null, // Override value of minimum size (pixel) of timeline grid that depended minScaleGridSize; Enhanced since v2.0.0
+        marginHeight    : 2, // Margin (pixel) top and bottom of events on the timeline; Added new since v2.0.0
         ruler           : { // Settings of ruler; Added new since v2.0.0
             top         : { // Can define the ruler position to top or bottom and both
                 lines      : [], // defaults to this.option.scale
@@ -104,8 +108,43 @@
         debug           : true,
     }
     
+    const minScaleGridSize = {
+        Millennium : 256,
+        century    : 144,
+        decade     : 120,
+        lustrum    : 108,
+        year       : 96,
+        month      : 80,
+        week       : 64,
+        day        : 48,
+        hour       : 48,
+        minute     : 32,
+        second     : 2
+    }
+    
     const DefaultType = {
         
+    }
+    
+    const EventParams = {
+        /*
+         * Defaults of event parameters on timeline
+         */
+        uid      : '',
+        eventId  : '',
+        x        : 0,
+        y        : Default.marginHeight,
+        width    : Default.minGridSize,
+        height   : Default.rowHeight - Default.marginHeight * 2,
+        bgColor  : '#F0F0F0',
+        color    : 'inherit',
+        label    : '',
+        content  : '',
+        image    : '',
+        margin   : Default.marginHeight,
+        extend   : {},
+        callback : function() {},
+        relation : {},
     }
     
     const Event = {
@@ -125,33 +164,6 @@
     }
     
     /*
-     * The dispatcher of plugin for the jQuery Timeline
-     * @public
-     */
-    /*
-    $.fn.timeline = function( arg ) {
-        let methodArgs = Array.prototype.slice.call( arguments, 1 );
-        
-        return this.each(function() {
-            // Call the instance if plugin has been applied (:> プラグイン適用済みならインスタンスを呼び出す
-            let instance = $(this).data( 'timeline' );
-            
-            if ( instance && arg in instance && arg.charAt(0) != '_' ) {
-                // Call public method (:> （インスタンスがpublicメソッドを持っている場合）メソッドを呼び出す
-                instance[arg].apply( instance, methodArgs );
-            } else 
-            if ( typeof arg === 'object' || ! arg ) {
-                // Apply the plugin and store the instance in data (:> プラグインを適用する
-                $(this).data( 'timeline', new $.timeline( this, arg ) );
-            } else {
-                // Error
-                console.error( 'Method "' + arg + '" does not exist on jQuery.timeline.' );
-            }
-        });
-    };
-    */
-    
-    /*
      * The plugin core class of the jQuery Timeline as controller
      */
     class Timeline {
@@ -160,23 +172,9 @@
             this._element       = element
             this._selector      = null
             this._isInitialized = false
-            this._isShown       = false
             this._isCached      = false
             this._isCompleted   = false
-        /*
-        // Proparties
-        this.elem          = elem;
-        this.option        = this._initOption( option );
-        this.selector      = null;
-        this.isInitialized = null;
-        this.isShown       = null;
-        this.isCached      = null;
-        this.isCompleted   = null;
-        
-        this._init();
-        //this.initialized();
-        //this._loadEvent();
-        */
+            this._isShown       = false
         }
         
         // Getters
@@ -199,14 +197,57 @@
                 ...Default,
                 ...config
             }
+            if ( is_empty( config.minGridSize ) ) {
+                config.minGridSize = minScaleGridSize[config.scale]
+            } else {
+                config.minGridSize = minScaleGridSize[config.scale] > config.minGridSize ? minScaleGridSize[config.scale] : config.minGridSize
+            }
             return config;
+        }
+        
+        /*
+         * @private: Initialize the plugin
+         */
+        _init() {
+            this._debug( '_init' )
+            
+            let _elem       = this._element,
+                _selector   = _elem.tagName + ( _elem.id ? '#' + _elem.id : '' ) + ( _elem.className ? '.' + _elem.className.replace(/\s/g, '.') : '' )
+            this._selector = _selector.toLowerCase()
+            
+            if ( ! verifyMaxRenderableRange( this._config ) ) {
+                throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
+            }
+            
+            if ( this._isInitialized || this._isCompleted ) {
+                return
+            }
+            
+            if ( ! this._isInitialized ) {
+                this._renderView()
+                
+                const afterInitEvent = $.Event( Event.INITIALIZED, { _elem } )
+                
+                $(_elem).trigger( afterInitEvent )
+                
+                $(_elem).off( Event.INITIALIZED )
+            }
+            
+            if ( ! this._isCached ) {
+                this._loadEvent()
+            }
+            
+            if ( this._isCached ) {
+                this._placeEvent()
+            }
+            
         }
         
         /*
          * @private: Render the view of timeline container
          */
         _renderView() {
-            this._debug( '_renderView', arguments )
+            this._debug( '_renderView' )
             
             renderTimelineView( this._element, this._config )
             
@@ -214,40 +255,10 @@
         }
         
         /*
-         * @private: Initialize the plugin
-         */
-        _init() {
-            this._debug( '_init', arguments )
-            
-            let _elem       = this._element,
-                _selector   = _elem.tagName + ( _elem.id ? '#' + _elem.id : '' ) + ( _elem.className ? '.' + _elem.className.replace(/\s/g, '.') : '' )
-            this._selector = _selector.toLowerCase()
-            
-            if ( this._isCompleted || this._isShown ) {
-                return
-            }
-            
-            const afterInitEvent = $.Event( Event.INITIALIZED )
-            
-            if ( ! this._isInitialized ) {
-                this._renderView()
-                
-                $(_elem).trigger( afterInitEvent )
-                
-                this._isInitialized = true;
-            }
-            
-            if ( ! this._isCompleted || ! this._isShown || ! this._isCached ) {
-                this._loadEvent( )
-            }
-            
-        }
-        
-        /*
          * @private: Load all enabled events markuped on target element to the timeline object
          */
         _loadEvent() {
-            this._debug( '_loadEvent', arguments )
+            this._debug( '_loadEvent' )
             
             let _elem         = this._element,
                 _opts         = this._config,
@@ -256,7 +267,8 @@
                 _ruler_bottom = $(_elem).find('.jqtl-ruler-bottom'),
                 _event_list   = $(_elem).find('.timeline-events'),
                 _cnt          = 0,
-                events        = []
+                events        = [],
+                lastEventId   = 0
             
             _event_list.children().each(function() {
                 let _attr = $(this).attr('data-timeline-node')
@@ -267,70 +279,100 @@
             })
             
             if ( _event_list.length == 0 || _cnt == 0 ) {
-                throw new UserException( 'Enable event does not exist.' )
+                this._debug( 'Enable event does not exist.' )
             }
             
             // Show loader
             if ( _opts.loader !== false ) {
                 let _visible_width  = _container.width(),
                     _visible_height = _container.height(),
-                    _margin_top     = ( _visible_height - ( _ruler_top.height() || 0 ) - ( _ruler_bottom.height() || 0 ) ) / 2;
-                _self.find('.jqtl-container').append( showLoading( _opts.loader, _visible_width, _visible_height, _margin_top ) );
+                    _margin_top     = ( _visible_height - ( _ruler_top.height() || 0 ) - ( _ruler_bottom.height() || 0 ) ) / 2
+                
+                $(_elem).find('.jqtl-container').append( showLoader( _opts.loader, _visible_width, _visible_height, _margin_top ) )
             }
             
-console.log( _opts );
+//console.log( _opts )
             // Register Event Data
             _event_list.children().each(function() {
-                let _evt_params = getPluggableParams( $(this).attr('data-timeline-node') );
-                if ( Object.keys( _evt_params ).length > 0 ) {
-                    events.push( registerEventData( this, _evt_params, _opts ) );
-                    /*
-                    let _x = 0, _y = 0, _w = 0, _h = 0, _gap = 2;
-                    if ( _evt_params.hasOwnProperty('start') ) {
-                        _x = getCoordinateX( _evt_params.start, _opts.startDatetime, _opts.endDatetime, _opts.scale, _opts.minGridSize );
-                        if ( _evt_params.hasOwnProperty('end') ) {
-                            _w = getCoordinateX( _evt_params.end, _opts.startDatetime, _opts.endDatetime, _opts.scale, _opts.minGridSize ) - _x;
-                        }
-                    }
-                    if ( _evt_params.hasOwnProperty('row') ) {
-                        // _y = getCoordinateY( );
-                        _y = ( ( _evt_params.row || 0 ) - 1 ) * _opts.rowHeight + _gap;
-                    }
-                    _h = _opts.rowHeight - _gap * 2;
-console.log( _x, _y, _w, _h );
-                    _self.find('.jqtl-events').append( '<div style="position:absolute;top:'+_y+'px;left:'+_x+'px;width:'+_w+'px;height:'+_h+'px;background:'+ _evt_params.bgColor +';">'+ _evt_params.content +'</div>' );
-                    */
+                let _evt_params = getPluggableParams( $(this).attr('data-timeline-node') ),
+                    _one_event  = {}
+                //if ( Object.keys( _evt_params ).length > 0 ) {
+                if ( ! is_empty( _evt_params ) ) {
+                    _one_event = registerEventData( this, _evt_params, _opts )
+                    events.push( _one_event )
+                    lastEventId = Math.max( lastEventId, Number( _one_event.eventId ) )
                 }
             });
             // Set event id with auto increment (:> イベントIDを自動採番
             events.forEach(function( _evt, _i, _this ){
-                _this[_i].eventId = _i + 1;
+                let _chkId = Number( _this[_i].eventId )
+                if ( _chkId == 0 ) {
+                    lastEventId++
+                    _this[_i].eventId = lastEventId
+                } else {
+                    _this[_i].eventId = _chkId
+                }
             });
             // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
             if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-                sessionStorage.setItem( this.selector, JSON.stringify( events ) );
+                sessionStorage.setItem( this._selector, JSON.stringify( events ) )
+                
+                this._isCached = true
             }
             
+        }
+        
+        _placeEvent() {
+            this._debug( '_placeEvent' )
             
-            //hideLoading( _self );
+            if ( ! this._isCached ) {
+                return
+            }
+            
+            let _elem          = this._element,
+                _opts          = this._config,
+                _evt_container = $(_elem).find('.jqtl-events'),
+                events         = {}
+            
+            if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+                events = JSON.parse( sessionStorage.getItem( this._selector ) )
+            }
+            
+            if ( events.length > 0 ) {
+                events.forEach(( _evt, _idx ) => {
+                    _evt_container.append( createEventNode( _evt ) )
+                })
+            }
+            
+            /* debug */
+            function sleep( msec ) {
+                return new Promise( ( resolve, reject ) => {
+                    setTimeout( resolve, msec )
+                })
+            }
+            sleep( 3000 ).then(() => {
+            
+            hideLoader( _elem )
+            _evt_container.fadeIn('normal')
+            
+            })
         }
         
         /*
          * @private: Echo the log of plugin for debugging
          */
-        _debug() {
-//console.log( this, arguments )
-            if ( arguments.length > 0 ) {
-                let args = Array.prototype.slice.call( arguments ),
-                    _msg = /\./i.test(args[0]) ? args[0] : 'Called method "'+ args[0] +'".',
+        _debug( message, throwType = 'Notice' ) {
+            message = supplement( null, message )
+            if ( message ) {
+                let _msg = typeof $(this._element).data( DATA_KEY )[message] !== 'undefined' ? `Called method "${message}".` : message,
                     _sty = /^Called method \"/.test(_msg) ? 'font-weight:600;color:blue;' : '',
-                    _rst = '';
+                    _rst = ''
                 
                 if ( this._config.debug && window.console && window.console.log ) {
-                    if ( args.length > 1 ) {
-                        window.console.log( '%c%s%c', _sty, _msg, _rst, args.slice(1) );
+                    if ( throwType === 'Notice' ) {
+                        window.console.log( '%c%s%c', _sty, _msg, _rst )
                     } else {
-                        window.console.log( '%c%s%c', _sty, _msg, _rst );
+                        throw new Error( `${_msg}` )
                     }
                 }
             }
@@ -342,42 +384,45 @@ console.log( _x, _y, _w, _h );
          * @public: This method is able to call only once after completed an initializing of the plugin
          */
         initialized( callback ) {
-console.log( this, arguments );
-            let _message = this.isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized';
-            this._debug( _message, arguments );
+            let _message = this._isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized'
+            this._debug( _message )
             
-            let _self = $(this.elem),
-                _opts = this.option;
-            if ( _self.find('.jqtl-container').length > 0 && ! this.isInitialized ) {
-                //endLoading( _self );
-                if ( typeof callback === 'function' ) {
-                    if ( _opts.debug ) {
-                        console.log( 'Fired the "initialized" method after initializing this plugin.' );
-                    }
-                    callback( _self, _opts );
+            let _elem = this._element,
+                _opts = this._config
+            
+//console.log( _elem, this._isInitialized )
+            if ( typeof callback === 'function' && ! this._isInitialized ) {
+                if ( _opts.debug ) {
+                    this._debug( 'Fired the "initialized" method after initializing this plugin.' )
                 }
-                _self.off( 'initialized.jqtl' );
-                this.isInitialized = true;
+                callback( _elem, _opts )
             }
-            // return this;
+            
+            this._isInitialized = true
+            
         }
         
         /*
          * @public: Destroy the object to which the plugin is applied
          */
         destroy() {
-            this._debug( 'destroy', this );
+            this._debug( 'destroy' )
             
-            let _self = $(this.elem),
-                _opts = this.option,
-                _instance = _self.data( 'timeline' );
+            $.removeData( this._element, DATA_KEY )
             
-            _self.off( '.jqtl' );
-            if ( _instance ) {
-                _instance.elem.remove();
-                _self.removeData( 'timeline' );
+            $(window, document, this._element).off( EVENT_KEY )
+            
+            $(this._element).remove()
+            
+            // Remove the cached data on the session storage (:> セッションストレージ上にキャッシュしているデータを削除
+            if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) && this._isCached ) {
+                sessionStorage.removeItem( this._selector )
             }
-            //return this;
+            
+            for ( let _prop in this ) {
+                this[_prop] = null
+                delete this[_prop]
+            }
         }
         
         /*
@@ -390,12 +435,14 @@ console.log( this, arguments );
          * @public: Show hidden timeline
          */
         show() {
-            this._debug( 'show', this );
+            this._debug( 'show' )
             
-            let _self = $(this.elem);
-            if ( ! this.isShown ) {
-                _self.removeClass( 'jqtl-hide' );
-                this.isShown = true;
+            let _elem = this.element
+            
+            if ( ! this._isShown ) {
+                $(_elem).removeClass( 'jqtl-hide' )
+                
+                this._isShown = true
             }
         }
         
@@ -403,12 +450,14 @@ console.log( this, arguments );
          * @public: Hide shown timeline
          */
         hide() {
-            this._debug( 'hide', this );
+            this._debug( 'hide' )
             
-            let _self = $(this.elem);
-            if ( this.isShown ) {
-                _self.addClass( 'jqtl-hide' );
-                this.isShown = false;
+            let _elem = this.element
+            
+            if ( this._isShown ) {
+                $(_elem).addClass( 'jqtl-hide' )
+                
+                this._isShown = false
             }
         }
         
@@ -437,6 +486,7 @@ console.log( this, arguments );
          * @public: This method has been deprecated since version 2.0.0
          */
         getOptions() {
+            
         }
         
         /*
@@ -478,20 +528,26 @@ console.log( this, arguments );
                     ...$(this).data(),
                     ...typeof config === 'object' && config ? config : {}
                 }
-//console.log( config, relatedTarget, _config, DATA_KEY, data )
                 
+//console.log( '_jQueryInterface', data, config )
                 if ( ! data ) {
+                    // Apply the plugin and store the instance in data (:> プラグインを適用する
                     data = new Timeline( this, _config )
                     $(this).data( DATA_KEY, data )
                 }
                 
-                if ( typeof config === 'string' ) {
+//if ( typeof config === 'string' ) console.log( config, config.charAt(0) != '_' )
+                if ( typeof config === 'string' && config.charAt(0) != '_' ) {
                     if ( typeof data[config] === 'undefined' ) {
+                        // Call no method
                         throw new TypeError( `No method named "${config}"` )
                     }
+                    // Call public method (:> （インスタンスがpublicメソッドを持っている場合）メソッドを呼び出す
                     data[config]( relatedTarget )
                 } else {
-                    data._init( relatedTarget )
+                    if ( ! data._isInitialized ) {
+                        data._init( relatedTarget )
+                    }
                 }
             })
         }
@@ -511,7 +567,58 @@ console.log( this, arguments );
     
     //export default Timeline
     
+    
+    
+    
     // Helper functions
+
+/*
+ * Determine empty that like PHP (:> PHPライクな空判定メソッド
+ *
+ * @param mixed value (required)
+ *
+ * @return bool
+ */
+function is_empty( value ) {
+    if ( value == null ) {
+        // typeof null -> object : for hack a bug of ECMAScript
+        // Refer: https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/typeof
+        return true
+    }
+    switch( typeof value ) {
+        case 'object':
+            if ( Array.isArray( value ) ) {
+                // When object is array:
+                return ( value.length === 0 )
+            } else {
+                // When object is not array:
+                if ( Object.keys( value ).length > 0 || Object.getOwnPropertySymbols( value ).length > 0 ) {
+                    return false
+                } else
+                if ( value.valueOf().length !== undefined ) {
+                    return ( value.valueOf().length === 0 )
+                } else
+                if ( typeof value.valueOf() !== 'object' ) {
+                    return is_empty( value.valueOf() )
+                } else {
+                    return true
+                }
+            }
+        case 'string':
+            return ( value === '' )
+        case 'number':
+            return ( value == 0 )
+        case 'boolean':
+            return ! value
+        case 'undefined':
+        case 'null':
+            return true
+        case 'symbol': // Since ECMAScript6
+        case 'function':
+        default:
+            return false
+    }
+}
 
 /*
  * Supplemental method for validating arguments in local scope (:> ローカルスコープ内で引数を検証するための補助メソッド
@@ -523,14 +630,14 @@ console.log( this, arguments );
  * @return mixed
  */
 function supplement( default_value, opt_arg, opt_callback ) {
-    'use strict';
+    'use strict'
     if ( opt_arg === undefined ) {
-        return default_value;
+        return default_value
     }
     if ( opt_callback === undefined ) {
-        return opt_arg;
+        return opt_arg
     }
-    return opt_callback( default_value, opt_arg );
+    return opt_callback( default_value, opt_arg )
 }
 
 /*
@@ -541,8 +648,8 @@ function supplement( default_value, opt_arg, opt_callback ) {
  * @return bool
  */
 function is_array( val ) {
-    'use strict';
-    return Object.prototype.toString.call( val ) === '[object Array]';
+    'use strict'
+    return Object.prototype.toString.call( val ) === '[object Array]'
 }
 
 /*
@@ -553,9 +660,9 @@ function is_array( val ) {
  * @return string
  */
 function generateUniqueID( digit ) {
-    'use strict';
-    digit = supplement( 1000, digit );
-    return new Date().getTime().toString(16) + Math.floor( digit * Math.random() ).toString(16);
+    'use strict'
+    digit = supplement( 1000, digit )
+    return new Date().getTime().toString(16) + Math.floor( digit * Math.random() ).toString(16)
 }
 
 /*
@@ -568,26 +675,50 @@ function generateUniqueID( digit ) {
  * @return numeric
  */
 function numRound( number, digit, round_type ) {
-    'use strict';
+    'use strict'
     function validateNumeric( def, val ) {
-        return typeof val === 'number' ? Number( val ) : def;
+        return typeof val === 'number' ? Number( val ) : def
     }
-    digit  = supplement( 0, digit, validateNumeric );
+    digit  = supplement( 0, digit, validateNumeric )
     let _pow = Math.pow( 10, digit ),
-        retval;
+        retval
+    
     switch( true ) {
         case /^ceil$/i.test( round_type ):
-            retval = Math.ceil( number * _pow ) / _pow;
-            break;
+            retval = Math.ceil( number * _pow ) / _pow
+            break
         case /^floor$/i.test( round_type ):
-            retval = Math.floor( number * _pow ) / _pow;
-            break;
+            retval = Math.floor( number * _pow ) / _pow
+            break
         case /^round$/i.test( round_type ):
         default:
-            retval = Math.round( number * _pow ) / _pow;
-            break;
+            retval = Math.round( number * _pow ) / _pow
+            break
     }
-    return retval;
+    return retval
+}
+
+/*
+ * Convert hex to rgba (:> 
+ *
+ * @param string hex (required)
+ * @param float alpha (optional; defaults to 1)
+ *
+ * @return string
+ */
+function hexToRgbA( hex, alpha = 1 ) {
+    let _c
+    
+    if ( /^#([A-Fa-f0-9]{3}){1,2}$/.test( hex ) ) {
+        _c = hex.substring(1).split('')
+        if ( _c.length == 3 ) {
+            _c= [ _c[0], _c[0], _c[1], _c[1], _c[2], _c[2] ]
+        }
+        _c = '0x' + _c.join('')
+        return 'rgba(' + [ (_c >> 16) & 255, (_c >> 8) & 255, _c & 255 ].join(',') + ',' + alpha + ')'
+    }
+    // throw new Error( 'Bad Hex' )
+    return hex
 }
 
 /*
@@ -596,10 +727,11 @@ function numRound( number, digit, round_type ) {
  * @return int
  */
 Date.prototype.getWeek = function() {
-    'use strict';
+    'use strict'
     let _onejan = new Date( this.getFullYear(), 0, 1 ),
-        _millisecInDay = 24 * 60 * 60 * 1000;
-    return Math.ceil( ( ( ( this - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 );
+        _millisecInDay = 24 * 60 * 60 * 1000
+    
+    return Math.ceil( ( ( ( this - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 )
 }
 
 /*
@@ -613,21 +745,22 @@ Date.prototype.getWeek = function() {
  * @return string locale_string
  */
 function getLocaleString( date_seed, scale, locales, options ) {
-    'use strict';
+    'use strict'
     function toLocaleStringSupportsLocales() {
         try {
-            new Date().toLocaleString( 'i' );
+            new Date().toLocaleString( 'i' )
         } catch ( e ) {
             return e.name === "RangeError";
         }
         return false;
-    };
+    }
     let is_toLocalString = toLocaleStringSupportsLocales(),
         locale_string = '',
-        _options = {}, _prop, _temp;
+        _options = {}, _prop, _temp
+    
     for ( _prop in options ) {
         if ( _prop === 'timeZone' || _prop === 'hour12' ) {
-            _options[_prop] = options[_prop];
+            _options[_prop] = options[_prop]
         }
     }
     switch ( true ) {
@@ -635,77 +768,90 @@ function getLocaleString( date_seed, scale, locales, options ) {
         case /^century$/i.test( scale ):
         case /^dec(ade|ennium)$/i.test( scale ):
         case /^lustrum$/i.test( scale ):
-            locale_string = date_seed;
-            break;
+            locale_string = date_seed
+            break
         case /^years?$/i.test( scale ):
             if ( is_toLocalString ) {
-                _options.year = options.hasOwnProperty('year') ? options.year : 'numeric';
-                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+                _options.year = options.hasOwnProperty('year') ? options.year : 'numeric'
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options )
             } else {
-                locale_string = new Date( date_seed ).getFullYear();
+                locale_string = new Date( date_seed ).getFullYear()
             }
-            break;
+            break
         case /^months?$/i.test( scale ):
             if ( is_toLocalString ) {
-                _options.month = options.hasOwnProperty('month') ? options.month : 'numeric';
-                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+                _options.month = options.hasOwnProperty('month') ? options.month : 'numeric'
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options )
             } else {
-                locale_string = new Date( date_seed ).getMonth() + 1;
+                locale_string = new Date( date_seed ).getMonth() + 1
             }
-            break;
+            break
         case /^weeks?$/i.test( scale ):
-            _temp = date_seed.split(',');
-            locale_string = _temp[1];
-            break;
+            _temp = date_seed.split(',')
+            locale_string = _temp[1]
+            break
         case /^weekdays?$/i.test( scale ):
-            _temp = date_seed.split(',');
+            _temp = date_seed.split(',')
             if ( is_toLocalString ) {
-                _options.weekday = options.hasOwnProperty('weekday') ? options.weekday : 'narrow';
-                locale_string = new Date( _temp[0] ).toLocaleString( locales, _options );
+                _options.weekday = options.hasOwnProperty('weekday') ? options.weekday : 'narrow'
+                locale_string = new Date( _temp[0] ).toLocaleString( locales, _options )
             } else {
-                let _weekday = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
-                locale_string = _weekday[_temp[1]];
+                let _weekday = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ]
+                locale_string = _weekday[_temp[1]]
             }
-            break;
+            break
         case /^days?$/i.test( scale ):
             if ( is_toLocalString ) {
-                _options.day = options.hasOwnProperty('day') ? options.day : 'numeric';
-                locales = options.hasOwnProperty('day') ? locales : 'en-US';
-                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+                _options.day = options.hasOwnProperty('day') ? options.day : 'numeric'
+                locales = options.hasOwnProperty('day') ? locales : 'en-US'
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options )
             } else {
-                locale_string = new Date( date_seed ).getDate();
+                locale_string = new Date( date_seed ).getDate()
             }
-            break;
+            break
         case /^hours?$/i.test( scale ):
+            date_seed = `${date_seed}:00:00`
             if ( is_toLocalString ) {
-                _options.hour = options.hasOwnProperty('hour') ? options.hour : 'numeric';
-                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+                _options.hour = options.hasOwnProperty('hour') ? options.hour : 'numeric'
+                if ( options.hasOwnProperty('minute') ) {
+                    _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
+                }
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options )
             } else {
-                locale_string = new Date( date_seed ).getHours();
+                locale_string = new Date( date_seed ).getHours()
             }
-            break;
+            break
         case /^minutes?$/i.test( scale ):
             if ( is_toLocalString ) {
-                _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric';
-                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+                _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
+                if ( options.hasOwnProperty('hour') ) {
+                    _options.hour   = options.hasOwnProperty('hour') ? options.hour : 'numeric'
+                }
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options )
             } else {
-                locale_string = new Date( date_seed ).getMinutes();
+                locale_string = new Date( date_seed ).getMinutes()
             }
-            break;
+            break
         case /^seconds?$/i.test( scale ):
             if ( is_toLocalString ) {
-                _options.second = options.hasOwnProperty('second') ? options.second : 'numeric';
-                locale_string = new Date( date_seed ).toLocaleString( locales, _options );
+                _options.second = options.hasOwnProperty('second') ? options.second : 'numeric'
+                if ( options.hasOwnProperty('hour') ) {
+                    _options.hour   = options.hasOwnProperty('hour') ? options.hour : 'numeric'
+                }
+                if ( options.hasOwnProperty('minute') ) {
+                    _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
+                }
+                locale_string = new Date( date_seed ).toLocaleString( locales, _options )
             } else {
-                locale_string = new Date( date_seed ).getSeconds();
+                locale_string = new Date( date_seed ).getSeconds()
             }
-            break;
+            break
         case /^millisec(|ond)s?$/i.test( scale ):
         default:
-            locale_string = new Date( date_seed );
-            break;
+            locale_string = new Date( date_seed )
+            break
     }
-    return locale_string;
+    return locale_string
 }
 
 /*
@@ -721,34 +867,37 @@ function getPluggableDatetime( key, scale, min_range ) {
     let _date,
         normaizeDate = function( dateString ) {
             // For Safari, IE
-            return dateString.replace(/-/g, '/');
-        };
+            return dateString.replace(/-/g, '/')
+        }
+    
     function validateScale( def, val ) {
-        return verifyScale( val ) !== false  ? def : val;
+        return verifyScale( val ) !== false  ? def : val
     }
-    scale     = supplement( 'day', scale, validateScale );
-    min_range = supplement( 3, min_range );
+    scale     = supplement( 'day', scale, validateScale )
+    min_range = supplement( 3, min_range )
     
     switch( true ) {
         case /^current(|ly)$/i.test( key ):
-            _date = new Date();
-            break;
+            _date = new Date()
+            break
         case /^auto$/i.test( key ):
-            let _ms = verifyScale( getHigherScale( scale ) );
-            _date = new Date();
-            _date.setTime( _date.getTime() + ( _ms * min_range ) );
-            break;
+            let _ms = verifyScale( getHigherScale( scale ) )
+            
+            _date = new Date()
+            _date.setTime( _date.getTime() + ( _ms * min_range ) )
+            break
         default:
-            _date = new Date( normaizeDate( key ) );
+            _date = new Date( normaizeDate( key ) )
             let _regx = /-|\//,
-                _temp = key.split( _regx );
+                _temp = key.split( _regx )
+            
             if ( Number( _temp[0] ) < 100 ) {
                 // for 0 ~ 99 years map
-                _date.setFullYear( Number( _temp[0] ) );
+                _date.setFullYear( Number( _temp[0] ) )
             }
-            break;
+            break
     }
-    return _date.toString();
+    return _date.toString()
 }
 
 /*
@@ -761,13 +910,14 @@ function getPluggableDatetime( key, scale, min_range ) {
  */
 function getPluggableRows( option_rows, sidebar_list ) {
     function validateNumeric( def, val ) {
-        return typeof val === 'number' ? Number( val ) : def;
+        return typeof val === 'number' ? Number( val ) : def
     }
-    let fixed_rows = supplement( "auto", option_rows, validateNumeric );
+    let fixed_rows = supplement( "auto", option_rows, validateNumeric )
+    
     if ( fixed_rows === "auto" ) {
-        fixed_rows = sidebar_list.length;
+        fixed_rows = sidebar_list.length
     }
-    return fixed_rows > 0 ? fixed_rows : 1;
+    return fixed_rows > 0 ? fixed_rows : 1
 }
 
 /*
@@ -778,15 +928,40 @@ function getPluggableRows( option_rows, sidebar_list ) {
  * @return object params
  */
 function getPluggableParams( param_str ) {
-    let params = {};
+    let params = {}
+    
     if ( typeof param_str === 'string' && param_str ) {
         try {
-            params = JSON.parse( JSON.stringify( ( new Function( 'return ' + param_str ) )() ) );
+            params = JSON.parse( JSON.stringify( ( new Function( 'return ' + param_str ) )() ) )
+            if ( params.hasOwnProperty( 'extend' ) ) {
+                params.extend = JSON.parse( JSON.stringify( ( new Function( 'return ' + params.extend ) )() ) )
+            }
         } catch( e ) {
-            console.warn( 'Can not parse to object therefor invalid param.' );
+            console.warn( 'Can not parse to object therefor invalid param.' )
         }
     }
-    return params;
+    return params
+}
+
+/*
+ * Verify the display period of the timeline does not exceed the maximum renderable range (:> タイムラインの表示期間が最大描画可能範囲を超過していないか検証する
+ *
+ * @param object config (required)
+ *
+ * @return bool
+ */
+function verifyMaxRenderableRange( config ) {
+    'use strict'
+    function validateDate( def, val ) {
+        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def
+    }
+    let _begin = supplement( null, getPluggableDatetime( config.startDatetime ), validateDate ),
+        _end   = supplement( null, getPluggableDatetime( config.endDatetime ), validateDate ),
+        _scale = verifyScale( config.scale ),
+        _grids = Math.ceil( ( _end - _begin ) / _scale )
+//console.log( _begin, _end, _scale, _grids, LIMIT_GRIDS, _grids <= LIMIT_GRIDS )
+    
+    return _grids <= LIMIT_GRIDS
 }
 
 /*
@@ -797,68 +972,69 @@ function getPluggableParams( param_str ) {
  * @return mixed result (integer of millisec if allowed, false if disallowed scale)
  */
 function verifyScale( scale ) {
-    'use strict';
+    'use strict'
     let result = false,
-        _ms = -1;
+        _ms = -1
+    
     if ( typeof scale === 'undefined' || typeof scale !== 'string' ) {
-        return result;
+        return result
     }
     switch ( true ) {
         case /^millisec(|ond)s?$/i.test( scale ):
             // Millisecond (:> ミリ秒
-            _ms = 1;
-            break;
+            _ms = 1
+            break
         case /^seconds?$/i.test( scale ):
             // Second (:> 秒
-            _ms = 1000;
-            break;
+            _ms = 1000
+            break
         case /^minutes?$/i.test( scale ):
             // Minute (:> 分
-            _ms = 60 * 1000;
-            break;
+            _ms = 60 * 1000
+            break
         case /^hours?$/i.test( scale ):
             // Hour (:> 時（時間）
-            _ms = 60 * 60 * 1000;
-            break;
+            _ms = 60 * 60 * 1000
+            break
         case /^days?$/i.test( scale ):
             // Day (:> 日
-            _ms = 24 * 60 * 60 * 1000;
-            break;
+            _ms = 24 * 60 * 60 * 1000
+            break
         case /^weeks?$/i.test( scale ):
             // Week (:> 週
-            _ms = 7 * 24 * 60 * 60 * 1000;
-            break;
+            _ms = 7 * 24 * 60 * 60 * 1000
+            break
         case /^months?$/i.test( scale ):
             // Month (:> 月（ヶ月）
             // 365 / 12 = 30.4167, 366 / 12 = 30.5, ((365 * 3) + 366) / (12 * 4) = 30.4375
-            _ms = 30.4375 * 24 * 60 * 60 * 1000;
-            break;
+            _ms = 30.4375 * 24 * 60 * 60 * 1000
+            break
         case /^years?$/i.test( scale ):
             // Year (:> 年
-            _ms = 365.25 * 24 * 60 * 60 * 1000;
-            break;
+            _ms = 365.25 * 24 * 60 * 60 * 1000
+            break
         case /^lustrum$/i.test( scale ):
             // Lustrum (:> 五年紀
-            _ms = ( ( 3.1536 * Math.pow( 10, 8 ) ) / 2 ) * 1000;
-            break;
+            _ms = ( ( 3.1536 * Math.pow( 10, 8 ) ) / 2 ) * 1000
+            break
         case /^dec(ade|ennium)$/i.test( scale ):
             // Decade (:> 十年紀
-            _ms = ( 3.1536 * Math.pow( 10, 8 ) ) * 1000;
-            break;
+            _ms = ( 3.1536 * Math.pow( 10, 8 ) ) * 1000
+            break
         case /^century$/i.test( scale ):
             // Century (:> 世紀（百年紀）
-            _ms = 3155760000 * 1000;
-            break;
+            _ms = 3155760000 * 1000
+            break
         case /^millenniums?|millennia$/i.test( scale ):
             // Millennium (:> 千年紀
-            _ms = ( 3.1536 * Math.pow( 10, 10 ) ) * 1000;
-            break;
+            _ms = ( 3.1536 * Math.pow( 10, 10 ) ) * 1000
+            break
         default:
-            console.warn( 'Specified an invalid scale.' );
-            _ms = -1;
+            console.warn( 'Specified an invalid scale.' )
+            _ms = -1
     }
-    result = _ms > 0 ? _ms : false;
-    return result;
+    result = _ms > 0 ? _ms : false
+    return result
 }
 
 /*
@@ -869,47 +1045,48 @@ function verifyScale( scale ) {
  * @return string higher_scale
  */
 function getHigherScale( scale ) {
-    'use strict';
-    let higher_scale = scale;
+    'use strict'
+    let higher_scale = scale
+    
     switch ( true ) {
         case /^millisec(|ond)s?$/i.test( scale ):
-            higher_scale = 'second';
-            break;
+            higher_scale = 'second'
+            break
         case /^seconds?$/i.test( scale ):
-            higher_scale = 'minute';
-            break;
+            higher_scale = 'minute'
+            break
         case /^minutes?$/i.test( scale ):
-            higher_scale = 'hour';
-            break;
+            higher_scale = 'hour'
+            break
         case /^hours?$/i.test( scale ):
-            higher_scale = 'day';
-            break;
+            higher_scale = 'day'
+            break
         case /^days?$/i.test( scale ):
-            higher_scale = 'week';
-            break;
+            higher_scale = 'week'
+            break
         case /^weeks?$/i.test( scale ):
-            higher_scale = 'month';
-            break;
+            higher_scale = 'month'
+            break
         case /^months?$/i.test( scale ):
-            higher_scale = 'year';
-            break;
+            higher_scale = 'year'
+            break
         case /^years?$/i.test( scale ):
-            higher_scale = 'lustrum';
-            break;
+            higher_scale = 'lustrum'
+            break
         case /^lustrum$/i.test( scale ):
-            higher_scale = 'decade';
-            break;
+            higher_scale = 'decade'
+            break
         case /^dec(ade|ennium)$/i.test( scale ):
-            higher_scale = 'century';
-            break;
+            higher_scale = 'century'
+            break
         case /^century$/i.test( scale ):
-            higher_scale = 'millennium';
-            break;
+            higher_scale = 'millennium'
+            break
         case /^millenniums?|millennia$/i.test( scale ):
         default:
-            break;
+            break
     }
-    return higher_scale;
+    return higher_scale
 }
 
 /*
@@ -924,30 +1101,32 @@ function getHigherScale( scale ) {
  * @return mixed retval (numeric of diff as dependent to scale; false if failed)
  */
 function diffDate( date1, date2, scale, intval, absval ) {
-    'use strict';
+    'use strict'
     function validate( def, val ) {
-        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def;
+        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def
     }
     let _dt1 = supplement( null, date1, validate ),
-        _dt2 = supplement( null, date2, validate );
+        _dt2 = supplement( null, date2, validate )
+    
     if ( ! _dt1 || ! _dt2 ) {
-        console.warn( 'Cannot parse date because invalid format or undefined.' );
-        return false;
+        console.warn( 'Cannot parse date because invalid format or undefined.' )
+        return false
     }
-    scale  = supplement( 'day', scale );
-    intval = supplement( false, intval );
-    absval = supplement( false, absval );
+    scale  = supplement( 'day', scale )
+    intval = supplement( false, intval )
+    absval = supplement( false, absval )
     let diffMS = _dt2 - _dt1,
         coefficient = verifyScale( scale ),
-        retval;
+        retval
+    
     if ( absval ) {
-        diffMS = Math.abs( diffMS );
+        diffMS = Math.abs( diffMS )
     }
-    retval = diffMS / coefficient;
+    retval = diffMS / coefficient
     if ( intval ) {
-        retval = Math.ceil( retval );
+        retval = Math.ceil( retval )
     }
-    return retval;
+    return retval
 }
 
 /*
@@ -962,41 +1141,43 @@ function diffDate( date1, date2, scale, intval, absval ) {
  * @return mixed coordinate_x (integer of X axis coordinate if completed, false if failed)
  */
 function getCoordinateX( date, range_begin, range_end, scale, size_per_scale ) {
-    'use strict';
+    'use strict'
     function validateDate( def, val ) {
-        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def;
+        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def
     }
     let _date  = supplement( null, date, validateDate ),
         _begin = supplement( null, range_begin, validateDate ),
         _end   = supplement( null, range_end, validateDate ),
         _scale = verifyScale( scale ),
         _size  = supplement( null, size_per_scale, function( def, val ) {
-            return typeof val === 'number' ? Number( val ) : def;
+            return typeof val === 'number' ? Number( val ) : def
         }),
-        coordinate_x;
+        coordinate_x
+    
     if ( ! _date || ! _begin || ! _end ) {
-        console.warn( 'Cannot parse date because invalid format or undefined.' );
-        return false;
+        console.warn( 'Cannot parse date because invalid format or undefined.' )
+        return false
     }
     if ( ! _scale ) {
-        console.warn( 'Specified an invalid scale.' );
-        return false;
+        console.warn( 'Specified an invalid scale.' )
+        return false
     }
     if ( ! _size ) {
-        console.warn( 'Invalid the size per scale of timeline.' );
-        return false;
+        console.warn( 'Invalid the size per scale of timeline.' )
+        return false
     }
     
     if ( _date - _begin >= 0 && _end - _date >= 0 ) {
         // When the given date is within the range of timeline_range_begin and timeline_range_end (:> 指定された日付がタイムラインの範囲内にある場合
-        //coordinate_x = Math.ceil( Math.abs( _date - _begin ) / _scale ) * _size; // 切り上げ
-        //coordinate_x = Math.floor( Math.abs( _date - _begin ) / _scale ) * _size; // 切り捨て
-        coordinate_x = ( Math.abs( _date - _begin ) / _scale ) * _size;
+        //coordinate_x = Math.ceil( Math.abs( _date - _begin ) / _scale ) * _size // 切り上げ
+        //coordinate_x = Math.floor( Math.abs( _date - _begin ) / _scale ) * _size // 切り捨て
+        coordinate_x = ( Math.abs( _date - _begin ) / _scale ) * _size
     } else {
-        console.warn( 'The given date is out of range in timeline' );
-        return false;
+        // console.warn( 'The given date is out of range in timeline' )
+        // return false
+        coordinate_x = ( Math.abs( _date - _begin ) / _scale ) * _size
     }
-    return coordinate_x;
+    return coordinate_x
 }
 
 /*
@@ -1041,15 +1222,15 @@ function getCoordinateX( date, range_begin, range_end, scale, size_per_scale ) {
  * @return void
  */
 function renderTimelineView( elem, options ) {
-    'use strict';
+    'use strict'
     function validateDate( def, val ) {
-        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def;
+        return ! isNaN( Date.parse( val ) ) && typeof val === 'string' ? Date.parse( val ) : def
     }
     function validateNumeric( def, val ) {
-        return typeof val === 'number' ? Number( val ) : def;
+        return typeof val === 'number' ? Number( val ) : def
     }
     // Validate Options
-    elem = supplement( null, elem );
+    elem = supplement( null, elem )
     let _begin      = supplement( null, getPluggableDatetime( options.startDatetime ), validateDate ),
         _end        = supplement( null, getPluggableDatetime( options.endDatetime ), validateDate ),
         _scale      = verifyScale( options.scale ),
@@ -1061,83 +1242,83 @@ function renderTimelineView( elem, options ) {
         sidebar     = supplement( null, options.sidebar ),
         ruler       = supplement( null, options.ruler ),
         width       = supplement( null, options.width, validateNumeric ),
-        height      = supplement( null, options.height, validateNumeric );
+        height      = supplement( null, options.height, validateNumeric )
     
 // console.log( elem, _begin, _end, _scale, _rows, _size_scale, _size_row, sidebar, ruler );
     if ( ! elem || ! _begin || ! _end || ! _scale || ! _rows || ! _size_scale || ! _size_row || ! headline || ! footer || ! sidebar || ! ruler  ) {
-        console.warn( 'Failed because exist undefined or invalid arguments.' );
-        return false;
+        console.warn( 'Failed because exist undefined or invalid arguments.' )
+        return false
     }
     
     // Calculate the full size of the timeline (:> タイムラインのフルサイズを算出
     let _cell_grids = Math.ceil( ( _end - _begin ) / _scale ),
         _fullwidth  = _cell_grids * _size_scale,
-        _fullheight = _rows * _size_row;
+        _fullheight = _rows * _size_row
+    
     if ( _fullwidth < 2 || _fullheight < 2 ) {
-        console.warn( 'The range of the timeline to be rendered is incorrect.' );
-        return false;
+        console.warn( 'The range of the timeline to be rendered is incorrect.' )
+        return false
     }
     
     // Define visible size according to full size of timeline (:> タイムラインのフルサイズに準じた可視サイズを定義
     let _visible_width  = '100%',
-        _visible_height = 'auto';
+        _visible_height = 'auto'
+    
     if ( width && width > 0 ) {
-        _visible_width = ( width <= _fullwidth ? width : _fullwidth ) + 'px';
+        _visible_width = ( width <= _fullwidth ? width : _fullwidth ) + 'px'
     }
     if ( height && height > 0 ) {
-        _visible_height = ( height <= _fullheight ? height : _fullheight ) + 'px';
+        _visible_height = ( height <= _fullheight ? height : _fullheight ) + 'px'
     }
     
     // Render a timeline container (:> タイムラインコンテナの描画
     if ( $(elem).length == 0 ) {
-        console.warn( 'Does not exist the element to render a timeline container.' );
-        return false;
+        console.warn( 'Does not exist the element to render a timeline container.' )
+        return false
     }
     
     let _tl_container  = $('<div></div>', { class: 'jqtl-container', style: 'width: '+ _visible_width +'; height: '+ _visible_height +';' }),
         _tl_main       = $('<div></div>', { class: 'jqtl-main' }),
-        hide_scrollbar = false;
+        hide_scrollbar = false
+    
     if ( options.debug ) {
-        console.log( 'Timeline:{ fullWidth: '+ _fullwidth +'px,', 'fullHeight: '+ _fullheight +'px,', 'viewWidth: '+ _visible_width, 'viewHeight: '+ _visible_height +' }' );
+        console.log( 'Timeline:{ fullWidth: '+ _fullwidth +'px,', 'fullHeight: '+ _fullheight +'px,', 'viewWidth: '+ _visible_width, 'viewHeight: '+ _visible_height +' }' )
     }
-    $(elem).css( 'position', 'relative' ); // initialize; not .empty()
+    $(elem).css( 'position', 'relative' ) // initialize; not .empty()
     if ( hide_scrollbar ) {
-        _tl_container.addClass( 'hide-scrollbar' );
+        _tl_container.addClass( 'hide-scrollbar' )
     }
     
     // Create the timeline headline (:> タイムラインの見出しを生成
-    $(elem).prepend( createHeadline( headline, _begin, _end ) );
-    
-    // // Prerender the loading animation (:> ローディング・アニメーションを事前表示
-    // let _loading_margin_top = $(elem).find('.jqtl-headline').height();
-    // $(elem).prepend( startLoading( _visible_width, _visible_height, _loading_margin_top ) );
+    $(elem).prepend( createHeadline( headline, _begin, _end ) )
     
     // Create the timeline event container (:> タイムラインのイベントコンテナを生成
-    _tl_main.append( createEventContainer( _fullwidth, _fullheight, _rows, _size_row, _cell_grids, _size_scale ) );
+    _tl_main.append( createEventContainer( _fullwidth, _fullheight, _rows, _size_row, _cell_grids, _size_scale ) )
     
     // Create the timeline ruler (:> タイムラインの目盛を生成
     if ( ruler.top ) {
-        _tl_main.prepend( createRuler( _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.top, 'top' ) );
+        _tl_main.prepend( createRuler( _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.top, 'top' ) )
     }
     if ( ruler.bottom ) {
-        _tl_main.append( createRuler( _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.bottom, 'bottom' ) );
+        _tl_main.append( createRuler( _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.bottom, 'bottom' ) )
     }
     
     // Create the timeline side index (:> タイムラインのサイドインデックスを生成
     let _top_margin    = parseInt( _tl_main.find('.jqtl-ruler-top canvas').attr('height') ) - 1,
         _bottom_margin = parseInt( _tl_main.find('.jqtl-ruler-bottom canvas').attr('height') ) - 1,
         _sticky        = sidebar.sticky || false,
-        _indices       = sidebar.list || [];
+        _indices       = sidebar.list || []
+    
     if ( _indices.length > 0 ) {
-        _tl_container.prepend( createSideIndex( _top_margin, _bottom_margin, _rows, _size_row, _sticky, _indices ) );
+        _tl_container.prepend( createSideIndex( _top_margin, _bottom_margin, _rows, _size_row, _sticky, _indices ) )
     }
     
     // Append the timeline container in the timeline element (:> タイムライン要素にタイムラインコンテナを追加
-    _tl_container.append( _tl_main );
-    $(elem).append( _tl_container );
+    _tl_container.append( _tl_main )
+    $(elem).append( _tl_container )
     
     // Create the timeline footer (:> タイムラインのフッタを生成
-    $(elem).append( createFooter( footer, _begin, _end ) );
+    $(elem).append( createFooter( footer, _begin, _end ) )
     
 }
 
@@ -1151,20 +1332,22 @@ function renderTimelineView( elem, options ) {
  *
  * @return DOM element
  */
-function showLoading( selector, width, height, margin_top ) {
-    let _loading = $('<div></div>', { id: 'jqtl-loading', style: 'width:'+ width +';height:'+ height + ';top:' + margin_top + 'px;' });
+function showLoader( selector, width, height, margin_top ) {
+    let _loader = $('<div></div>', { id: 'jqtl-loading', style: 'width:'+ width +';height:'+ height + ';top:' + margin_top + 'px;' })
+    
     if ( $(selector).length == 0 ) {
-        height = height === 'auto' ? '240px' : height;
-        let _loading_text = 'Loading...'.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter(Boolean);
+        height = height === 'auto' ? '240px' : height
+        let _loading_text = 'Loading...'.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter( Boolean )
+        
         _loading_text.forEach(function( str,idx ) {
-            let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: 'jqtl-loading' }).text( str );
-            _loading.append( _fountain_text );
-        });
+            let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: 'jqtl-loading' }).text( str )
+            _loader.append( _fountain_text )
+        })
     } else {
-        let _custom_loader = $(selector).clone().prop('hidden', false).css('display', 'block');
-        _loading.append( _custom_loader );
+        let _custom_loader = $(selector).clone().prop( 'hidden', false ).css( 'display', 'block' )
+        _loading.append( _custom_loader )
     }
-    return _loading;
+    return _loader
 }
 
 /*
@@ -1174,8 +1357,8 @@ function showLoading( selector, width, height, margin_top ) {
  *
  * @return void
  */
-function hideLoading( $elem ) {
-    $elem.find('#jqtl-loading').remove();
+function hideLoader( element ) {
+    $(element).find('#jqtl-loading').remove()
 }
 
 /*
@@ -1188,7 +1371,7 @@ function hideLoading( $elem ) {
  * @return DOM element
  */
 function createHeadline( headline, range_begin, range_end ) {
-    'use strict';
+    'use strict'
     let _display = supplement( true, headline.display ),
         _title   = supplement( null, headline.title ),
         _range   = supplement( true, headline.range ),
@@ -1197,20 +1380,21 @@ function createHeadline( headline, range_begin, range_end ) {
         _begin   = supplement( null, range_begin ),
         _end     = supplement( null, range_end ),
         _tl_headline = $('<div></div>', { class: 'jqtl-headline my-1', }),
-        _wrapper     = $('<div></div>', { class: 'd-flex justify-content-between align-items-stretch' });
+        _wrapper     = $('<div></div>', { class: 'd-flex justify-content-between align-items-stretch' })
+    
     if ( _title ) {
-        _wrapper.append( '<h3 class="jqtl-timeline-title">'+ _title +'</h3>' );
+        _wrapper.append( '<h3 class="jqtl-timeline-title">'+ _title +'</h3>' )
     }
     if ( _range ) {
         if ( _begin && _end ) {
-            let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format );
-            _wrapper.append( '<div class="jqtl-range-meta align-self-center">'+ _meta +'</div>' );
+            let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format )
+            _wrapper.append( '<div class="jqtl-range-meta align-self-center">'+ _meta +'</div>' )
         }
     }
     if ( ! _display ) {
-        _tl_headline.addClass( 'jqtl-hide' );
+        _tl_headline.addClass( 'jqtl-hide' )
     }
-    return _tl_headline.append( _wrapper );
+    return _tl_headline.append( _wrapper )
 }
 
 /*
@@ -1227,9 +1411,9 @@ function createHeadline( headline, range_begin, range_end ) {
  * @return DOM element
  */
 function createRuler( grids, size_per_grid, scale, begin, min_scale, ruler, position ) {
-    'use strict';
+    'use strict'
     function validateRulerLine( def, val ) {
-        return is_array( val ) && val.length > 0 ? val : def;
+        return is_array( val ) && val.length > 0 ? val : def
     }
     let ruler_line  = supplement( [ min_scale ], ruler.lines, validateRulerLine ),
         line_height = supplement( 30, ruler.height ),
@@ -1243,45 +1427,47 @@ function createRuler( grids, size_per_grid, scale, begin, min_scale, ruler, posi
         _ruler      = $('<div></div>', { class: 'jqtl-ruler-'+position }),
         _ruler_bg   = $('<canvas width="'+ _fullwidth +'" height="'+ _fullheight +'"></canvas>', { class: 'jqtl-ruler-bg-' + position, }),
         _ruler_body = $('<div></div>', { class: 'jqtl-ruler-content-' + position }),
-        ctx_ruler   = _ruler_bg[0].getContext('2d');
-//console.log( grids, size_per_grid, scale, begin, min_scale, ruler, position, ruler_line, line_height, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
+        ctx_ruler   = _ruler_bg[0].getContext('2d')
+    
+//console.log( grids, size_per_grid, scale, begin, min_scale, ruler, position, ruler_line, line_height, ctx_ruler.canvas.width, ctx_ruler.canvas.height )
     // Draw background of ruler
-    ctx_ruler.fillStyle = background;
-    ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height );
+    ctx_ruler.fillStyle = background
+    ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height )
     // Draw stroke of ruler
-    ctx_ruler.strokeStyle = 'rgba( 51, 51, 51, 0.1 )';
-    ctx_ruler.lineWidth = 1;
-    ctx_ruler.filter = 'url(#crisp)';
+    ctx_ruler.strokeStyle = 'rgba( 51, 51, 51, 0.1 )'
+    ctx_ruler.lineWidth = 1
+    ctx_ruler.filter = 'url(#crisp)'
     ruler_line.forEach(function( line_scale, idx ){
-        ctx_ruler.beginPath();
+        ctx_ruler.beginPath()
         // Draw rows
         let _line_x = position === 'top' ? 0 : ctx_ruler.canvas.width,
-            _line_y = position === 'top' ? line_height * ( idx + 1 ) - 0.5 : line_height * idx + 0.5;
-        ctx_ruler.moveTo( 0, _line_y );
-        ctx_ruler.lineTo( ctx_ruler.canvas.width, _line_y );
+            _line_y = position === 'top' ? line_height * ( idx + 1 ) - 0.5 : line_height * idx + 0.5
+        
+        ctx_ruler.moveTo( 0, _line_y )
+        ctx_ruler.lineTo( ctx_ruler.canvas.width, _line_y )
         // Draw cols
-        let _line_grids = getGridsPerScale( grids, begin, scale, line_scale );
-// console.log( _line_grids, grids, begin, scale, line_scale );
+        let _line_grids = getGridsPerScale( grids, begin, scale, line_scale )
+// console.log( _line_grids, grids, begin, scale, line_scale )
         let _grid_x = 0;
         for ( let _key in _line_grids ) {
             if ( _line_grids[_key] >= grids ) {
-                break;
+                break
             }
             let _grid_width = _line_grids[_key] * size_per_grid,
-                _correction = -1.5;
-            _grid_x += _grid_width;
+                _correction = -1.5
+            _grid_x += _grid_width
             if ( Math.ceil( _grid_x ) - _correction >= ctx_ruler.canvas.width ) {
-                break;
+                break
             }
-            ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y );
-            ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height );
+            ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
+            ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
         }
-        ctx_ruler.closePath();
-        ctx_ruler.stroke();
-        _ruler_body.append( createRulerContent( _line_grids, line_scale, size_per_grid, ruler ) );
-    });
+        ctx_ruler.closePath()
+        ctx_ruler.stroke()
+        _ruler_body.append( createRulerContent( _line_grids, line_scale, size_per_grid, ruler ) )
+    })
     
-    return _ruler.append( _ruler_bg ).append( _ruler_body );
+    return _ruler.append( _ruler_bg ).append( _ruler_body )
 }
 
 /*
@@ -1295,11 +1481,12 @@ function createRuler( grids, size_per_grid, scale, begin, min_scale, ruler, posi
  * @return object
  */
 function getGridsPerScale( grids, begin, scale, target_scale ) {
-    'use strict';
+    'use strict'
     let _tmp, i, _scopes = [], _scale_grids = {},
-        _sep = '/';
+        _sep = '/'
+    
     for ( i = 0; i < grids; i++ ) {
-        _tmp = new Date( begin + ( i * scale ) );
+        _tmp = new Date( begin + ( i * scale ) )
         let _y   = _tmp.getFullYear(),
             _mil = Math.ceil( _y / 1000 ),
             _cen = Math.ceil( _y / 100 ),
@@ -1311,7 +1498,8 @@ function getGridsPerScale( grids, begin, scale, target_scale ) {
             _d   = _tmp.getDate(),
             _h   = _tmp.getHours(),
             _min = _tmp.getMinutes(),
-            _s   = _tmp.getSeconds();
+            _s   = _tmp.getSeconds()
+        
         _scopes.push({
             millennium: _mil,
             century:    _cen,
@@ -1326,18 +1514,18 @@ function getGridsPerScale( grids, begin, scale, target_scale ) {
             minute:     _y + _sep + _m + _sep + _d + ' ' + _h + ':' + _min,
             second:     _y + _sep + _m + _sep + _d + ' ' + _h + ':' + _min + ':' + _s,
             datetime:   _tmp.toString(),
-        });
+        })
     }
     _scopes.forEach(function( _scope, idx ) {
         // console.log( _scope[target_scale], idx );
         if ( ! _scale_grids[_scope[target_scale]] ) {
-            _scale_grids[_scope[target_scale]] = 1;
+            _scale_grids[_scope[target_scale]] = 1
         } else {
-            _scale_grids[_scope[target_scale]]++;
+            _scale_grids[_scope[target_scale]]++
         }
-    });
+    })
     
-    return _scale_grids;
+    return _scale_grids
 }
 
 /*
@@ -1351,28 +1539,31 @@ function getGridsPerScale( grids, begin, scale, target_scale ) {
  * @return DOM element
  */
 function createRulerContent( line_scope, line_scale, size_per_grid, ruler ) {
-    'use strict';
+    'use strict'
     function validateString( def, val ) {
-        return typeof val === 'string' && val !== '' ? val : def;
+        return typeof val === 'string' && val !== '' ? val : def
     }
     function validateFormat( def, val ) {
-        return typeof val === 'object' ? val : def;
+        return typeof val === 'object' ? val : def
     }
-    let line_height  = supplement( 30, ruler.height ),
-        font_size    = supplement( 14, ruler.fontSize ),
-        text_color   = supplement( '#777', ruler.color ),
-        locale       = supplement( 'en-US', ruler.locale, validateString ),
-        format       = supplement( { hour12: false }, ruler.format, validateFormat ),
-        _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ line_height +'px;' });
+    let line_height  = supplement( Default.ruler.top.height, ruler.height ),
+        font_size    = supplement( Default.ruler.top.fontSize, ruler.fontSize ),
+        text_color   = supplement( Default.ruler.top.color, ruler.color ),
+        locale       = supplement( Default.ruler.top.locale, ruler.locale, validateString ),
+        format       = supplement( Default.ruler.top.format, ruler.format, validateFormat ),
+        _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ line_height +'px;' })
+    
     for ( let _key in line_scope ) {
         let _line = $('<div></div>', { class: 'jqtl-ruler-line-item', style: 'width:'+ (line_scope[_key] * size_per_grid) +'px;height:'+ line_height +'px;line-height:'+ line_height +'px;font-size:'+ font_size +'px;color:'+ text_color +';' }),
-            _ruler_string = getLocaleString( _key, line_scale, locale, format, ),
-            _data_ruler_item = '';
-        _data_ruler_item  = line_scale +'-'+ ( _data_ruler_item === '' ? String( _key ) : _data_ruler_item );
-        _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string );
-        _ruler_lines.append( _line ).attr( 'data-ruler-scope', line_scale );
+            _ruler_string = getLocaleString( _key, line_scale, locale, format ),
+            _data_ruler_item = ''
+//console.log( line_scope[_key], line_scale, locale, format, _ruler_string )
+        
+        _data_ruler_item  = line_scale +'-'+ ( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )
+        _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string )
+        _ruler_lines.append( _line ).attr( 'data-ruler-scope', line_scale )
     }
-    return _ruler_lines;
+    return _ruler_lines
 }
 
 /*
@@ -1388,65 +1579,67 @@ function createRulerContent( line_scope, line_scale, size_per_grid, ruler ) {
  * @return DOM element
  */
 function createEventContainer( width, height, rows, size_per_row, grids, size_per_scale ) {
-    'use strict';
-    width -= 1;
+    'use strict'
+    width -= 1
     let _container   = $('<div></div>', { class: 'jqtl-event-container' }),
         _events_bg   = $('<canvas width="'+ width +'" height="'+ height +'"></canvas>', { class: 'jqtl-bg-grid', }),
         _events_body = $('<div></div>', { class: 'jqtl-events' }),
-        ctx_grid     = _events_bg[0].getContext('2d');
+        ctx_grid     = _events_bg[0].getContext('2d')
+    
     let drawRowRect = function( pos_y, color ) {
-        color = supplement( '#FFFFFF', color );
-        // console.log( 0, pos_y, _fullwidth, _size_row, color );
-        ctx_grid.fillStyle = color;
-        ctx_grid.fillRect( 0, pos_y + 0.5, width, size_per_row + 1 );
-        ctx_grid.stroke();
-    };
+        color = supplement( '#FFFFFF', color )
+        // console.log( 0, pos_y, _fullwidth, _size_row, color )
+        ctx_grid.fillStyle = color
+        ctx_grid.fillRect( 0, pos_y + 0.5, width, size_per_row + 1 )
+        ctx_grid.stroke()
+    }
     let drawHorizontalLine = function( pos_y, is_dotted ) {
-        is_dotted = supplement( false, is_dotted );
-        // console.log( pos_y, is_dotted );
-        ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.1 )';
-        ctx_grid.lineWidth = 1;
-        ctx_grid.filter = 'url(#crisp)';
-        ctx_grid.beginPath();
+        is_dotted = supplement( false, is_dotted )
+        // console.log( pos_y, is_dotted )
+        ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.1 )'
+        ctx_grid.lineWidth = 1
+        ctx_grid.filter = 'url(#crisp)'
+        ctx_grid.beginPath()
         if ( is_dotted ) {
-            ctx_grid.setLineDash([ 1, 2 ]);
+            ctx_grid.setLineDash([ 1, 2 ])
         } else {
-            ctx_grid.setLineDash([]);
+            ctx_grid.setLineDash([])
         }
-        ctx_grid.moveTo( 0, pos_y + 0.5 );
-        ctx_grid.lineTo( width, pos_y + 0.5 );
-        ctx_grid.closePath();
-        ctx_grid.stroke();
-    };
+        ctx_grid.moveTo( 0, pos_y + 0.5 )
+        ctx_grid.lineTo( width, pos_y + 0.5 )
+        ctx_grid.closePath()
+        ctx_grid.stroke()
+    }
     let drawVerticalLine = function( pos_x, is_dotted ) {
-        is_dotted = supplement( false, is_dotted );
-        // console.log( pos_x, is_dotted );
-        ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.025 )';
-        ctx_grid.lineWidth = 1;
-        ctx_grid.filter = 'url(#crisp)';
-        ctx_grid.beginPath();
+        is_dotted = supplement( false, is_dotted )
+        // console.log( pos_x, is_dotted )
+        ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.025 )'
+        ctx_grid.lineWidth = 1
+        ctx_grid.filter = 'url(#crisp)'
+        ctx_grid.beginPath()
         if ( is_dotted ) {
-            ctx_grid.setLineDash([ 1, 2 ]);
+            ctx_grid.setLineDash([ 1, 2 ])
         } else {
-            ctx_grid.setLineDash([]);
+            ctx_grid.setLineDash([])
         }
-        ctx_grid.moveTo( pos_x - 0.5, 0 );
-        ctx_grid.lineTo( pos_x - 0.5, height );
-        ctx_grid.closePath();
-        ctx_grid.stroke();
-    };
-    let i;
+        ctx_grid.moveTo( pos_x - 0.5, 0 )
+        ctx_grid.lineTo( pos_x - 0.5, height )
+        ctx_grid.closePath()
+        ctx_grid.stroke()
+    }
+    let i
+    
     for ( i = 0; i < rows; i++ ) {
-        drawRowRect( ( i * size_per_row ), i % 2 == 0 ? '#FEFEFE' : '#F8F8F8' );
+        drawRowRect( ( i * size_per_row ), i % 2 == 0 ? '#FEFEFE' : '#F8F8F8' )
     }
     for ( i = 1; i < rows; i++ ) {
-        drawHorizontalLine( ( i * size_per_row ), true );
+        drawHorizontalLine( ( i * size_per_row ), true )
     }
     for ( i = 1; i < grids; i++ ) {
-        drawVerticalLine( ( i * size_per_scale ), false );
+        drawVerticalLine( ( i * size_per_scale ), false )
     }
     
-    return _container.append( _events_bg ).append( _events_body );
+    return _container.append( _events_bg ).append( _events_body )
 }
 
 /*
@@ -1462,20 +1655,21 @@ function createEventContainer( width, height, rows, size_per_row, grids, size_pe
  * @return DOM element
  */
 function createSideIndex( top_margin, bottom_margin, rows, size_per_row, sticky, indices ) {
-    'use strict';
+    'use strict'
     let _wrapper = $('<div></div>', { class: 'jqtl-side-index' }),
         _list    = $('<div></div>', { class: 'jqtl-side-index-item' }),
-        _c       = 0.5;
+        _c       = 0.5
+    
     if ( sticky ) {
-        _wrapper.addClass( 'jqtl-sticky-left' );
+        _wrapper.addClass( 'jqtl-sticky-left' )
     }
-    _wrapper.css( 'margin-top', top_margin + 'px' ).css( 'margin-bottom', bottom_margin + 'px' ); //.css( 'grid-template-rows', 'repeat('+ rows +', '+ ( size_per_row + 0.25 ) +')' );
+    _wrapper.css( 'margin-top', top_margin + 'px' ).css( 'margin-bottom', bottom_margin + 'px' ) //.css( 'grid-template-rows', 'repeat('+ rows +', '+ ( size_per_row + 0.25 ) +')' )
     for ( let i = 0; i < rows; i++ ) {
-        let _item = _list.clone().html( indices[i] );
-        _wrapper.append( _item );
+        let _item = _list.clone().html( indices[i] )
+        _wrapper.append( _item )
     }
-    _wrapper.find('.jqtl-side-index-item').css( 'height', ( size_per_row + _c ) + 'px' ).css( 'line-height', ( size_per_row + _c ) + 'px' );
-    return _wrapper;
+    _wrapper.find('.jqtl-side-index-item').css( 'height', ( size_per_row + _c ) + 'px' ).css( 'line-height', ( size_per_row + _c ) + 'px' )
+    return _wrapper
 }
 
 /*
@@ -1488,7 +1682,7 @@ function createSideIndex( top_margin, bottom_margin, rows, size_per_row, sticky,
  * @return DOM element
  */
 function createFooter( footer, range_begin, range_end ) {
-    'use strict';
+    'use strict'
     let _display = supplement( true, footer.display ),
         _content = supplement( null, footer.content ),
         _range   = supplement( false, footer.range ),
@@ -1496,20 +1690,21 @@ function createFooter( footer, range_begin, range_end ) {
         _format  = supplement( { hour12: false }, footer.format ),
         _begin   = supplement( null, range_begin ),
         _end     = supplement( null, range_end ),
-        _tl_footer = $('<div></div>', { class: 'jqtl-footer', });
+        _tl_footer = $('<div></div>', { class: 'jqtl-footer', })
+    
     if ( _range ) {
         if ( _begin && _end ) {
-            let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format );
-            _tl_footer.append( '<div class="jqtl-range-meta jqtl-align-self-right">'+ _meta +'</div>' );
+            let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format )
+            _tl_footer.append( '<div class="jqtl-range-meta jqtl-align-self-right">'+ _meta +'</div>' )
         }
     }
     if ( _content ) {
-        _tl_footer.append( '<div class="jqtl-footer-content">'+ _content +'</div>' );
+        _tl_footer.append( '<div class="jqtl-footer-content">'+ _content +'</div>' )
     }
     if ( ! _display ) {
-        _tl_footer.addClass( 'jqtl-hide' );
+        _tl_footer.addClass( 'jqtl-hide' )
     }
-    return _tl_footer;
+    return _tl_footer
 }
 
 /*
@@ -1522,37 +1717,31 @@ function createFooter( footer, range_begin, range_end ) {
  * @return object event_data
  */
 function registerEventData( elem, params, options ) {
-    //console.log( elem, params );
-    let _self      = $(elem),
-        _gap       = 2,
-        event_data = { // Default parameters of the timeline event
-            uid      : generateUniqueID(),
-            eventId  : '',
-            x        : 0,
-            y        : _gap,
-            width    : options.minGridSize,
-            height   : options.rowHeight - _gap * 2,
-            bgColor  : '#FAFAFA',
-            color    : 'inherit',
-            label    : _self.html(),
-            content  : '',
-            image    : '',
-            margin   : _gap,
-            extend   : {},
-            callback : function() {},
-            relation : {},
-        };
+    //console.log( elem, params, EventParams )
+    let _self     = $(elem),
+        new_event = {
+            ...EventParams,
+            ...{
+                uid   : generateUniqueID(),
+                label : _self.html()
+            }
+        },
+        _x, _w
     
     if ( params.hasOwnProperty( 'start' ) ) {
-        event_data.x = numRound( getCoordinateX( params.start, options.startDatetime, options.endDatetime, options.scale, options.minGridSize ), 2 );
+        _x = getCoordinateX( params.start, options.startDatetime, options.endDatetime, options.scale, options.minGridSize )
+console.log( 'getX:', _x, _self )
+        new_event.x = numRound( _x, 2 )
         if ( params.hasOwnProperty( 'end' ) ) {
-            event_data.width = numRound( getCoordinateX( params.end, options.startDatetime, options.endDatetime, options.scale, options.minGridSize ) - event_data.x, 2 );
+            _x = getCoordinateX( params.end, options.startDatetime, options.endDatetime, options.scale, options.minGridSize )
+            _w = _x - new_event.x
+            new_event.width = numRound( _w, 2 )
         }
         if ( params.hasOwnProperty( 'row' ) ) {
-            event_data.y = ( params.row - 1 ) * options.rowHeight + _gap;
+            new_event.y = ( params.row - 1 ) * options.rowHeight + new_event.margin
         }
         
-        Object.keys( event_data ).forEach(function( _prop ){
+        Object.keys( new_event ).forEach(function( _prop ){
             switch( _prop ) {
                 case 'eventId':
                 case 'bgColor':
@@ -1563,26 +1752,83 @@ function registerEventData( elem, params, options ) {
                 case 'callback':
                 case 'relation':
                     if ( params.hasOwnProperty( _prop ) && params[_prop] && params[_prop] !== '' ) {
-                        event_data[_prop] = params[_prop];
+                        new_event[_prop] = params[_prop]
                     }
-                    break;
+                    break
                 case 'label':
                 case 'content':
                     if ( params.hasOwnProperty( _prop ) && params[_prop] && params[_prop] !== '' ) {
-                        event_data[_prop] = params[_prop];
+                        new_event[_prop] = params[_prop]
                     }
                     // Override the children element to label or content setting
                     if ( _self.children('.event-' + _prop).length > 0 ) {
-                        event_data[_prop] = _self.children('.event-' + _prop).html();
+                        new_event[_prop] = _self.children('.event-' + _prop).html()
                     }
-                    break;
+                    break
                 default:
-                    break;
+                    break
             }
         });
     }
-    return event_data;
+    return new_event
 }
+
+/*
+ * Create an event element on the timeline (:> タイムライン上にイベント要素を作成する
+ *
+ * @param object params (required)
+ * @param string type (optional)
+ *
+ * @return DOM element
+ */
+function createEventNode( params, type ) {
+    'use strict'
+    type = supplement( 'bar', type )
+console.log( params )
+    let _evt_elem = $('<div></div>', {
+            class : 'jqtl-event-node',
+            id    : `evt-${params.eventId}`,
+            css   : {
+                left   : `${params.x}px`,
+                top    : `${params.y}px`,
+                width  : `${params.width}px`,
+                height : `${params.height}px`,
+                color  : hexToRgbA( params.color ),
+                backgroundColor : hexToRgbA( params.bgColor ),
+            },
+            html  : params.label
+        })
+    
+    _evt_elem.attr( 'data-uid', params.uid )
+    
+    if ( ! is_empty( params.extend ) ) {
+        for ( let _prop in params.extend ) {
+            _evt_elem.attr( `data-${_prop}`, params.extend[_prop] )
+            if ( _prop === 'toggle' && $.inArray( params.extend[_prop], [ 'popover', 'tooltip' ] ) != -1 ) {
+                // for bootstrap's popover or tooltip
+                _evt_elem.attr( 'title', params.label )
+                if ( ! params.extend.hasOwnProperty( 'content' ) ) {
+                    _evt_elem.attr( 'data-content', params.content )
+                }
+            }
+        }
+    }
+    
+    if ( ! is_empty( params.callback ) ) {
+        _evt_elem.attr( 'data-callback', params.callback )
+    }
+    
+    /*
+    $(document).on( 'mouseenter', `#evt-${params.eventId}`, (e) => {
+        $(e.target).css( 'background-color', hexToRgbA( params.bgColor, 0.65 ) )
+    }).on( 'mouseleave', `#evt-${params.eventId}`, (e) => {
+        $(e.target).css( 'background-color', hexToRgbA( params.bgColor, 1 ) )
+    })
+    */
+    
+    return _evt_elem
+}
+
 
 })
 );
