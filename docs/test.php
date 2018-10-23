@@ -367,14 +367,40 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     text-align: center;
 }
 /* Custom for DEMO: start */
-.jqtl-ruler-line-item[data-ruler-item^="year-"] {
+.jqtl-ruler-line-item[data-ruler-item^="millennium-"],
+.jqtl-ruler-line-item[data-ruler-item^="century-"],
+.jqtl-ruler-line-item[data-ruler-item^="decade-"],
+.jqtl-ruler-line-item[data-ruler-item^="lustrum-"],
+.jqtl-ruler-line-item[data-ruler-item^="year-"],
+.jqtl-ruler-line-item[data-ruler-item^="month-"],
+.jqtl-ruler-line-item[data-ruler-item^="week-"] {
     text-align: left;
     padding-left: 2em;
 }
 .jqtl-ruler-line-item[data-ruler-item^="month-"] {
-    text-align: left;
     padding-left: 4em;
 }
+.jqtl-ruler-line-item[data-ruler-item^="week-"] {
+    padding-left: 6em;
+}
+.jqtl-ruler-line-item[data-ruler-item^="millennium-"]:after {
+    content: '千年紀';
+}
+.jqtl-ruler-line-item[data-ruler-item^="century-"]:after {
+    content: '世紀';
+}
+.jqtl-ruler-line-item[data-ruler-item^="decade-"]:before {
+    content: '十年紀 ';
+}
+.jqtl-ruler-line-item[data-ruler-item^="lustrum-"]:before {
+    content: '五年紀 ';
+}
+/*
+.jqtl-ruler-line-item[data-ruler-item^="decade-"]:after, 
+.jqtl-ruler-line-item[data-ruler-item^="lustrum-"]:after {
+    content: '紀';
+}
+*/
 /*
 .jqtl-ruler-line-item[data-ruler-item^="week-"]:before {
     content: '第';
@@ -668,13 +694,13 @@ $('#my-timeline').timeline({
     },
     ruler         : {
         top    : {
-            lines      : [ 'year', 'month', 'day', 'hour' ],
+            lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
             background : '#FFF',
             locale     : 'ja-JP',
-            format     : { timeZone: 'Asia/Tokyo', hour12: false, year: 'numeric', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
+            format     : { timeZone: 'Asia/Tokyo', hour12: false, decade: 'ordinal', lustrum: 'ordinal', year: 'numeric', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
         },
         // bottom : {}
     },

@@ -109,7 +109,7 @@
     }
     
     const minScaleGridSize = {
-        Millennium : 256,
+        millennium : 256,
         century    : 144,
         decade     : 120,
         lustrum    : 108,
@@ -756,7 +756,12 @@ function getLocaleString( date_seed, scale, locales, options ) {
     }
     let is_toLocalString = toLocaleStringSupportsLocales(),
         locale_string = '',
-        _options = {}, _prop, _temp
+        _options = {},
+        getOrdinal = n => {
+            let s = [ 'th', 'st', 'nd', 'rd' ], v = n % 100
+            return n + ( s[(v - 20)%10] || s[v] || s[0] )
+        },
+        _prop, _temp
     
     for ( _prop in options ) {
         if ( _prop === 'timeZone' || _prop === 'hour12' ) {
@@ -768,7 +773,11 @@ function getLocaleString( date_seed, scale, locales, options ) {
         case /^century$/i.test( scale ):
         case /^dec(ade|ennium)$/i.test( scale ):
         case /^lustrum$/i.test( scale ):
-            locale_string = date_seed
+            if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
+                locale_string = getOrdinal( date_seed )
+            } else {
+                locale_string = date_seed
+            }
             break
         case /^years?$/i.test( scale ):
             if ( is_toLocalString ) {
@@ -788,7 +797,11 @@ function getLocaleString( date_seed, scale, locales, options ) {
             break
         case /^weeks?$/i.test( scale ):
             _temp = date_seed.split(',')
-            locale_string = _temp[1]
+            if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
+                locale_string = getOrdinal( _temp )
+            } else {
+                locale_string = _temp[1]
+            }
             break
         case /^weekdays?$/i.test( scale ):
             _temp = date_seed.split(',')
