@@ -172,8 +172,17 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 }
 .jqtl-headline {
     width: 100%;
+    margin-top: .25rem;
+    margin-bottom: .25rem;
     padding-left: 5px;
     padding-right: 5px;
+}
+.jqtl-headline-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: stretch;
 }
 .jqtl-timeline-title {
     font-size: 26px;
@@ -505,8 +514,8 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
             <li data-timeline-node="">event test 1</li>
             <li data-timeline-node="{}">event test 2</li>
             <li data-timeline-node="{start:'2018-10-21 9:50',end:'2018-10-21 13:15',content:'text text text text ...'}">event test 3</li>
-            <li data-timeline-node="{eventId:'7',start:'2018-10-22 0:00',end:'2018-10-22 3:00',content:'text text text text ...'}">event test 4</li>
-            <li data-timeline-node="{eventId:0,start:'2018-10-23 8:30',end:'2018-10-23 15:45',content:'text text text text ...'}">event test 5</li>
+            <li data-timeline-node="{eventId:'7',start:'2018-10-24 10:00',end:'2018-10-24 19:00'}"><label class="event-label">Office Work</label></li>
+            <li data-timeline-node="{eventId:0,start:'2018-10-25 9:50',end:'2018-10-25 18:50'}"><div class="event-content">event test 5</div></li>
             <li data-timeline-node="{eventId:1,start:'2018-10-16 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'set label at attribute',content:'set content at attribute',bgColor:'#CFC',color:'#33E'}">full params</li>
             <li data-timeline-node="{eventId:4,start:'2018-10-16 00:00:00',end:'2018-10-20 23:59:59',row:3,bgColor:'#CCF',color:'#E3E'}"><p class="event-label">Set label on .event-label</p><p class="event-content">Set content on .event-content</p></li>
             <li data-timeline-node="{eventId:null,start:'2018-10-21 00:00:00',end:'2018-10-24 23:59:59',row:4,label:'set label at attribute',content:'set content at attribute',extend:'{toggle:\'popover\',placement:\'top\',trigger:\'hover\'}'}"><p class="event-label">Bootstrap Popover</p><span class="event-label">double label</span><p class="event-content">Set content on .event-content</p></li>
@@ -649,8 +658,8 @@ test_scales.forEach(function( scale ){
 //console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
 
 $('#my-timeline').timeline({
-    startDatetime : '2018-10-21 0:00:00',
-    endDatetime   : '2018-11-1 23:59:59',
+    startDatetime : '2018-10-24 0:00:00',
+    endDatetime   : '2018-10-31 23:59:59',
     scale         : 'hour',
     showHeadline  : true,
     headline      : {
@@ -694,7 +703,8 @@ $('#my-timeline').timeline({
     },
     ruler         : {
         top    : {
-            lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
+            //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
+            lines      : [ 'year', 'month', 'day', 'hour' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
@@ -712,7 +722,7 @@ $('#my-timeline').timeline({
 //.timeline('destroy')
 //.timeline('_init')
 .timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
-.css( 'border', 'solid 1px #F03333' )
+//.css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
 ;
 
