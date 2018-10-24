@@ -395,20 +395,20 @@
             
             // Create the timeline ruler (:> タイムラインの目盛を生成
             if ( ! is_empty( _opts.ruler.top ) ) {
-                _tl_main.prepend( this._createRuler( /*_cell_grids, _size_scale, _scale, _begin, options.scale, ruler.top,*/ 'top' ) )
+                _tl_main.prepend( this._createRuler( 'top' ) )
             }
             if ( ! is_empty( _opts.ruler.bottom ) ) {
-                _tl_main.append( this._createRuler( /*_cell_grids, _size_scale, _scale, _begin, options.scale, ruler.bottom,*/ 'bottom' ) )
+                _tl_main.append( this._createRuler( 'bottom' ) )
             }
             
             // Create the timeline side index (:> タイムラインのサイドインデックスを生成
-            let _top_margin    = parseInt( _tl_main.find('.jqtl-ruler-top canvas').attr('height') ) - 1,
-                _bottom_margin = parseInt( _tl_main.find('.jqtl-ruler-bottom canvas').attr('height') ) - 1,
-                _sticky        = _opts.sidebar.sticky || false,
-                _indices       = _opts.sidebar.list || []
+            let margin = {
+                    top    : parseInt( _tl_main.find('.jqtl-ruler-top canvas').attr('height'), 10 ) - 1,
+                    bottom : parseInt( _tl_main.find('.jqtl-ruler-bottom canvas').attr('height'), 10 ) - 1
+                }
             
-            if ( _indices.length > 0 ) {
-                _tl_container.prepend( this._createSideIndex( _top_margin, _bottom_margin, _rows, _size_row, _sticky, _indices ) )
+            if ( _opts.sidebar.list.length > 0 ) {
+                _tl_container.prepend( this._createSideIndex( margin ) )
             }
             
             // Append the timeline container in the timeline element (:> タイムライン要素にタイムラインコンテナを追加
@@ -416,7 +416,7 @@
             $(_elem).append( _tl_container )
             
             // Create the timeline footer (:> タイムラインのフッタを生成
-            $(_elem).append( this._createFooter( footer, _begin, _end ) )
+            $(_elem).append( this._createFooter( /* footer, _begin, _end */ ) )
             
             this._isShown = true
         }
@@ -443,6 +443,7 @@
             if ( _range ) {
                 if ( _begin && _end ) {
                     let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format )
+                    
                     _wrapper.append( '<div class="jqtl-range-meta align-self-center">'+ _meta +'</div>' )
                 }
             }
@@ -520,7 +521,7 @@
         /*
          * @private: Create the ruler of the timeline (:> タイムラインの目盛を作成する
          */
-        _createRuler( position /* _cell_grids, _size_scale, _scale, _begin, options.scale, ruler.top, 'top' */ ) {
+        _createRuler( position ) {
             let _opts       = this._config,
                 _props      = this._instanceProps,
                 ruler_line  = supplement( [ _opts.scale ], _opts.ruler[position].lines, ( def, val ) => { return is_array( val ) && val.length > 0 ? val : def }),
@@ -558,10 +559,10 @@
                 ctx_ruler.lineTo( ctx_ruler.canvas.width, _line_y )
                 
                 // Draw cols
-                let _line_grids = this._getGridsPerScale( line_scale ), // getGridsPerScale( grids, begin, scale, line_scale ),
+                let _line_grids = this._getGridsPerScale( line_scale ),
                     _grid_x     = 0
                 
-// console.log( _line_grids, grids, begin, scale, line_scale )
+console.log( _line_grids, _props.grids, _props.begin, _props.scale, line_scale )
                 for ( let _key in _line_grids ) {
                     if ( _line_grids[_key] >= _props.grids ) {
                         break
@@ -578,7 +579,7 @@
                 }
                 ctx_ruler.closePath()
                 ctx_ruler.stroke()
-                _ruler_body.append( this._createRulerContent( _line_grids, line_scale, ruler_opts ) ) // createRulerContent( _line_grids, line_scale, size_per_grid, ruler )
+                _ruler_body.append( this._createRulerContent( _line_grids, line_scale, ruler_opts ) )
             })
             
             return _ruler.append( _ruler_bg ).append( _ruler_body )
@@ -595,7 +596,7 @@
                 _sep         = '/'
             
             for ( let i = 0; i < _props.grids; i++ ) {
-                let _tmp = new Date( _props.begin + ( i * _opts.scale ) ),
+                let _tmp = new Date( _props.begin + ( i * _props.scale ) ),
                     _y   = _tmp.getFullYear(),
                     _mil = Math.ceil( _y / 1000 ),
                     _cen = Math.ceil( _y / 100 ),
@@ -640,7 +641,7 @@
         /*
          * @private: Create the content of ruler of the timeline (:> タイムラインの目盛本文を作成する
          */
-        _createRulerContent( _line_grids, line_scale, ruler ) { // function createRulerContent( line_scope, line_scale, size_per_grid, ruler ) 
+        _createRulerContent( _line_grids, line_scale, ruler ) {
             let _opts        = this._config,
                 _props       = this._instanceProps,
                 line_height  = supplement( Default.ruler.top.height, ruler.height ),
@@ -651,17 +652,91 @@
                 _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ line_height +'px;' })
             
             for ( let _key in _line_grids ) {
-                let _line        = $('<div></div>', { class: 'jqtl-ruler-line-item', style: 'width:'+ (_line_grids[_key] * _props.scaleSize) +'px;height:'+ line_height +'px;line-height:'+ line_height +'px;font-size:'+ font_size +'px;color:'+ text_color +';' }),
-                    _ruler_string = getLocaleString( _key, line_scale, locale, format ),
+                let _line            = $('<div></div>', { class: 'jqtl-ruler-line-item', style: 'width:'+ (_line_grids[_key] * _props.scaleSize) +'px;height:'+ line_height +'px;line-height:'+ line_height +'px;font-size:'+ font_size +'px;color:'+ text_color +';' }),
+                    _ruler_string    = getLocaleString( _key, line_scale, locale, format ),
                     _data_ruler_item = ''
-//console.log( line_scope[_key], line_scale, locale, format, _ruler_string )
+//console.log( _key, _line_grids[_key], line_scale, locale, format, _ruler_string )
                 
                 _data_ruler_item  = line_scale +'-'+ ( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )
                 _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string )
                 _ruler_lines.append( _line ).attr( 'data-ruler-scope', line_scale )
             }
-            return _ruler_lines
             
+            return _ruler_lines
+        }
+        
+        /*
+         * @private: Create the side indexes of the timeline (:> タイムラインのサイド・インデックスを作成する
+         */
+        _createSideIndex( margin ) {
+            let _opts    = this._config,
+                _props   = this._instanceProps,
+                _sticky  = supplement( Default.sidebar.sticky, _opts.sidebar.sticky ),
+                _overlay = supplement( Default.sidebar.overlay, _opts.sidebar.overlay ),
+                _sbList  = supplement( Default.sidebar.list, _opts.sidebar.list ),
+                _wrapper = $('<div></div>', { class: 'jqtl-side-index' }),
+                _margin  = $('<div></div>', { class: 'jqtl-side-index-margin' }),
+                _list    = $('<div></div>', { class: 'jqtl-side-index-item' }),
+                _c       = 0.5
+            
+            if ( _sticky ) {
+                _wrapper.addClass( 'jqtl-sticky-left' )
+            }
+            
+console.log( 'overlay', _overlay )
+            if ( _overlay ) {
+                _list.addClass( 'jqtl-overlay' )
+            }
+            
+            //_wrapper.css( 'margin-top', margin.top + 'px' ).css( 'margin-bottom', margin.bottom + 'px' )
+            if ( margin.top > 0 ) {
+                _wrapper.prepend( _margin.css( 'height', `${margin.top}px` ) )
+            }
+            
+            for ( let i = 0; i < _props.rows; i++ ) {
+                let _item = _list.clone().html( _sbList[i] )
+                
+                _wrapper.append( _item )
+            }
+            _wrapper.find('.jqtl-side-index-item').css( 'height', ( _props.rowSize + _c ) + 'px' ).css( 'line-height', ( _props.rowSize + _c ) + 'px' )
+            
+            if ( margin.bottom > 0 ) {
+                _wrapper.append( _margin.css( 'height', `${margin.bottom}px` ) )
+            }
+            
+            return _wrapper
+        }
+        
+        /*
+         * @private: 
+         */
+        _createFooter( /* footer, _begin, _end */ ) {
+            let _opts    = this._config,
+                _props   = this._instanceProps,
+                _display = supplement( Default.footer.display, _opts.footer.display ),
+                _content = supplement( null, _opts.footer.content ),
+                _range   = supplement( Default.footer.range, _opts.footer.range ),
+                _locale  = supplement( Default.footer.locale, _opts.footer.locale ),
+                _format  = supplement( Default.footer.format, _opts.footer.format ),
+                _begin   = supplement( null, _props.begin ),
+                _end     = supplement( null, _props.end ),
+                _tl_footer = $('<div></div>', { class: 'jqtl-footer', })
+            
+            if ( _range ) {
+                if ( _begin && _end ) {
+                    let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format )
+                    
+                    _tl_footer.append( '<div class="jqtl-range-meta jqtl-align-self-right">'+ _meta +'</div>' )
+                }
+            }
+            if ( _content ) {
+                _tl_footer.append( '<div class="jqtl-footer-content">'+ _content +'</div>' )
+            }
+            if ( ! _display ) {
+                _tl_footer.addClass( 'jqtl-hide' )
+            }
+            
+            return _tl_footer
         }
         
         /*
@@ -1747,8 +1822,8 @@ function renderTimelineView( elem, options ) {
     }
     
     // Create the timeline side index (:> タイムラインのサイドインデックスを生成
-    let _top_margin    = parseInt( _tl_main.find('.jqtl-ruler-top canvas').attr('height') ) - 1,
-        _bottom_margin = parseInt( _tl_main.find('.jqtl-ruler-bottom canvas').attr('height') ) - 1,
+    let _top_margin    = parseInt( _tl_main.find('.jqtl-ruler-top canvas').attr('height'), 10 ) - 1,
+        _bottom_margin = parseInt( _tl_main.find('.jqtl-ruler-bottom canvas').attr('height'), 10 ) - 1,
         _sticky        = sidebar.sticky || false,
         _indices       = sidebar.list || []
     

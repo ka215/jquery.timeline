@@ -343,13 +343,13 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     align-items: center;
     width: max-content;
     border-right: solid 1px #DDD;
-    background-color: rgba(255,255,255,.45);
     z-index: 25;
 }
 .jqtl-sticky-left {
     position: -webkit-sticky;
     position: sticky;
 }
+.jqtl-side-index-margin,
 .jqtl-side-index-item {
     display: table-cell;
     padding-left: 10px;
@@ -358,13 +358,20 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     font-size: 14px;
     vertical-align: middle;
     border-bottom: solid 1px #DDD;
+    background-color: #FFFFFF;
     white-space: nowrap;
+}
+.jqtl-side-index-item:nth-child(odd) {
+    background-color: #F7F7F7;
 }
 .jqtl-side-index-item:first-child {
     border-top: solid 1px #DDD;
 }
-.jqtl-side-index-item:nth-child(even) {
-    background-color: rgba(247,247,247,.25);
+.jqtl-overlay {
+    background-color: rgba(255,255,255,.65) !important;
+}
+.jqtl-overlay:nth-child(odd) {
+    background-color: rgba(247,247,247,.45) !important;
 }
 .jqtl-footer {
     margin: 15px auto;
