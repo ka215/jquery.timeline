@@ -73,7 +73,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <link rel="stylesheet" href="./css/timeline.min.css?v=<?= filemtime( CURRENT_DIR . '/docs/css/timeline.min.css' ); ?>">
   <style>
 /* Builtin Loader : start */
-#jqtl-loading {
+#jqtl-loader {
     position: fixed;
     top: 0;
     left: 0;
@@ -301,22 +301,43 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     display: flex;
     justify-content: start;
     align-items: center;
-    padding: 2px;
-    font-size: 14px;
-    line-height: 1.428571429; /* calc( 20px / 14px ) */
-    overflow: hidden;
-    /* white-space: nowrap; */
-    text-overflow: ellipsis;
+    align-content: center;
+    padding-left: 5px;
+    padding-right: 5px;
     border-radius: 2px;
+    overflow: hidden;
     z-index: 5;
     cursor: pointer;
     transition: all .5s ease;
+}
+.jqtl-event-label,
+.jqtl-event-node > * {
+    flex-grow: 1;
+    align-self: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+    font-size: 14px;
+}
+.jqtl-event-thumbnail {
+    margin-right: 3px;
 }
 .jqtl-event-node:hover {
     color: #FEFEFE;/* !important;*/
     background-color: #F73333;/* !important;*/
 }
 .jqtl-event-node:before {
+    content: attr(data-meta);
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    text-align: right;
+    font-size: 10px;
+    color: #999999;
+}
+.jqtl-event-node:after {
     content: '';
     position: absolute;
     display: block;
@@ -329,7 +350,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     background-color: transparent;
     transition: all .5s ease;
 }
-.jqtl-event-node:hover:before {
+.jqtl-event-node:hover:after {
     z-index: 4;
     background-color: rgba(0, 0, 0, 0.1);
 }
@@ -517,16 +538,18 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
       */ -->
         <div id="my-timeline" class="test-timeline test-1">
           <ul class="timeline-events">
-            <li>disallow</li>
-            <li data-timeline-node="">event test 1</li>
-            <li data-timeline-node="{}">event test 2</li>
-            <li data-timeline-node="{start:'2018-10-21 9:50',end:'2018-10-21 13:15',content:'text text text text ...'}">event test 3</li>
-            <li data-timeline-node="{eventId:'7',start:'2018-10-24 10:00',end:'2018-10-24 19:00'}"><label class="event-label">Office Work</label></li>
-            <li data-timeline-node="{eventId:0,start:'2018-10-25 9:50',end:'2018-10-25 18:50'}"><div class="event-content">event test 5</div></li>
-            <li data-timeline-node="{eventId:1,start:'2018-10-16 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'set label at attribute',content:'set content at attribute',bgColor:'#CFC',color:'#33E'}">full params</li>
-            <li data-timeline-node="{eventId:4,start:'2018-10-16 00:00:00',end:'2018-10-20 23:59:59',row:3,bgColor:'#CCF',color:'#E3E'}"><p class="event-label">Set label on .event-label</p><p class="event-content">Set content on .event-content</p></li>
-            <li data-timeline-node="{eventId:null,start:'2018-10-21 00:00:00',end:'2018-10-24 23:59:59',row:4,label:'set label at attribute',content:'set content at attribute',extend:'{toggle:\'popover\',placement:\'top\',trigger:\'hover\'}'}"><p class="event-label">Bootstrap Popover</p><span class="event-label">double label</span><p class="event-content">Set content on .event-content</p></li>
-            <li data-timeline-node="{start:'2018-10-25 00:00:00',end:'2018-10-31 23:59:59',row:5,callback:'myCallback'}"><h4 class="event-label">Bootstrap Modal</h4><p class="event-content">Event content...</p></li>
+            <li>無効なイベント</li>
+            <li data-timeline-node="">無効なイベント・その２</li>
+            <li data-timeline-node="{}">無効なイベント・その３</li>
+            <li data-timeline-node="{start:'2018-10-18 9:50',end:'2018-10-18 19:15',content:'始点と終点がレンジ外（タイムライン範囲より前）'}">レンジ外のイベント</li>
+            <li data-timeline-node="{eventId:'7',start:'2018-10-24 10:00',end:'2018-10-24 19:00'}"><label class="event-label">ラベルのみ</label></li>
+            <li data-timeline-node="{eventId:0,start:'2018-10-25 9:50',end:'2018-10-25 18:50'}"><div class="event-content">本文のみ</div></li>
+            <li data-timeline-node="{eventId:1,start:'2018-10-26 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'属性パラメータのラベル',content:'属性パラメータの本文',bgColor:'#CFC',color:'#33E'}">終点がレンジ外</li>
+            <li data-timeline-node="{eventId:4,start:'2018-10-25 12:00:00',end:'2018-10-26 22:59:59',row:3,bgColor:'#CCF',color:'#E3E'}"><p class="event-label">子要素のラベル</p><p class="event-content">子要素の本文</p></li>
+            <li data-timeline-node="{eventId:null,start:'2018-10-25 10:03:48',end:'2018-10-25 13:21:16',row:4,label:'属性パラメータのラベル',content:'属性パラメータの本文',extend:'{toggle:\'popover\',placement:\'top\',trigger:\'hover\'}'}"><p class="event-label">Bootstrap Popoverのサンプル</p><span class="event-label">子要素の"重複"ラベル</span><p class="event-content">Bootstrap Popoverへの対応がちょっとだけ簡単になった</p><div class="event-content">子要素の"重複"本文</div></li>
+            <li data-timeline-node="{start:'2018-10-01 00:00:00',end:'2018-10-24 23:59:59',row:5,callback:'myCallback'}"><h4 class="event-label">Bootstrap Modalのサンプル</h4><p class="event-content">また、このイベントは始点がレンジ外でもあるのだ。</p></li>
+            <li data-timeline-node="{eventId:1,start:'2018-10-28 5:48',end:'2018-10-28 6:37',row:6}"><div class="event-content">始点がレンジ外（タイムライン範囲より後）</div></li>
+            <li data-timeline-node="{start:'2018-10-24 13:05',end:'2018-10-24 16:27',row:7,image:'imgs/thumb_014.png'}"><div class="event-content">画像つきイベント</div></li>
           </ul>
         </div>
         
@@ -666,7 +689,7 @@ test_scales.forEach(function( scale ){
 
 $('#my-timeline').timeline({
     startDatetime : '2018-10-24 0:00:00',
-    endDatetime   : '2018-10-31 23:59:59',
+    endDatetime   : '2018-10-26 23:59:59',
     scale         : 'hour',
     showHeadline  : true,
     headline      : {
