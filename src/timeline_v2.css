@@ -1,0 +1,419 @@
+/*!
+ * jQuery Timeline Plugin
+ * ------------------------
+ * Version: 2.0.0a1
+ * Coded by: ka2 ( https://ka2.org/ )
+ * Repository: https://github.com/ka215/jquery.timeline
+ * Lisenced: MIT
+ */
+@charset "UTF-8";
+/* ----------------------------------------------------------------------------
+ * Common style
+ * ----------------------------------------------------------------------------
+ */
+.timeline-events {
+    display: none;
+    visibility: hidden;
+    position: asolute;
+    left: -9999px;
+    top: -9999px;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    z-index: -9999;
+}
+.jqtl-hide {
+    display: none;
+    visibility: hidden;
+    opacity: 0;
+}
+.jqtl-align-self-left {
+    clear: both;
+    float: left;
+    display: inline-block;
+    text-align: left;
+    align-self: left;
+}
+.jqtl-align-self-right {
+    clear: both;
+    float: right;
+    display: inline-block;
+    text-align: right;
+    align-self: right;
+}
+.jqtl-align-self-center {
+    clear: both;
+    display: inline-block;
+    text-align: center;
+    align-self: center;
+}
+/* ----------------------------------------------------------------------------
+ * Headline style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-headline {
+    width: 100%;
+    margin-top: .25rem;
+    margin-bottom: .25rem;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.jqtl-headline-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: stretch;
+}
+.jqtl-timeline-title {
+    align-self: center;
+    font-size: 26px;
+    color: #333;
+}
+.jqtl-range-meta {
+    align-self: center;
+    font-size: 86%;
+    color: #777777;
+}
+.jqtl-range-span {
+    position: relative;
+    display: inline-block;
+    margin-left: 2px;
+    margin-right: -2px;
+    width: 1em;
+    height: 1em;
+}
+.jqtl-range-span:before {
+    content: "\2013";
+    position: absolute;
+    left: 0;
+    top: -.25rem;
+    font-size: 1rem;
+    color: #999999;
+}
+/* ----------------------------------------------------------------------------
+ * Body container style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-container {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    border: solid 1px #DDD;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: #FFFFFF;
+}
+.hide-scrollbar {
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.jqtl-main {
+    position: relative;
+}
+/* ----------------------------------------------------------------------------
+ * Ruler style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-ruler-top, .jqtl-ruler-bottom {
+    position: relative;
+    border-left: solid 1px #DDD;
+    overflow: hidden;
+    z-index: 20;
+}
+.jqtl-ruler-bg-top, .jqtl-ruler-bg-bottom {
+    position: relative;
+    z-index: 21;
+}
+.jqtl-ruler-top {
+    bottom: 0;
+}
+.jqtl-ruler-bottom {
+    top: 0;
+}
+.jqtl-ruler-content-top, .jqtl-ruler-content-bottom {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    z-index: 22;
+}
+.jqtl-ruler-line-rows {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+.jqtl-ruler-line-rows:nth-child(even) {
+    background-color: rgba(247,247,247,.25);
+}
+.jqtl-ruler-line-item {
+    position: relative;
+    margin: 0;
+    padding-left: 2px;
+    padding-right: 2px;
+    min-width: 0;
+    text-align: center;
+    align-self: center;
+    font-family: "Courier New", monospace !important;
+    color: #777;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.jqtl-rli-left {
+    padding-left: 2rem;
+    text-align: left;
+    align-self: left !important;
+}
+.jqtl-ruler-line-item:nth-child(even) {
+    background-color: rgba(240,240,240,.25);
+}
+/* ----------------------------------------------------------------------------
+ * Event container style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-event-container {
+    position: relative;
+    outline: solid 1px #DDD;
+    z-index: 1;
+}
+.jqtl-bg-grid {
+    position: relative;
+    z-index: 2;
+}
+.jqtl-events {
+    position: absolute;
+    display: none;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+}
+/* ----------------------------------------------------------------------------
+ * One event style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-event-node {
+    position: absolute;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    align-content: center;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 2px;
+    overflow: hidden;
+    z-index: 5;
+    cursor: pointer;
+    transition: all .5s ease;
+}
+.jqtl-event-label,
+.jqtl-event-node > * {
+    /*flex-grow: 1;*/
+    align-self: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+    font-size: 1rem; /* Defaults to 16px */
+}
+.jqtl-event-thumbnail {
+    margin-right: 3px;
+}
+.jqtl-event-node:hover {
+    color: #FEFEFE;
+    background-color: #F73333;
+}
+.jqtl-event-node:before {
+    content: attr(data-meta);
+    position: absolute;
+    right: 4px;
+    top: 2px;
+    text-align: right;
+    font-size: .625rem; /* Defaults to 10px */
+    color: #999999;
+}
+.jqtl-event-node:after {
+    content: '';
+    position: absolute;
+    display: block;
+    z-index: 4;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 2px;
+    background-color: transparent;
+    transition: all .5s ease;
+}
+.jqtl-event-node:hover:after {
+    z-index: 4;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+.jqtl-event-thumbnail {
+    border-radius: 3px;
+    margin-right: 4px;
+    transition: all .5s ease;
+}
+.jqtl-event-node:hover .jqtl-event-thumbnail {
+    opacity: .75;
+}
+/* ----------------------------------------------------------------------------
+ * Sidebar index style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-side-index {
+    position: relative;
+    left: 1px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: start;
+    align-items: center;
+    width: max-content;
+    border-right: solid 1px #DDD;
+    z-index: 25;
+}
+.jqtl-sticky-left {
+    position: -webkit-sticky;
+    position: sticky;
+}
+.jqtl-side-index > [class^="jqtl-side-index-"] {
+    display: table-cell;
+    padding-left: 10px;
+    padding-right: 10px;
+    width: 100%;
+    font-size: 14px;
+    vertical-align: middle;
+    border-bottom: solid 1px #DDD;
+    background-color: #FFFFFF;
+    white-space: nowrap;
+}
+.jqtl-side-index > [class^="jqtl-side-index-"]:last-child {
+    border-bottom: 0;
+}
+.jqtl-side-index-item:nth-child(odd) {
+    background-color: #F7F7F7;
+}
+.jqtl-side-index-item:first-child {
+    border-top: solid 1px #DDD;
+}
+.jqtl-overlay {
+    background-color: rgba(255,255,255,.65) !important;
+}
+.jqtl-overlay:nth-child(odd) {
+    background-color: rgba(247,247,247,.45) !important;
+}
+/* ----------------------------------------------------------------------------
+ * Footer style
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-footer {
+    margin: 15px auto;
+    padding: 0;
+    width: 100%;
+}
+.jqtl-footer-content {
+    clear: both;
+    text-align: center;
+}
+/* ----------------------------------------------------------------------------
+ * Builtin Loader style
+ * ----------------------------------------------------------------------------
+ */
+#jqtl-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+}
+.jqtl-loading {
+    color: rgb(0,0,0);
+    font-family: "Courier New", monospace !important;
+    font-size: 48px;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    float: left;
+    animation-name: bounce_jqtl-loading;
+    animation-duration: 2.09s;
+    animation-iteration-count: infinite;
+    animation-direction: normal;
+    transform: scale(.5);
+}
+#jqtl-loading_1 {
+    animation-delay: 0.75s;
+}
+#jqtl-loading_2 {
+    animation-delay: 0.9s;
+}
+#jqtl-loading_3 {
+    animation-delay: 1.05s;
+}
+#jqtl-loading_4{
+    animation-delay: 1.2s;
+}
+#jqtl-loading_5 {
+    animation-delay: 1.35s;
+}
+#jqtl-loading_6 {
+    animation-delay: 1.5s;
+}
+#jqtl-loading_7 {
+    animation-delay: 1.64s;
+}
+#jqtl-loading_8 {
+    animation-delay: 1.79s;
+}
+#jqtl-loading_9 {
+    animation-delay: 1.94s;
+}
+#jqtl-loading_10 {
+    animation-delay: 2.09s;
+}
+@keyframes bounce_jqtl-loading {
+    0% {
+        transform: scale(1);
+        color: rgb(0,0,0);
+    }
+    100% {
+        transform: scale(.5);
+        color: rgb(255,255,255);
+    }
+}
+/* ----------------------------------------------------------------------------
+ * Others
+ * ----------------------------------------------------------------------------
+ */
+#jqtl-str-ruler {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    visibility: hidden;
+    white-space: nowrap;
+}

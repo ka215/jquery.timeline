@@ -1,0 +1,95 @@
+/*
+ * Extend style for demo of jQuery.Timeline v2
+ */
+/*
+.jqtl-ruler-line-item[data-ruler-item^="millennium-"],
+.jqtl-ruler-line-item[data-ruler-item^="century-"],
+.jqtl-ruler-line-item[data-ruler-item^="decade-"],
+.jqtl-ruler-line-item[data-ruler-item^="lustrum-"],
+.jqtl-ruler-line-item[data-ruler-item^="year-"],
+.jqtl-ruler-line-item[data-ruler-item^="month-"],
+.jqtl-ruler-line-item[data-ruler-item^="week-"] {
+    text-align: left;
+    padding-left: 2rem;
+}
+.jqtl-ruler-line-item[data-ruler-item^="month-"] {
+    padding-left: 4rem;
+}
+.jqtl-ruler-line-item[data-ruler-item^="week-"] {
+    padding-left: 6rem;
+}
+*/
+.jqtl-ruler-line-item[data-ruler-item^="millennium-"]:after {
+    content: '千年紀';
+}
+.jqtl-ruler-line-item[data-ruler-item^="century-"]:after {
+    content: '世紀';
+}
+/*
+.jqtl-ruler-line-item[data-ruler-item^="decade-"]:before {
+    content: '十年紀 ';
+}
+*/
+/*
+.jqtl-ruler-line-item[data-ruler-item^="lustrum-"]:before {
+    content: '五年紀 ';
+}
+*/
+/*
+.jqtl-ruler-line-item[data-ruler-item^="decade-"]:after, 
+.jqtl-ruler-line-item[data-ruler-item^="lustrum-"]:after {
+    content: '紀';
+}
+*/
+/*
+.jqtl-ruler-line-item[data-ruler-item^="week-"]:before {
+    content: '第';
+}
+*/
+.jqtl-ruler-line-item[data-ruler-item^="week-"]:after {
+    content: '週';
+}
+.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",6"] {
+    background-color: rgba(51,51,247,.08);
+}
+.jqtl-ruler-line-item[data-ruler-item^="weekday-"][data-ruler-item$=",0"] {
+    background-color: rgba(247,51,51,.08);
+}
+.jqtl-side-index-item a {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    padding-right: 5px;
+    text-decoration: none;
+}
+.jqtl-event-label,
+.jqtl-event-node > * {
+    font-size: .875rem; /* = 14px */
+    font-size: .8125rem; /* = 13px */
+}
+.avatar-icon {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    margin-top: -3px;
+    margin-right: 10px;
+}
+.avatar-icon img {
+    width: 100%;
+    height: 100%;
+}
+.custom-loader {
+    display: none;
+    border: 16px solid #DDD;
+    border-top: 16px solid #3498db;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

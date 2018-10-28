@@ -106,7 +106,6 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
             <li data-timeline-node="{start:'2018-10-01 00:00:00',end:'2018-10-24 23:59:59',row:5,callback:'myCallback'}"><h4 class="event-label">Bootstrap Modalのサンプル</h4><p class="event-content">また、このイベントは始点がレンジ外でもあるのだ。</p></li>
             <li data-timeline-node="{eventId:1,start:'2018-10-28 5:48',end:'2018-10-28 6:37',row:6}"><div class="event-content">始点がレンジ外（タイムライン範囲より後）</div></li>
             <li data-timeline-node="{start:'2018-10-24 13:05',end:'2018-10-24 16:27',row:7,image:'imgs/thumb_014.png'}"><div class="event-content">画像つきイベント</div></li>
-            <li data-timeline-node="{start:'0079-10-18 9:50',end:'0079-12-18 19:15',content:'サンプル'}">1年戦争勃発</li>
           </ul>
         </div>
         
@@ -201,45 +200,12 @@ const dates = [
     'Thu Sep 27 2018 02:00:00 GMT+0900',
     'Thu Sep 27 2018 02:00:00 GMT+0900 (Japan Standard Time)',
     'Thursday, 27-Sep-18 02:00:00 JST', // RFC 850  -> invalid
-    'Wednesday, 26-Sep-18 17:00:00 GMT', // RFC 850
-    '0/12/31',
-    '1/1/1',
-    '12/12/12',
-    '31-2-4',
-    '79/4/3',
-    '0083/7/6',
-    '166/4/1',
+    'Wednesday, 26-Sep-18 17:00:00 GMT' // RFC 850
 ];
-/*
-dates.forEach( ( dt ) => {
-    let _d = getElaborateDatetime( dt )
-    if ( _d ) {
-        console.log( `"${dt}"`, _d.toLocaleString() )
-    }
+dates.forEach(function( dt ){
+    let res = isNaN( Date.parse( dt ) ) ? '"'+dt+'" Cannot parse date because invalid format.' : Date.parse( dt );
+    // console.log( res );
 });
-*/
-
-    function getElaborateDatetime( datetime_str ) {
-        let normalizeDate = ( dateString ) => {
-                // For Safari, IE
-                return dateString.replace(/-/g, '/')
-            }
-        
-        if ( isNaN( Date.parse( normalizeDate( datetime_str ) ) ) ) {
-            console.warn( `"${datetime_str}" Cannot parse date because invalid format.` )
-            return null
-        }
-        let _tempDate = new Date( normalizeDate( datetime_str ) ),
-            _chk_date = datetime_str.split( /-|\// )
-        
-        if ( parseInt( _chk_date[0], 10 ) < 100 ) {
-            // Remapping if year is 0-99
-            _tempDate.setFullYear( parseInt( _chk_date[0], 10 ) )
-        }
-        
-        return _tempDate
-    }
-
 
 const test_date = [
     { date1: date1.toLocaleString(), date2: '2018/9/26 02:00:00' },
@@ -277,36 +243,28 @@ test_scales.forEach(function( scale ){
 
 //console.log( renderTimelineView( '#my-timeline', '2018/10/1 00:00:00', '2018/12/31 23:59:59', 'day', 30, 10, 50, '100%', '100%' ) );
 
-let _d = new Date()
-_d.setDate( _d.getDate() - 1 )
-//console.log( _d )
+//console.log( `${new Date().toLocaleDateString()} 0:00` );
 
 $('#my-timeline').timeline({
-    //startDatetime : '79/1/1 0:00',
-    //startDatetime : '166-1-1 0:00',
-    //startDatetime : '2000/1/1',
-    startDatetime : '2018-10-24 0:00:00',
-    // startDatetime : `${_d.toLocaleDateString()} 0:00`,
+    // startDatetime : '2018-10-26 0:00:00',
+    // startDatetime : `${new Date().toLocaleDateString()} 0:00`,
     // endDatetime   : '2018-10-28 23:59:59',
     // endDatetime : `${new Date().toLocaleDateString()} 6:59`,
-    //endDatetime   : '2020/12/31',
-    // scale         : 'half-hour',
-    scale         : 'half-hour',
-    minGridSize   : 30,
+    scale         : 'second',
     showHeadline  : true,
     headline      : {
         display   : true,
-        title     : 'jQuery Timeline Ver.2.0.0a1',
+        title     : 'jQuery Timeline Ver.2.0.0 alpha-1',
         range     : true,
         locale    : 'ja-JP-u-ca-japanese',
         format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }
     },
     footer        : {
         display   : true,
-        content   : `<small>&copy; MAGIC METHODS ${new Date().getFullYear()}</small>`,
+        content   : '<small>&copy; MAGIC METHODS 2018</small>',
         range     : true,
-        locale    : 'ja-JP-u-ca-iso8601',
-        format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'narrow', year: 'zerofill', month: 'numeric', day: '2-digit' }
+        locale    : 'ja-JP-u-ca-japanese',
+        format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }
     },
     sidebar       : {
         sticky : true,
@@ -336,9 +294,7 @@ $('#my-timeline').timeline({
     ruler         : {
         top    : {
             //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
-            //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month' ],
             lines      : [ 'year', 'month', 'week', 'day', 'weekday', 'hour', 'half-hour', 'quarter-hour'/*, 'minute'/*, 'second'*/ ],
-            //lines      : [ 'year', 'month', 'day' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
@@ -347,8 +303,7 @@ $('#my-timeline').timeline({
             format     : { timeZone: 'Asia/Tokyo', hour12: false, decade: 'ordinal', lustrum: 'ordinal', year: 'numeric', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
         },
         bottom : {
-            //lines      : [ 'hour' ],
-            lines      : [ 'week', 'year' ],
+            lines      : [ 'hour' ],
         }
     },
     
