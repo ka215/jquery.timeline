@@ -71,7 +71,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
   <!-- jQuery Timeline -->
   <link rel="stylesheet" href="../src/timeline_v2.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2.css' ); ?>">
-  <link rel="stylesheet" href="../src/timeline_v2_demo.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2_demo.css' ); ?>">
+  <!-- link rel="stylesheet" href="../src/timeline_v2_demo.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2_demo.css' ); ?>" -->
 </head>
 <body>
 <div class="container-fluid">
@@ -103,10 +103,16 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
             <li data-timeline-node="{eventId:1,start:'2018-10-26 00:00:00',end:'2018-10-31 23:59:59',row:2,label:'属性パラメータのラベル',content:'属性パラメータの本文',bgColor:'#CFC',color:'#33E'}">終点がレンジ外</li>
             <li data-timeline-node="{eventId:4,start:'2018-10-25 12:00:00',end:'2018-10-26 22:59:59',row:3,bgColor:'#CCF',color:'#E3E'}"><p class="event-label">子要素のラベル</p><p class="event-content">子要素の本文</p></li>
             <li data-timeline-node="{eventId:null,start:'2018-10-26 10:03:48',end:'2018-10-26 13:21:16',row:4,label:'属性パラメータのラベル',content:'属性パラメータの本文',extend:'{toggle:\'popover\',placement:\'top\',trigger:\'hover\'}'}"><p class="event-label">Bootstrap Popoverのサンプル</p><span class="event-label">子要素の"重複"ラベル</span><p class="event-content">Bootstrap Popoverへの対応がちょっとだけ簡単になった</p><div class="event-content">子要素の"重複"本文</div></li>
-            <li data-timeline-node="{start:'2018-10-01 00:00:00',end:'2018-10-24 23:59:59',row:5,callback:'myCallback'}"><h4 class="event-label">Bootstrap Modalのサンプル</h4><p class="event-content">また、このイベントは始点がレンジ外でもあるのだ。</p></li>
-            <li data-timeline-node="{eventId:1,start:'2018-10-28 5:48',end:'2018-10-28 6:37',row:6}"><div class="event-content">始点がレンジ外（タイムライン範囲より後）</div></li>
-            <li data-timeline-node="{start:'2018-10-24 13:05',end:'2018-10-24 16:27',row:7,image:'imgs/thumb_014.png'}"><div class="event-content">画像つきイベント</div></li>
+            <li data-timeline-node="{start:'2018-10-01 00:00:00',end:'2018-10-24 23:59:59',row:4,extend:'{toggle:\'modal\',target:\'#myModal\'}'}"><h4 class="event-label">Bootstrap Modalのサンプル1</h4><p class="event-content">また、このイベントは始点がレンジ外でもあるのだ。</p></li>
+            <li data-timeline-node="{start:'2018-11-01 00:00:00',end:'2018-11-9 23:59:59',row:5,callback:'$(\'#myModal\').modal()'}"><h4 class="event-label">Bootstrap Modalのサンプル2</h4><p class="event-content">また、このイベントは始点がレンジ外でもあるのだ。</p></li>
+            <li data-timeline-node="{eventId:1,start:'2018-10-28 5:48',end:'2018-10-28 6:37',row:6,callback:'$(document).localFunction( event )'}"><div class="event-content">始点がレンジ外（タイムライン範囲より後）</div></li>
+            <li data-timeline-node="{start:'2018-10-15 13:05',end:'2018-11-2 16:27',row:7,image:'imgs/thumb_014.png',rangeMeta:'個別のmeta'}"><div class="event-content">画像つきイベント</div></li>
             <li data-timeline-node="{start:'0079-10-18 9:50',end:'0079-12-18 19:15',content:'サンプル'}">1年戦争勃発</li>
+            <li data-timeline-node="{id:14,start:'2018-10-15 10:50',content:'サイズ指定は「large」',size:'large',relation:{before:-1}}">始点のみ設定されたイベント</li>
+            <li data-timeline-node="{id:15,start:'2018-10-17 13:45',row:2,content:'サイズ指定は「normal」',size:'normal',relation:{before:16,curve:'lb'}}">ポインター用イベント（1）</li>
+            <li data-timeline-node="{id:16,start:'2018-10-21 10:50',row:2,content:'サイズ指定は「small」',size:'small',relation:{before:15,after:-1,lineSize:8,color:'red'}}">ポインター用イベント（2）</li>
+            <li data-timeline-node="{id:17,start:'2018-10-23 3:45',row:3,content:'サイズ指定はピクセル値で「4」',size:4,bdColor:'blue',relation:{before:16,lineColor:'blue',size:1}}">ポインター用イベント（3）</li>
+            <li data-timeline-node="{id:18,start:'2018-10-24 0:00',row:4,content:'サイズ指定はなし',relation:{before:17,curve:'lb'}}">ポインター用イベント（4）</li>
           </ul>
         </div>
         
@@ -118,14 +124,28 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
     </div>
     <!-- /.content-main -->
 
-    <div class="col-lg-6 col-md-12" hidden>
+    <div class="col-lg-6 col-md-12">
 
       <div class="card mb-3">
         <div class"card-block">
-          <h5><i class="fa fa-cog"></i> Timeline Configuration</h5>
+          <h5><i class="fa fa-cog"></i> Test Methods </h5>
           <div class="card-text">
             <!-- configuration content -->
             
+          </div>
+        </div>
+      </div>
+      <!-- /.card -->
+    </div>
+    <!-- /.col -->
+
+    <div class="col-lg-6 col-md-12">
+
+      <div class="card mb-3">
+        <div class"card-block">
+          <h5><i class="fa fa-eye"></i> Timeline Event Detail</h5>
+          <div class="card-text">
+            <div class="timeline-event-view"></div>
           </div>
         </div>
       </div>
@@ -149,7 +169,7 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
         </button>
       </div>
       <div class="modal-body">
-        <div class="timeline-event-view"></div>
+        <div class="jqtl-event-view"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -212,34 +232,15 @@ const dates = [
 ];
 /*
 dates.forEach( ( dt ) => {
-    let _d = getElaborateDatetime( dt )
-    if ( _d ) {
-        console.log( `"${dt}"`, _d.toLocaleString() )
-    }
+    let _d = getLocaleString( dt, 'year', 'en-US', {
+            hour12: false, year: 'zerofill'
+        } )
+    
+    //if ( _d ) {
+        console.log( `"${dt}"`, _d )
+    //}
 });
 */
-
-    function getElaborateDatetime( datetime_str ) {
-        let normalizeDate = ( dateString ) => {
-                // For Safari, IE
-                return dateString.replace(/-/g, '/')
-            }
-        
-        if ( isNaN( Date.parse( normalizeDate( datetime_str ) ) ) ) {
-            console.warn( `"${datetime_str}" Cannot parse date because invalid format.` )
-            return null
-        }
-        let _tempDate = new Date( normalizeDate( datetime_str ) ),
-            _chk_date = datetime_str.split( /-|\// )
-        
-        if ( parseInt( _chk_date[0], 10 ) < 100 ) {
-            // Remapping if year is 0-99
-            _tempDate.setFullYear( parseInt( _chk_date[0], 10 ) )
-        }
-        
-        return _tempDate
-    }
-
 
 const test_date = [
     { date1: date1.toLocaleString(), date2: '2018/9/26 02:00:00' },
@@ -282,17 +283,19 @@ _d.setDate( _d.getDate() - 1 )
 //console.log( _d )
 
 $('#my-timeline').timeline({
+    type          : 'point',
     //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
     //startDatetime : '2000/1/1',
-    startDatetime : '2018-10-24 0:00:00',
+    startDatetime : '2018-10-14 0:00',
     // startDatetime : `${_d.toLocaleDateString()} 0:00`,
-    // endDatetime   : '2018-10-28 23:59:59',
+    //endDatetime   : '2019-1-3 23:59:59',
     // endDatetime : `${new Date().toLocaleDateString()} 6:59`,
     //endDatetime   : '2020/12/31',
     // scale         : 'half-hour',
-    scale         : 'half-hour',
-    minGridSize   : 30,
+    scale         : 'day',
+    //rows          : 7,
+    minGridSize   : 40,
     showHeadline  : true,
     headline      : {
         display   : true,
@@ -337,8 +340,8 @@ $('#my-timeline').timeline({
         top    : {
             //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
             //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month' ],
-            lines      : [ 'year', 'month', 'week', 'day', 'weekday', 'hour', 'half-hour', 'quarter-hour'/*, 'minute'/*, 'second'*/ ],
-            //lines      : [ 'year', 'month', 'day' ],
+            //lines      : [ 'year', 'month', 'week', 'day', 'weekday', 'hour', 'half-hour', 'quarter-hour'/*, 'minute'/*, 'second'*/ ],
+            lines      : [ 'year', 'month', 'day' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
@@ -350,6 +353,13 @@ $('#my-timeline').timeline({
             //lines      : [ 'hour' ],
             lines      : [ 'week', 'year' ],
         }
+    },
+    eventMeta       : {
+        display     : true,
+        scale       : 'hour',
+        //locale      : 'ja-JP-u-ca-japanese',
+        //format      : { hour12: false, month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' },
+        //content     : ''
     },
     
     debug         : true
@@ -385,11 +395,16 @@ $('#my-timeline2').timeline()
 
 $('[data-toggle="popover"]').popover()
 
-function myCallback() {
-    alert( 'Custom Callback Function!' )
+function localFunction( e ) {
+    alert( 'Custom Callback Local Function!' )
+    console.log( e )
 }
 
 })
+function globalFunction( e ) {
+    alert( 'Custom Callback Global Function!' )
+    console.log( e )
+}
 </script>
 </body>
 </html>

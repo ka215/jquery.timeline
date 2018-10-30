@@ -1,8 +1,7 @@
-// import Util from './timeline-utils.js'
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0
+ * Version: 2.0.0a1
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline/tree/develop
  * Lisenced: MIT
@@ -24,11 +23,15 @@
     /*
      * Constants
      */
-    const NAME               = 'timeline'
-    const VERSION            = '2.0.0'
-    const DATA_KEY           = 'jq.timeline'
+    const NAME               = "timeline"
+    const VERSION            = "2.0.0a1"
+    const DATA_KEY           = "jq.timeline"
     const EVENT_KEY          = `.${DATA_KEY}`
-    const DATA_API_KEY       = '.data-api'
+    const PREFIX             = "jqtl-"
+    const LOADING_MESSAGE    = "Loading..."
+    const MIN_POINTER_SIZE   = 12
+    
+    const DATA_API_KEY       = ".data-api"
     const JQUERY_NO_CONFLICT = $.fn[NAME]
     const ESCAPE_KEYCODE     = 27 // KeyboardEvent.which value for Escape (Esc) key
     
@@ -95,12 +98,18 @@
         },
         rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
         naviIcon        : { // Define class name
-            left        : "jqtl-circle-left",
-            right       : "jqtl-circle-right"
+            left        : `${PREFIX}circle-left`,
+            right       : `${PREFIX}circle-right`
         },
         loader          : "default", // Custom loader definition, possible values are "default", false and selector of loader element; Added new since v2.0.0
         hideScrollbar   : false,
-        showEventMeta   : true, // Display meta of range on event node when the timeline type is "bar"; Added new since v2.0.0
+        eventMeta       : { // Display meta of range on event node when the timeline type is "bar"; Added new since v2.0.0
+            display     : false,
+            scale       : "day",
+            locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
+            format      : { hour12: false }, // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+            content     : "" // This is value for if you want to show custom content on the meta
+        },
         showPointer     : true,
         // i18n         : {}, // --> Deprecated since v1.0.6
         // langsDir     : "./langs/", // --> Deprecated since v1.0.6
@@ -108,22 +117,6 @@
         // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
         debug           : true,
     }
-    
-    /*
-    const MinScaleGridSize = {
-        millennium : 256,
-        century    : 144,
-        decade     : 120,
-        lustrum    : 108,
-        year       : 96,
-        month      : 80,
-        week       : 64,
-        day        : 48,
-        hour       : 32,
-        minute     : 16,
-        second     : 8
-    }
-    */
     
     /*
      * Define the limited grid number per scale of timeline
@@ -158,32 +151,88 @@
         y         : Default.marginHeight,
         width     : Default.minGridSize,
         height    : Default.rowHeight - Default.marginHeight * 2,
-        bgColor   : '#E7E7E7',
-        color     : '#343A40',
+        bgColor   : '#E7E7E7', // background color
+        color     : '#343A40', // text color
+        bdColor   : '#6C757D', // border color
         label     : '',
         content   : '',
         image     : '',
         margin    : Default.marginHeight,
         rangeMeta : '',
+        size      : 'normal', // diameter of pointer
         extend    : {},
         callback  : function() {},
-        relation  : {},
+        relation  : { /*
+            before    : 
+            after     : 
+            linesize  : 
+            linecolor : 
+            curve     : 
+        */ },
     }
     
     const Event = {
-        INITIALIZED : `initialized${EVENT_KEY}`,
-        HIDE        : `hide${EVENT_KEY}`,
-        HIDDEN      : `hidden${EVENT_KEY}`,
-        SHOW        : `show${EVENT_KEY}`,
-        SHOWN       : `shown${EVENT_KEY}`,
+        INITIALIZED        : `initialized${EVENT_KEY}`,
+        HIDE               : `hide${EVENT_KEY}`,
+        //HIDDEN      : `hidden${EVENT_KEY}`,
+        SHOW               : `show${EVENT_KEY}`,
+        //SHOWN       : `shown${EVENT_KEY}`,
+        CLICK_EVENT        : `click.open${EVENT_KEY}`,
+        MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
+        MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
     }
     
     const ClassName = {
-        
+        TIMELINE_CONTAINER         : `${PREFIX}container`,
+        TIMELINE_MAIN              : `${PREFIX}main`,
+        TIMELINE_HEADLINE          : `${PREFIX}headline`,
+        TIMELINE_HEADLINE_WRAPPER  : `${PREFIX}headline-wrapper`,
+        HEADLINE_TITLE             : `${PREFIX}timeline-title`,
+        RANGE_META                 : `${PREFIX}range-meta`,
+        RANGE_SPAN                 : `${PREFIX}range-span`,
+        TIMELINE_EVENT_CONTAINER   : `${PREFIX}event-container`,
+        TIMELINE_BACKGROUND_GRID   : `${PREFIX}bg-grid`,
+        TIMELINE_RELATION_LINES    : `${PREFIX}relation-lines`,
+        TIMELINE_EVENTS            : `${PREFIX}events`,
+        TIMELINE_EVENT_NODE        : `${PREFIX}event-node`,
+        TIMELINE_EVENT_LABEL       : `${PREFIX}event-label`,
+        TIMELINE_EVENT_THUMBNAIL   : `${PREFIX}event-thumbnail`,
+        TIMELINE_RULER_LINES       : `${PREFIX}ruler-line-rows`,
+        TIMELINE_RULER_ITEM        : `${PREFIX}ruler-line-item`,
+        TIMELINE_SIDEBAR           : `${PREFIX}side-index`,
+        TIMELINE_SIDEBAR_MARGIN    : `${PREFIX}side-index-margin`,
+        TIMELINE_SIDEBAR_ITEM      : `${PREFIX}side-index-item`,
+        TIMELINE_FOOTER            : `${PREFIX}footer`,
+        TIMELINE_FOOTER_CONTENT    : `${PREFIX}footer-content`,
+        VIEWER_EVENT_TITLE         : `${PREFIX}event-title`,
+        VIEWER_EVENT_CONTENT       : `${PREFIX}event-content`,
+        VIEWER_EVENT_META          : `${PREFIX}event-meta`,
+        VIEWER_EVENT_IMAGE_WRAPPER : `${PREFIX}event-image-wrapper`,
+        VIEWER_EVENT_IMAGE         : `${PREFIX}event-image`,
+        VIEWER_EVENT_TYPE_POINTER  : `${PREFIX}event-type-pointer`,
+        HIDE_SCROLLBAR             : `${PREFIX}hide-scrollbar`,
+        HIDE                       : `${PREFIX}hide`,
+        RULER_ITEM_ALIGN_LEFT      : `${PREFIX}rli-left`,
+        STICKY_LEFT                : `${PREFIX}sticky-left`,
+        OVERLAY                    : `${PREFIX}overlay`,
+        ALIGN_SELF_RIGHT           : `${PREFIX}align-self-right`,
+        LOADER_ITEM                : `${PREFIX}loading`
     }
     
     const Selector = {
-        
+        EVENT_NODE                : `.${PREFIX}event-node`,
+        EVENT_VIEW                : `.timeline-event-view, .${PREFIX}event-view`,
+        RULER_TOP                 : `.${PREFIX}ruler-top`,
+        RULER_BOTTOM              : `.${PREFIX}ruler-bottom`,
+        TIMELINE_CONTAINER        : `.${ClassName.TIMELINE_CONTAINER}`,
+        TIMELINE_RULER_TOP        : `.${PREFIX}ruler-top`,
+        TIMELINE_RULER_BOTTOM     : `.${PREFIX}ruler-bottom`,
+        TIMELINE_RELATION_LINES   : `.${ClassName.TIMELINE_RELATION_LINES}`,
+        TIMELINE_EVENTS           : `.${ClassName.TIMELINE_EVENTS}`,
+        TIMELINE_SIDEBAR_ITEM     : `.${ClassName.TIMELINE_SIDEBAR_ITEM}`,
+        VIEWER_EVENT_TYPE_POINTER : `.${ClassName.VIEWER_EVENT_TYPE_POINTER}`,
+        LOADER                    : `#${PREFIX}loader`,
+        DEFAULT_EVENTS            : ".timeline-events"
     }
     
     /*
@@ -282,6 +331,28 @@
                 this._placeEvent()
             }
             
+            // Assign events for the timeline
+            $(document).on(
+                Event.CLICK_EVENT,
+                `${this._selector} ${Selector.EVENT_NODE}`,
+                ( event ) => this.openEvent( event )
+            )
+            
+//console.log( '!_init:', )
+            if ( /^point(|er)$/i.test( this._config.type ) ) {
+                $(_elem).on(
+                    Event.MOUSEENTER_POINTER,
+                    Selector.VIEWER_EVENT_TYPE_POINTER,
+                    ( event ) => this._hoverPointer( event )
+                )
+                $(_elem).on(
+                    Event.MOUSELEAVE_POINTER,
+                    Selector.VIEWER_EVENT_TYPE_POINTER,
+                    ( event ) => this._hoverPointer( event )
+                )
+            }
+            
+            this._isCompleted = true
         }
         
         /*
@@ -291,33 +362,33 @@
             let _opts  = this._config,
                 _props = {}
             
-            _props.begin      = supplement( null, this._getPluggableDatetime( _opts.startDatetime ) )
-            _props.end        = supplement( null, this._getPluggableDatetime( _opts.endDatetime ) )
+            _props.begin      = supplement( null, this._getPluggableDatetime( _opts.startDatetime, 'first' ) )
+            _props.end        = supplement( null, this._getPluggableDatetime( _opts.endDatetime, 'last' ) )
             _props.scaleSize  = supplement( null, _opts.minGridSize, validateNumeric )
             _props.rows       = this._getPluggableRows()
             _props.rowSize    = supplement( null, _opts.rowHeight, validateNumeric )
             _props.width      = supplement( null, _opts.width, validateNumeric )
             _props.height     = supplement( null, _opts.height, validateNumeric )
             
-            this._instanceProps = _props
+            this._instanceProps = _props　// pre-cache
             
             if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
                 // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
-                let _temp = this._verifyScale( _opts.scale ),
-                    _vals = Object.values( _temp ),
-                    _avrg = numRound( _vals.reduce( ( a, v ) => a + v, 0 ) / _vals.length, 4 ), // Average value within the range
-                    _bc   = /^years?$/i.test( _opts.scale ) ? 365 : 30,
-                    _sy   = 0
+                let _temp            = this._verifyScale( _opts.scale ),
+                    _values          = Object.values( _temp ),
+                    _averageDays     = numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average days within the range
+                    _baseDaysOfScale = /^years?$/i.test( _opts.scale ) ? 365 : 30,
+                    _totalWidth      = 0
                 
 //console.log( '!', _opts.scale, _temp, _vals )
-                _vals.forEach( ( v ) => {
-                    _sy += numRound( ( v * _props.scaleSize ) / _bc, 2 )
+                _values.forEach( ( days ) => {
+                    _totalWidth += numRound( ( days * _props.scaleSize ) / _baseDaysOfScale, 2 )
                 })
                 
-                _props.scale         = _avrg * ( 24 * 60 * 60 * 1000 )
-                _props.grids         = _vals.length
+                _props.scale         = _averageDays * ( 24 * 60 * 60 * 1000 )
+                _props.grids         = _values.length
                 _props.variableScale = _temp
-                _props.fullwidth     = _sy
+                _props.fullwidth     = _totalWidth
             } else {
                 // In case of fixed length scale (:> 固定長スケールの場合
                 _props.scale         = this._verifyScale( _opts.scale )
@@ -349,13 +420,21 @@
         /*
          * @private: Retrieve the pluggable datetime as milliseconds from specified keyword (:> 指定キーから作成されたプラガブルな日時をミリ秒単位で取得する
          */
-        _getPluggableDatetime( key ) {
-            let _opts = this._config,
-                _date
+        _getPluggableDatetime( key, round_type = '' ) {
+            let _opts        = this._config,
+                _date        = null,
+                getFirstDate = ( dateObj, scale ) => {
+                    return /^years?$/i.test( scale ) ? new Date( dateObj.getFullYear(), 0, 1 ) : new Date( dateObj.getFullYear(), dateObj.getMonth(), 1 )
+                },
+                getLastDate  = ( dateObj, scale ) => {
+                    let _tmpDate = /^years?$/i.test( scale ) ? new Date( dateObj.getFullYear() + 1, 0, 1 ) : new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                    return new Date( _tmpDate.getTime() - 1 )
+                }
             
             switch ( true ) {
                 case /^current(|ly)$/i.test( key ):
                     _date = new Date()
+//console.log( '!_getPluggableDatetime::currently:', _opts.scale, getHigherScale( _opts.scale ), key, _date.getTime() )
                     break
                 case /^auto$/i.test( key ):
                     let _ms          = null,
@@ -363,6 +442,9 @@
                     
                     if ( /^current(|ly)$/i.test( _opts.startDatetime ) ) {
                         _date = new Date()
+                        if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+                            _date = getFirstDate( _date, _opts.scale )
+                        }
                     } else {
                         _date = getCorrectDatetime( _opts.startDatetime )
                     }
@@ -388,12 +470,21 @@
                         }
                         _date.setTime( _date.getTime() + ( _ms * LimitScaleGrids[this._filterScaleKeyName( _opts.scale )] ) )
                     }
-//console.log( '!auto:', _opts.scale, getHigherScale( _opts.scale ), key, _date.getTime() )
+//console.log( '!_getPluggableDatetime::auto:', _opts.scale, getHigherScale( _opts.scale ), key, _date.getTime() )
                     break
                 default:
                     _date = getCorrectDatetime( key )
                     break
             }
+            if ( ! is_empty( round_type ) && /^(year|month)s?$/i.test( _opts.scale ) ) {
+                if ( 'first' === round_type ) {
+                    _date = getFirstDate( _date, _opts.scale )
+                } else
+                if ( 'last' === round_type ) {
+                    _date = getLastDate( _date, _opts.scale )
+                }
+            }
+            
             return _date.getTime()
         }
         
@@ -475,7 +566,7 @@
                     break
                 case /^months?$/i.test( scale ):
                     // Month (is the variable length scale) (:> 月（可変長スケール）
-console.log( '!p', this._instanceProps, _opts.scale )
+//console.log( '!_verifyScale::month:', this._instanceProps, _opts.scale )
                     if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
                         return this._diffDate( _props.begin, _props.end, scale )
                     } else {
@@ -528,8 +619,8 @@ console.log( '!p', this._instanceProps, _opts.scale )
             let _elem          = this._element,
                 _opts          = this._config,
                 _props         = this._instanceProps,
-                _tl_container  = $('<div></div>', { class: 'jqtl-container', style: 'width: '+ _props.visibleWidth +'; height: '+ _props.visibleHeight +';' }),
-                _tl_main       = $('<div></div>', { class: 'jqtl-main' })
+                _tl_container  = $('<div></div>', { class: ClassName.TIMELINE_CONTAINER, style: 'width: '+ _props.visibleWidth +'; height: '+ _props.visibleHeight +';' }),
+                _tl_main       = $('<div></div>', { class: ClassName.TIMELINE_MAIN })
             
 //console.log( _elem, _opts, _props )
             if ( $(_elem).length == 0 ) {
@@ -542,7 +633,7 @@ console.log( '!p', this._instanceProps, _opts.scale )
             
             $(_elem).css( 'position', 'relative' ) // initialize; not .empty()
             if ( _opts.hideScrollbar ) {
-                _tl_container.addClass( 'hide-scrollbar' )
+                _tl_container.addClass( ClassName.HIDE_SCROLLBAR )
             }
             
             // Create the timeline headline (:> タイムラインの見出しを生成
@@ -561,8 +652,8 @@ console.log( '!p', this._instanceProps, _opts.scale )
             
             // Create the timeline side index (:> タイムラインのサイドインデックスを生成
             let margin = {
-                    top    : parseInt( _tl_main.find('.jqtl-ruler-top').height(), 10 ) - 1,
-                    bottom : parseInt( _tl_main.find('.jqtl-ruler-bottom').height(), 10 ) - 1
+                    top    : parseInt( _tl_main.find( Selector.RULER_TOP ).height(), 10 ) - 1,
+                    bottom : parseInt( _tl_main.find( Selector.RULER_BOTTOM ).height(), 10 ) - 1
                 }
             
             if ( _opts.sidebar.list.length > 0 ) {
@@ -574,7 +665,7 @@ console.log( '!p', this._instanceProps, _opts.scale )
             $(_elem).append( _tl_container )
             
             // Create the timeline footer (:> タイムラインのフッタを生成
-            $(_elem).append( this._createFooter( /* footer, _begin, _end */ ) )
+            $(_elem).append( this._createFooter() )
             
             this._isShown = true
         }
@@ -592,23 +683,23 @@ console.log( '!p', this._instanceProps, _opts.scale )
                 _format  = supplement( Default.headline.format, _opts.headline.format ),
                 _begin   = supplement( null, _props.begin ),
                 _end     = supplement( null, _props.end ),
-                _tl_headline = $('<div></div>', { class: 'jqtl-headline', }),
-                _wrapper     = $('<div></div>', { class: 'jqtl-headline-wrapper' })
+                _tl_headline = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE }),
+                _wrapper     = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE_WRAPPER })
             
-console.log( _opts )
+// console.log( '!_createHeadline:', _opts )
             if ( _title ) {
-                _wrapper.append( '<h3 class="jqtl-timeline-title">'+ _opts.headline.title +'</h3>' )
+                _wrapper.append( `<h3 class="${ClassName.HEADLINE_TITLE}">${_opts.headline.title}</h3>` )
             }
             if ( _range ) {
                 if ( _begin && _end ) {
-                    let _meta = new Date( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ new Date( _end ).toLocaleString( _locale, _format )
+                    let _meta = new Date( _begin ).toLocaleString( _locale, _format ) + `<span class="${ClassName.RANGE_SPAN}"></span>` + new Date( _end ).toLocaleString( _locale, _format )
                     //let _meta = getCorrectDatetime( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ getCorrectDatetime( _end ).toLocaleString( _locale, _format )
                     
-                    _wrapper.append( '<div class="jqtl-range-meta">'+ _meta +'</div>' )
+                    _wrapper.append( `<div class="${ClassName.RANGE_META}">${_meta}</div>` )
                 }
             }
             if ( ! _display ) {
-                _tl_headline.addClass( 'jqtl-hide' )
+                _tl_headline.addClass( ClassName.HIDE )
             }
             return _tl_headline.append( _wrapper )
         }
@@ -620,9 +711,10 @@ console.log( _opts )
             let _opts         = this._config,
                 _props        = this._instanceProps,
                 _actualHeight = _props.fullheight + Math.ceil( _props.rows / 2 ),
-                _container    = $('<div></div>', { class: 'jqtl-event-container', style: `height:${_actualHeight}px;` }),
-                _events_bg    = $('<canvas width="'+ ( _props.fullwidth - 1 ) +'" height="'+ _actualHeight +'"></canvas>', { class: 'jqtl-bg-grid', }),
-                _events_body  = $('<div></div>', { class: 'jqtl-events' }),
+                _container    = $('<div></div>', { class: ClassName.TIMELINE_EVENT_CONTAINER, style: `height:${_actualHeight}px;` }),
+                _events_bg    = $('<canvas width="'+ ( _props.fullwidth - 1 ) +'" height="'+ _actualHeight +'" class="'+ ClassName.TIMELINE_BACKGROUND_GRID +'"></canvas>'),
+                _events_lines = $('<canvas width="'+ ( _props.fullwidth - 1 ) +'" height="'+ _actualHeight +'" class="'+ ClassName.TIMELINE_RELATION_LINES +'"></canvas>'),
+                _events_body  = $('<div></div>', { class: ClassName.TIMELINE_EVENTS }),
                 _cy           = 0,
                 ctx_grid      = _events_bg[0].getContext('2d'),
                 drawRowRect   = ( pos_y, color ) => {
@@ -695,7 +787,7 @@ console.log( _opts )
                 }
             }
             
-            return _container.append( _events_bg ).append( _events_body )
+            return _container.append( _events_bg ).append( _events_lines ).append( _events_body )
         }
         
         /*
@@ -714,9 +806,9 @@ console.log( _opts )
                 ruler_opts  = { lines: ruler_line, height: line_height, fontSize: font_size, color: text_color, background: background, locale: locale, format: format },
                 _fullwidth  = _props.fullwidth - 1,
                 _fullheight = ruler_line.length * line_height,
-                _ruler      = $('<div></div>', { class: `jqtl-ruler-${position}`, style: `height:${_fullheight}px;` }),
-                _ruler_bg   = $('<canvas class="jqtl-ruler-bg-'+ position +'" width="'+ _fullwidth +'" height="'+ _fullheight +'"></canvas>'),
-                _ruler_body = $('<div></div>', { class: `jqtl-ruler-content-${position}` }),
+                _ruler      = $('<div></div>', { class: `${PREFIX}ruler-${position}`, style: `height:${_fullheight}px;` }),
+                _ruler_bg   = $('<canvas class="'+ PREFIX +'ruler-bg-'+ position +'" width="'+ _fullwidth +'" height="'+ _fullheight +'"></canvas>'),
+                _ruler_body = $('<div></div>', { class: `${PREFIX}ruler-content-${position}` }),
                 _finalLines = 0,
                 ctx_ruler   = _ruler_bg[0].getContext('2d')
                 
@@ -804,7 +896,7 @@ console.log( _opts )
                     grid_size = numRound( ( _days * _props.scaleSize ) / _bc, 2 ),
                     _newKey   = null,
                     _arr, _temp
-console.log( '!_filterVariableScale:', _dt, getCorrectDatetime( _dt ).getFullYear(), _days )
+//console.log( '!_filterVariableScale:', _dt, getCorrectDatetime( _dt ).getFullYear(), _days )
                 
                 switch ( true ) {
                     case /^millenniums?|millennia$/i.test( target_scale ):
@@ -936,7 +1028,7 @@ console.log( '!_filterVariableScale:', _dt, getCorrectDatetime( _dt ).getFullYea
                     _scale_grids[_scope[target_scale]]++
                 }
             })
-console.log( '!_getGridsPerScale:', target_scale, _scale_grids )
+//console.log( '!_getGridsPerScale:', target_scale, _scale_grids )
             
             return _scale_grids
         }
@@ -952,14 +1044,14 @@ console.log( '!_getGridsPerScale:', target_scale, _scale_grids )
                 text_color   = supplement( Default.ruler.top.color, ruler.color ),
                 locale       = supplement( Default.ruler.top.locale, ruler.locale, validateString ),
                 format       = supplement( Default.ruler.top.format, ruler.format, validateObject ),
-                _ruler_lines = $('<div></div>', { class: 'jqtl-ruler-line-rows', style: 'width:100%;height:'+ line_height +'px;' })
+                _ruler_lines = $('<div></div>', { class: ClassName.TIMELINE_RULER_LINES, style: 'width:100%;height:'+ line_height +'px;' })
             
             for ( let _key in _line_grids ) {
                 let _item_width      = /^(year|month)s?$/i.test( _opts.scale ) ? _line_grids[_key] : _line_grids[_key] * _props.scaleSize,
-                    _line            = $('<div></div>', { class: 'jqtl-ruler-line-item', style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
+                    _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
                     _ruler_string    = getLocaleString( _key, line_scale, locale, format ),
                     _data_ruler_item = ''
-console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, locale, format, _item_width, _ruler_string )
+//console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, locale, format, _item_width, _ruler_string )
                 
                 _data_ruler_item  = line_scale +'-'+ ( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )
                 _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string )
@@ -968,7 +1060,7 @@ console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, local
                     // Adjust position of ruler item string
 //console.log( _item_width, _ruler_string, _ruler_string.length, strWidth( _ruler_string ), $(this._element).width() )
                     if ( _item_width > $(this._element).width() ) {
-                        _line.addClass( 'jqtl-rli-left' )
+                        _line.addClass( ClassName.RULER_ITEM_ALIGN_LEFT )
                     }
                 }
                 
@@ -987,17 +1079,17 @@ console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, local
                 _sticky  = supplement( Default.sidebar.sticky, _opts.sidebar.sticky ),
                 _overlay = supplement( Default.sidebar.overlay, _opts.sidebar.overlay ),
                 _sbList  = supplement( Default.sidebar.list, _opts.sidebar.list ),
-                _wrapper = $('<div></div>', { class: 'jqtl-side-index' }),
-                _margin  = $('<div></div>', { class: 'jqtl-side-index-margin' }),
-                _list    = $('<div></div>', { class: 'jqtl-side-index-item' }),
+                _wrapper = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR }),
+                _margin  = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR_MARGIN }),
+                _list    = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR_ITEM }),
                 _c       = 0.5
             
             if ( _sticky ) {
-                _wrapper.addClass( 'jqtl-sticky-left' )
+                _wrapper.addClass( ClassName.STICKY_LEFT )
             }
             
             if ( _overlay ) {
-                _list.addClass( 'jqtl-overlay' )
+                _list.addClass( ClassName.OVERLAY )
             }
             
             //_wrapper.css( 'margin-top', margin.top + 'px' ).css( 'margin-bottom', margin.bottom + 'px' )
@@ -1010,7 +1102,7 @@ console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, local
                 
                 _wrapper.append( _item )
             }
-            _wrapper.find('.jqtl-side-index-item').css( 'height', ( _props.rowSize + _c ) + 'px' ).css( 'line-height', ( _props.rowSize + _c ) + 'px' )
+            _wrapper.find( Selector.TIMELINE_SIDEBAR_ITEM ).css( 'height', ( _props.rowSize + _c ) + 'px' ).css( 'line-height', ( _props.rowSize + _c ) + 'px' )
             
             if ( margin.bottom > 0 ) {
                 _wrapper.append( _margin.clone().css( 'height', ( margin.bottom + 1 ) + 'px' ) )
@@ -1032,21 +1124,21 @@ console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, local
                 _format  = supplement( Default.footer.format, _opts.footer.format ),
                 _begin   = supplement( null, _props.begin ),
                 _end     = supplement( null, _props.end ),
-                _tl_footer = $('<div></div>', { class: 'jqtl-footer', })
+                _tl_footer = $('<div></div>', { class: ClassName.TIMELINE_FOOTER })
             
             if ( _range ) {
                 if ( _begin && _end ) {
-                    let _meta = getLocaleString( _begin, _opts.scale, _locale, _format ) +'<span class="jqtl-range-span"></span>'+ getLocaleString( _end, _opts.scale, _locale, _format )
+                    let _meta = getLocaleString( _begin, _opts.scale, _locale, _format ) + `<span class="${ClassName.RANGE_SPAN}"></span>`+ getLocaleString( _end, _opts.scale, _locale, _format )
                     //let _meta = getCorrectDatetime( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ getCorrectDatetime( _end ).toLocaleString( _locale, _format )
                     
-                    _tl_footer.append( '<div class="jqtl-range-meta jqtl-align-self-right">'+ _meta +'</div>' )
+                    _tl_footer.append( `<div class="${ClassName.RANGE_META} ${ClassName.ALIGN_SELF_RIGHT}">${_meta}</div>` )
                 }
             }
             if ( _content ) {
-                _tl_footer.append( '<div class="jqtl-footer-content">'+ _content +'</div>' )
+                _tl_footer.append( `<div class="${ClassName.TIMELINE_FOOTER_CONTENT}">${_content}</div>` )
             }
             if ( ! _display ) {
-                _tl_footer.addClass( 'jqtl-hide' )
+                _tl_footer.addClass( ClassName.HIDE )
             }
             
             return _tl_footer
@@ -1150,7 +1242,7 @@ console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, local
                     retval = diffMS
                     break
             }
-console.log( '!_diffDate:', retval )
+//console.log( '!_diffDate:', retval )
             
             return retval
         }
@@ -1164,16 +1256,16 @@ console.log( '!_diffDate:', retval )
             let _that         = this,
                 _elem         = this._element,
                 _opts         = this._config,
-                _container    = $(_elem).find('.jqtl-container'),
-                _ruler_top    = $(_elem).find('.jqtl-ruler-top'),
-                _ruler_bottom = $(_elem).find('.jqtl-ruler-bottom'),
-                _event_list   = $(_elem).find('.timeline-events'),
+                _container    = $(_elem).find( Selector.TIMELINE_CONTAINER ),
+                _ruler_top    = $(_elem).find( Selector.TIMELINE_RULER_TOP ),
+                _ruler_bottom = $(_elem).find( Selector.TIMELINE_RULER_BOTTOM ),
+                _event_list   = $(_elem).find( Selector.DEFAULT_EVENTS ),
                 _cnt          = 0,
                 events        = [],
                 lastEventId   = 0
             
             _event_list.children().each(function() {
-                let _attr = $(this).attr('data-timeline-node')
+                let _attr = $(this).attr( 'data-timeline-node' )
                 
                 if ( typeof _attr !== 'undefined' && _attr !== false ) {
                     _cnt++
@@ -1191,31 +1283,33 @@ console.log( '!_diffDate:', retval )
                     _margin_top     = ( _visible_height - ( _ruler_top.height() || 0 ) - ( _ruler_bottom.height() || 0 ) ) / 2
                 
 //console.log( _visible_width, _visible_height, _margin_top )
-                 $(_elem).find('.jqtl-container').append( this._showLoader( _visible_width, _visible_height ) )
+                 $(_elem).find( Selector.TIMELINE_CONTAINER ).append( this._showLoader( _visible_width, _visible_height ) )
             }
             
 //console.log( _opts )
             // Register Event Data
             _event_list.children().each(function() {
-                let _evt_params = _that._getPluggableParams( $(this).attr('data-timeline-node') ),
+                let _evt_params = _that._getPluggableParams( $(this).attr( 'data-timeline-node' ) ),
                     _one_event  = {}
                 
                 if ( ! is_empty( _evt_params ) ) {
                     _one_event = _that._registerEventData( this, _evt_params )
                     events.push( _one_event )
-                    lastEventId = Math.max( lastEventId, Number( _one_event.eventId ) )
+                    lastEventId = Math.max( lastEventId, parseInt( _one_event.eventId, 10 ) )
                 }
             });
             // Set event id with auto increment (:> イベントIDを自動採番
+            let cacheIds = [] // for checking duplication of id (:> IDの重複チェック用
             events.forEach(function( _evt, _i, _this ){
-                let _chkId = Number( _this[_i].eventId )
+                let _chkId = parseInt( _this[_i].eventId, 10 )
                 
-                if ( _chkId == 0 ) {
+                if ( _chkId == 0 || cacheIds.includes( _chkId ) ) {
                     lastEventId++
                     _this[_i].eventId = lastEventId
                 } else {
                     _this[_i].eventId = _chkId
                 }
+                cacheIds.push( _this[_i].eventId )
             });
             // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
             if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
@@ -1236,10 +1330,10 @@ console.log( '!_diffDate:', retval )
             
             if ( $(_opts.loader).length == 0 ) {
                 height = height === 'auto' ? '240px' : height
-                let _loading_text = 'Loading...'.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter( Boolean )
+                let _loading_text = LOADING_MESSAGE.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter( Boolean )
                 
                 _loading_text.forEach( ( str, idx ) => {
-                    let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: 'jqtl-loading' }).text( str )
+                    let _fountain_text = $('<div></div>', { id: 'jqtl-loading_'+ ( idx + 1 ), class: ClassName.LOADER_ITEM }).text( str )
                     _loader.append( _fountain_text )
                 })
             } else {
@@ -1253,7 +1347,7 @@ console.log( '!_diffDate:', retval )
          * @private:  Hide the loader (:> ローダーを非表示
          */
         _hideLoader() {
-            $(this._element).find('#jqtl-loader').remove()
+            $(this._element).find( Selector.LOADER ).remove()
         }
         
         /*
@@ -1269,8 +1363,9 @@ console.log( '!_diffDate:', retval )
                         label : $(event_element).html()
                     }
                 },
-                _x, _w, _c
-//console.log( params, new_event )
+                _relation = {},
+                _x, _w, _c, _pointSize
+//console.log( '!_registerEventData:', _opts, params )
             
             if ( params.hasOwnProperty( 'start' ) ) {
                 _x = this._getCoordinateX( params.start )
@@ -1280,10 +1375,18 @@ console.log( '!_diffDate:', retval )
                     _w = _x - new_event.x
                     new_event.width = numRound( _w, 2 )
                     
-//console.log( params.start, _opts.scale, getLocaleString( params.start, _opts.scale, Default.ruler.top.locale, Default.ruler.top.format ) )
-//console.log( params.end, _opts.scale, getLocaleString( params.end, _opts.scale, Default.ruler.top.locale, Default.ruler.top.format ) )
-                    new_event.rangeMeta += getLocaleString( params.start, _opts.scale, _opts.ruler.top.locale, _opts.ruler.top.format )
-                    new_event.rangeMeta += '-' + getLocaleString( params.end, _opts.scale, _opts.ruler.top.locale, _opts.ruler.top.format )
+                    if ( _opts.eventMeta.display ) {
+                        if ( is_empty( _opts.eventMeta.content ) && ! params.hasOwnProperty( 'rangeMeta' ) ) {
+//console.log( '!_registerEventData:', _opts.eventMeta.locale, _opts.eventMeta.format, _opts.scale, params )
+                            
+                            new_event.rangeMeta += getLocaleString( params.start, _opts.eventMeta.scale, _opts.eventMeta.locale, _opts.eventMeta.format )
+                            new_event.rangeMeta += ' - ' + getLocaleString( params.end, _opts.eventMeta.scale, _opts.eventMeta.locale, _opts.eventMeta.format )
+                        } else {
+                            new_event.rangeMeta = _opts.eventMeta.content
+                        }
+                    }
+                } else {
+                    new_event.width = 0
                 }
 //console.log( 'getX:', _x, 'getW:', _w, event_element )
                 if ( params.hasOwnProperty( 'row' ) ) {
@@ -1292,25 +1395,43 @@ console.log( '!_diffDate:', retval )
                 }
                 
                 Object.keys( new_event ).forEach( ( _prop ) => {
-                    switch( _prop ) {
-                        case 'label':
-                        case 'content':
-                            if ( params.hasOwnProperty( _prop ) && params[_prop] && params[_prop] !== '' ) {
+                    switch( true ) {
+                        case /^(|event)id$/i.test( _prop ):
+                            new_event.eventId = parseInt( params[_prop], 10 ) || 0
+                            break
+                        case /^(label|content)$/i.test( _prop ):
+                            if ( params.hasOwnProperty( _prop ) && ! is_empty( params[_prop] ) ) {
                                 new_event[_prop] = params[_prop]
                             }
                             // Override the children element to label or content setting
                             if ( $(event_element).children('.event-' + _prop).length > 0 ) {
                                 new_event[_prop] = $(event_element).children('.event-' + _prop).html()
                             }
+//console.log( '!_registerEventData:', _prop, params[_prop], new_event[_prop] )
+                            break
+                        case /^relation$/i.test( _prop ):
+                            // For drawing the relation line
+                            if ( /^point(|er)$/i.test( _opts.type ) ) {
+                                _pointSize  = this._getPointerSize( new_event.size, new_event.margin ),
+                                _relation.x = numRound( new_event.x, 2 ),
+                                _relation.y = numRound( ( _props.rowSize * ( ( params.row || 1 ) - 1 ) ) + ( _props.rowSize / 2 ), 2 )
+                                
+//console.log( '!_registerEventData:', params, new_event.x, new_event.y, _pointSize, _relation )
+                                new_event[_prop] = {
+                                    ...params[_prop],
+                                    ..._relation
+                                }
+                            }
                             break
                         default:
-                            if ( params.hasOwnProperty( _prop ) && params[_prop] && params[_prop] !== '' ) {
+                            if ( params.hasOwnProperty( _prop ) && ! is_empty( params[_prop] ) ) {
                                 new_event[_prop] = params[_prop]
                             }
                             break
                     }
                 });
             }
+//console.log( '!_registerEventData:', new_event )
             return new_event
         }
         
@@ -1327,21 +1448,14 @@ console.log( '!_diffDate:', retval )
                 if ( _date - _props.begin >= 0 && _props.end - _date >= 0 ) {
                     // When the given date is within the range of timeline begin and end (:> 指定された日付がタイムラインの開始と終了の範囲内にある場合
                     coordinate_x = ( Math.abs( _date - _props.begin ) / _props.scale ) * _props.scaleSize
-                /*
-                } else
-                if ( _date - _props.begin < 0 ) {
-                    // When the given date is less than the begin of timeline range (:> 指定された日付がタイムラインの開始時より前にある場合
-                    coordinate_x = ( ( _date - _props.begin ) / _props.scale ) * _props.scaleSize
-                */
                 } else {
-                    // When the given date is greater than the end of timeline range (:> 指定された日付がタイムラインの終了時より後にある場合
-                    coordinate_x = ( ( _date - _props.begin ) / _props.scale ) * _props.scaleSize // _props.fullwidth + 1
+                    // When the given date is out of timeline range (:> 指定された日付がタイムラインの範囲外にある場合
+                    coordinate_x = ( ( _date - _props.begin ) / _props.scale ) * _props.scaleSize
                 }
             } else {
                 console.warn( 'Cannot parse date because invalid format or undefined.' )
             }
             
-//console.log( _date, ' => ', coordinate_x )
             return coordinate_x
         }
         
@@ -1352,10 +1466,11 @@ console.log( '!_diffDate:', retval )
                 return
             }
             
-            let _elem          = this._element,
-                _opts          = this._config,
-                _evt_container = $(_elem).find('.jqtl-events'),
-                events         = {}
+            let _elem           = this._element,
+                _opts           = this._config,
+                _evt_container  = $(_elem).find( Selector.TIMELINE_EVENTS ),
+                _relation_lines = $(_elem).find( Selector.TIMELINE_RELATION_LINES ),
+                events          = {}
             
             if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
                 events = JSON.parse( sessionStorage.getItem( this._selector ) )
@@ -1364,15 +1479,23 @@ console.log( '!_diffDate:', retval )
             if ( events.length > 0 ) {
                 events.forEach(( _evt, _idx ) => {
                     let _evt_elem = this._createEventNode( _evt )
+                    
                     if ( _evt_elem ) {
                         _evt_container.append( _evt_elem )
                     }
                 })
             }
             
-            sleep( 1000 ).then(() => {
+            if ( /^point(|er)$/i.test( _opts.type ) ) {
+                this._drawRelationLine( events )
+            }
+            
+// console.log( '!_placeEvent:', _opts )
+            sleep( 1 ).then(() => {
                 this._hideLoader()
-                _evt_container.fadeIn('normal')
+                _evt_container.fadeIn( 'fast', () => {
+                    _relation_lines.fadeIn( 'fast' )
+                })
             })
             
         }
@@ -1384,7 +1507,7 @@ console.log( '!_diffDate:', retval )
             let _opts     = this._config,
                 _props    = this._instanceProps,
                 _evt_elem = $('<div></div>', {
-                    class : 'jqtl-event-node',
+                    class : ClassName.TIMELINE_EVENT_NODE,
                     id    : `evt-${params.eventId}`,
                     css   : {
                         left   : `${params.x}px`,
@@ -1394,57 +1517,85 @@ console.log( '!_diffDate:', retval )
                         color  : hexToRgbA( params.color ),
                         backgroundColor : hexToRgbA( params.bgColor ),
                     },
-                    html  : `<div class="jqtl-event-label">${params.label}</div>`
+                    html  : `<div class="${ClassName.TIMELINE_EVENT_LABEL}">${params.label}</div>`
                 })
+//console.log( '!_createEventNode:', params )
             
             // Whether this event is within the display range of the timeline (:> タイムライン表示範囲内のイベントかどうか
+            // For events excluded, set the width to -1 (:> 除外イベントは幅を -1 に設定する
             if ( params.x >= 0 ) {
                 // The event start datetime is over the start datetime of the timeline (:> イベント始点がタイムラインの始点以上
                 if ( params.x <= _props.fullwidth ) {
                     // The event start datetime is less than or equal to the timeline end datetime (:> イベントの始点がタイムラインの終点以下
                     if ( params.x + params.width <= _props.fullwidth ) {
                         // The event end datetime is less than before the timeline end datetime (regular event) (:> イベント終点がタイムラインの終点以下（通常イベント）
+                        // OK
                     } else {
                         // The event end datetime is after the timeline end datetime (event exceeded end datetime) (:> イベント終点がタイムラインの終点より後（終点超過イベント）
                         params.width = _props.fullwidth - params.x
                     }
                 } else {
                     // The event start datetime is after the timeline end datetime (exclude event) (:> イベント始点がタイムラインの終点より後（除外イベント）
-                    params.width = 0
+                    params.width = -1
                 }
             } else {
                 // The event start datetime is before the timeline start datetime (:> イベント始点がタイムラインの始点より前
-                if ( params.x + params.width <= 0 ) {
-                    // The event end datetime is less than before the timeline start datetime (exclude event) (:> イベント終点がタイムラインの始点以下（除外イベント）
-                    params.width = 0
+                if ( /^point(|er)$/i.test( _opts.type ) ) {
+                    // In the case of "point" type, that is an exclude event (:> ポインター型の場合は除外イベント
+                    params.width = -1
                 } else {
-                    // The event end datetime is after the timeline start datetime (:> イベント終点がタイムラインの始点より後
-                    if ( params.x + params.width <= _props.fullwidth ) {
-                        // The event end datetime is less than or equal the timeline end datetime (event exceeded start datetime) (:> イベント終点がタイムラインの終点以下（始点超過イベント）
-                        params.width = Math.abs( params.x + params.width )
-                        params.x = 0
+                    // The case of "bar" type
+                    if ( params.x + params.width <= 0 ) {
+                        // The event end datetime is less than before the timeline start datetime (exclude event) (:> イベント終点がタイムラインの始点より前（除外イベント）
+                        params.width = -1
                     } else {
-                        // The event end datetime is after the timeline end datetime (event exceeded both start and end datetime) (:> イベント終点がタイムラインの終点より後（始点・終点ともに超過イベント）
-                        params.width = _props.fullwidth
-                        params.x = 0
+                        // The event end datetime is after the timeline start datetime (:> イベント終点がタイムラインの始点より後
+                        if ( params.x + params.width <= _props.fullwidth ) {
+                            // The event end datetime is less than or equal the timeline end datetime (event exceeded start datetime) (:> イベント終点がタイムラインの終点以下（始点超過イベント）
+                            params.width = Math.abs( params.x + params.width )
+                            params.x = 0
+                        } else {
+                            // The event end datetime is after the timeline end datetime (event exceeded both start and end datetime) (:> イベント終点がタイムラインの終点より後（始点・終点ともに超過イベント）
+                            params.width = _props.fullwidth
+                            params.x = 0
+                        }
                     }
                 }
             }
-//console.log( 'x:', params.x, 'w:', params.width, 'x-end:', Math.abs( params.x ) + params.width, 'fw:', _props.fullwidth )
-            if ( params.width < 1 ) {
-                return null
+//console.log( 'x:', params.x, 'w:', params.width, 'x-end:', Math.abs( params.x ) + params.width, 'fw:', _props.fullwidth, 'ps:', params.size )
+            
+            if ( /^point(|er)$/i.test( _opts.type ) ) {
+                if ( params.width < 0 ) {
+                    return null
+                }
+                let _pointSize = this._getPointerSize( params.size, params.margin ),
+                    _shiftX    = numRound( params.x - ( _pointSize / 2 ), 2 ),
+                    _shiftY    = numRound( params.y + ( ( params.height - _pointSize ) / 2 ), 2 )
+                
+//console.log( '!_createEventNode:', params, _pointSize, _shiftX, _shiftY )
+                _evt_elem.addClass( ClassName.VIEWER_EVENT_TYPE_POINTER ).css( 'border-color', params.bdColor )
+                .css( 'left', `${_shiftX}px` ).css( 'top', `${_shiftY}px` ).css( 'width', `${_pointSize}px` ).css( 'height', `${_pointSize}px` )
+                .attr( 'data-base-size', _pointSize ).attr( 'data-base-left', _shiftX ).attr( 'data-base-top', _shiftY )
+            } else {
+                if ( params.width < 1 ) {
+                    return null
+                }
+                _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
             }
-            _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
             
             _evt_elem.attr( 'data-uid', params.uid )
             
             if ( ! is_empty( params.image ) ) {
-//console.log( '!_createEventNode:', params )
-                let _imgSize = params.height - ( params.margin * 2 )
-                _evt_elem.prepend( `<img src="${params.image}" class="jqtl-event-thumbnail" width="${_imgSize}" height="${_imgSize}" />` )
+                if ( /^point(|er)$/i.test( _opts.type ) ) {
+                    _evt_elem.css( 'background-image', `url(${params.image})` )
+                } else {
+                    let _imgSize = params.height - ( params.margin * 2 )
+                    _evt_elem.prepend( `<img src="${params.image}" class="${ClassName.TIMELINE_EVENT_THUMBNAIL}" width="${_imgSize}" height="${_imgSize}" />` )
+                }
             }
             
-            if ( _opts.type.toLowerCase() === 'bar' && _opts.showEventMeta ) {
+            if ( /^bar$/i.test( _opts.type ) && _opts.eventMeta.display ) {
+//console.log( '!_createEventNode:', params )
                 params.extend.meta = params.rangeMeta
             }
             
@@ -1475,6 +1626,172 @@ console.log( '!_diffDate:', retval )
             
             return _evt_elem
         }
+        
+        /*
+         * @private: Retrieve the diameter size (pixel) of pointer (:> ポインタの直径サイズ（ピクセル値）を取得する
+         */
+        _getPointerSize( key, margin ) {
+            let _opts  = this._config,
+                _props = this._instanceProps,
+                _max   = Math.min( _props.scaleSize, _props.rowSize ) - ( margin * 2 ),
+                _size  = null
+            
+            switch ( true ) {
+                case /^large$/i.test( key ):
+                    _size = Math.max( numRound( _max * 0.8, 1 ), MIN_POINTER_SIZE )
+                    break
+                case /^normal$/i.test( key ):
+                    _size = Math.max( numRound( _max / 2, 1 ), MIN_POINTER_SIZE )
+                    break
+                case /^small$/i.test( key ):
+                    _size = Math.max( numRound( _max / 4, 1 ), MIN_POINTER_SIZE )
+                    break
+                default:
+                    _size = Math.max( parseInt( key, 10 ), MIN_POINTER_SIZE )
+            }
+            
+//console.log( '!_getPointerSize:', _props, key, _max, _size )
+            return _size
+        }
+        
+        /*
+         * @private: Draw the relation lines
+         */
+        _drawRelationLine( events ) {
+            let _props        = this._instanceProps,
+                _canvas       = $(this._element).find( Selector.TIMELINE_RELATION_LINES ),
+                ctx_relations = _canvas[0].getContext('2d'),
+                drawLine      = ( _sx, _sy, _ex, _ey, evt, _ba ) => {
+                    let _curveType = {}
+                    
+                    // Defaults
+                    ctx_relations.strokeStyle = EventParams.bdColor
+                    ctx_relations.lineWidth   = 2.5
+                    ctx_relations.filter      = 'url(#crisp)'
+                    for ( let _key in evt.relation ) {
+                        switch ( true ) {
+                            case /^(|line)color$/i.test( _key ):
+                                ctx_relations.strokeStyle = evt.relation[_key]
+                                break
+                            case /^(|line)size$/i.test( _key ):
+                                ctx_relations.lineWidth = parseInt( evt.relation[_key], 10 ) || 2.5
+                                break
+                            case /^curve$/i.test( _key ):
+                                if ( /^(r|l)(t|b),?(r|l)?(t|b)?$/i.test( evt.relation[_key] ) ) {
+                                    let _tmp = evt.relation[_key].split(',')
+                                    if ( _tmp.length == 2 ) {
+                                        _curveType.before = _tmp[0]
+                                        _curveType.after  = _tmp[1]
+                                    } else {
+                                        _curveType[_ba] = _tmp[0]
+                                    }
+                                }
+                                break
+                        }
+                    }
+                    if ( Math.abs( _ey - _sy ) > _props.rowSize ) {
+                        _ey += Math.floor( Math.abs( _ey - _sy ) / _props.rowSize )
+                    }
+                    ctx_relations.beginPath()
+                    if ( ! is_empty( _curveType ) ) {
+                        let _radius = _props.scaleSize / 2
+                        //    _cpx    = Math.abs( _ex - _sx ) > ( _props.scaleSize / 2 ) ? _sx
+                        //    _cpy
+console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
+                        switch ( true ) {
+                            case /^lb$/i.test( _curveType[_ba] ):
+                                ctx_relations.moveTo( _sx, _sy )
+                                ctx_relations.lineTo( _sx, _ey - _radius )
+                                ctx_relations.quadraticCurveTo( _sx, _ey, _sx + _radius, _ey )
+                                ctx_relations.lineTo( _ex, _ey )
+                                break
+                            case /^rb$/i.test( _curveType[_ba] ):
+                            case /^lt$/i.test( _curveType[_ba] ):
+                            case /^rt$/i.test( _curveType[_ba] ):
+                                break
+                        }
+                    } else {
+                        ctx_relations.moveTo( _sx, _sy )
+                        ctx_relations.lineTo( _ex, _ey )
+                    }
+                    //ctx_relations.closePath()
+                    ctx_relations.stroke()
+                }
+            
+//console.log( '!_drawRelationLine:', _props, events, _canvas )
+            events.forEach( ( evt ) => {
+                let _rel = evt.relation,
+                    _sx, _sy, _ex, _ey, 
+                    _targetId, _targetEvent
+                
+                if ( _rel.hasOwnProperty( 'before' ) ) {
+                    _ex = _rel.x
+                    _ey = _rel.y
+                    _targetId = parseInt( _rel.before, 10 )
+                    if ( _targetId < 0 ) {
+                        _sx = 0
+                        _sy = _ey
+                    } else {
+                        _targetEvent = events.find( _evt => parseInt( _evt.eventId, 10 ) == _targetId )
+//console.log( '!_drawRelationLine:', _targetEvent.relation )
+                        if ( _targetEvent.relation ) {
+                            _sx = _targetEvent.relation.x
+                            _sy = _targetEvent.relation.y
+                        }
+                    }
+                    if ( _sx >= 0 && _sy >= 0 && _ex >= 0 && _ey >= 0 ) {
+                        drawLine( _sx, _sy, _ex, _ey, evt, 'before' )
+                    }
+                }
+                if ( _rel.hasOwnProperty( 'after' ) ) {
+                    _sx = _rel.x
+                    _sy = _rel.y
+                    _targetId = parseInt( _rel.after, 10 )
+                    if ( _targetId < 0 ) {
+                        _ex = _props.fullwidth
+                        _ey = _sy
+                    } else {
+                        _targetEvent = events.find( _evt => parseInt( _evt.eventId, 10 ) == _targetId )
+                        if ( _targetEvent.relation ) {
+                            _ex = _targetEvent.relation.x
+                            _ey = _targetEvent.relation.y
+                        }
+                    }
+                    if ( _sx >= 0 && _sy >= 0 && _ex >= 0 && _ey >= 0 ) {
+                        drawLine( _sx, _sy, _ex, _ey, evt, 'after' )
+                    }
+                }
+                
+            })
+            
+        }
+        
+        /*
+         * @private: Event when hover on the pointer type event
+         */
+        _hoverPointer( event ) {
+            let _props = this._instanceProps,
+                _elem  = event.target,
+                _base  = {
+                    left  : $(_elem).data( 'baseLeft' ),
+                    top   : $(_elem).data( 'baseTop' ),
+                    width : $(_elem).data( 'baseSize' )
+                },
+                _x     = _base.left,
+                _y     = _base.top,
+                _w     = _base.width,
+                _z     = 5
+            
+//console.log( '!_hoverPointer:', _props )
+            if ( 'mouseenter' === event.type ) {
+                _w = Math.max( numRound( _w * 1.2, 'ceil' ), Math.min( _props.rowSize, _props.scaleSize ) )
+                _x = numRound( _x - ( ( _w - _base.width ) / 2 ), 2 )
+                _y = numRound( _y - ( ( _w - _base.width ) / 2 ), 2 )
+                _z = 9
+            }
+            $(_elem).css( 'left', `${_x}px` ).css( 'top', `${_y}px` ).css( 'width', `${_w}px` ).css( 'height', `${_w}px` ).css( 'z-index', _z )
+        }
+        
         /*
          * @private: Echo the log of plugin for debugging
          */
@@ -1507,7 +1824,6 @@ console.log( '!_diffDate:', retval )
             let _elem = this._element,
                 _opts = this._config
             
-//console.log( _elem, this._isInitialized )
             if ( typeof callback === 'function' && ! this._isInitialized ) {
                 if ( _opts.debug ) {
                     this._debug( 'Fired the "initialized" method after initializing this plugin.' )
@@ -1545,8 +1861,7 @@ console.log( '!_diffDate:', retval )
         /*
          * @public: This method has been deprecated since version 2.0.0
          */
-        render() {
-        }
+        render() {}
         
         /*
          * @public: Show hidden timeline
@@ -1557,7 +1872,7 @@ console.log( '!_diffDate:', retval )
             let _elem = this.element
             
             if ( ! this._isShown ) {
-                $(_elem).removeClass( 'jqtl-hide' )
+                $(_elem).removeClass( ClassName.HIDE )
                 
                 this._isShown = true
             }
@@ -1572,7 +1887,7 @@ console.log( '!_diffDate:', retval )
             let _elem = this.element
             
             if ( this._isShown ) {
-                $(_elem).addClass( 'jqtl-hide' )
+                $(_elem).addClass( ClassName.HIDE )
                 
                 this._isShown = false
             }
@@ -1602,9 +1917,7 @@ console.log( '!_diffDate:', retval )
         /*
          * @public: This method has been deprecated since version 2.0.0
          */
-        getOptions() {
-            
-        }
+        getOptions() {}
         
         /*
          * @public: 
@@ -1628,16 +1941,75 @@ console.log( '!_diffDate:', retval )
         }
         
         /*
-         * @public: 
+         * @public: The method that fires when an event on the timeline is clicked (:> タイムライン上のイベントがクリックされた時に発火
+         *
+         * Note: You can hook the custom processing with the callback specified in the event parameter. (:> イベントパラメータに指定したコールバックでカスタム処理をフックできます
          */
-        openEvent() {
+        openEvent( event ) {
+            this._debug( 'openEvent' )
             
+            let _opts     = this._config,
+                _cached   = this._isCached,
+                _selector = this._selector,
+                _self     = event.target,
+                $viewer   = $(document).find( Selector.EVENT_VIEW ),
+                eventId   = parseInt( $(_self).attr( 'id' ).replace( 'evt-', '' ), 10 ),
+                uid       = $(_self).data( 'uid' ),
+                meta      = supplement( null, $(_self).data( 'meta' ) ),
+                callback  = supplement( null, $(_self).data( 'callback' ) )
+//console.log( '!openEvent:', _self, $viewer, eventId, uid, meta, callback )
+            
+            if ( $viewer.length > 0 ) {
+                $viewer.each(function() {
+                    let _cacheEvents = null,
+                        _eventData   = null,
+                        _label       = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
+                        _content     = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
+                        _meta        = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
+                        _image       = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER })
+                    
+                    if ( _cached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+                        _cacheEvents = JSON.parse( sessionStorage.getItem( _selector ) )
+                        _eventData = _cacheEvents.find( event => event.uid === uid )
+                    }
+//console.log( '!openEvent:', $(this), $(_self).html(), _eventData.label )
+                    
+                    $(this).empty() // Initialize Viewer
+                    if ( ! is_empty( _eventData.image ) ) {
+                        _image.append( `<img src="${_eventData.image}" class="${ClassName.VIEWER_EVENT_IMAGE}" />` )
+                        $(this).append( _image )
+                    }
+                    if ( ! is_empty( _eventData.label ) ) {
+                        _label.html( _eventData.label )
+                        $(this).append( _label )
+                    }
+                    if ( ! is_empty( _eventData.content ) ) {
+                        _content.html( _eventData.content )
+                        $(this).append( _content )
+                    }
+                    if ( ! is_empty( _eventData.rangeMeta ) ) {
+                        _meta.html( _eventData.rangeMeta )
+                        $(this).append( _meta )
+                    }
+                    
+                })
+            }
+            
+            if ( callback ) {
+                if ( _opts.debug ) {
+                    this._debug( `The callback "${callback}" was called by the "openEvent" method.` )
+                }
+                try {
+                    Function.call( null, `return ${callback}` )()
+                } catch ( e ) {
+                    throw new TypeError( e )
+                }
+            }
         }
         
         // Static
         
-        static _jQueryInterface( config, relatedTarget ) {
-            // relatedTarget = undefined why?
+        static _jQueryInterface( config ) {
             return this.each(function () {
                 let data = $(this).data( DATA_KEY )
                 const _config = {
@@ -1646,24 +2018,23 @@ console.log( '!_diffDate:', retval )
                     ...typeof config === 'object' && config ? config : {}
                 }
                 
-//console.log( '_jQueryInterface', data, config )
+//console.log( '!_jQueryInterface:', data, config )
                 if ( ! data ) {
                     // Apply the plugin and store the instance in data (:> プラグインを適用する
                     data = new Timeline( this, _config )
                     $(this).data( DATA_KEY, data )
                 }
                 
-//if ( typeof config === 'string' ) console.log( config, config.charAt(0) != '_' )
                 if ( typeof config === 'string' && config.charAt(0) != '_' ) {
                     if ( typeof data[config] === 'undefined' ) {
                         // Call no method
                         throw new TypeError( `No method named "${config}"` )
                     }
                     // Call public method (:> （インスタンスがpublicメソッドを持っている場合）メソッドを呼び出す
-                    data[config]( relatedTarget )
+                    data[config]()
                 } else {
                     if ( ! data._isInitialized ) {
-                        data._init( relatedTarget )
+                        data._init()
                     }
                 }
             })
@@ -1790,8 +2161,6 @@ console.log( '!_diffDate:', retval )
      * @return string
      */
     function generateUniqueID( digit = 1000 ) {
-        // 'use strict'
-        // digit = supplement( 1000, digit )
         return new Date().getTime().toString(16) + Math.floor( digit * Math.random() ).toString(16)
     }
     
@@ -2024,13 +2393,12 @@ console.log( '!_diffDate:', retval )
      *
      * @param string date_seed (required)
      * @param string scale (required)
-     * @param string locales (required)
-     * @param object options (required)
+     * @param string locales (optional)
+     * @param object options (optional)
      *
      * @return string locale_string
      */
-    function getLocaleString( date_seed, scale, locales, options ) {
-        'use strict'
+    function getLocaleString( date_seed, scale, locales = 'en-US', options = {} ) {
         function toLocaleStringSupportsLocales() {
             try {
                 new Date().toLocaleString( 'i' )
@@ -2128,6 +2496,7 @@ console.log( '!_diffDate:', retval )
                 }
                 break
             case /^hours?$/i.test( scale ):
+            case /^(half|quarter)-?hours?$/i.test( scale ):
 // console.log( '!getLocaleString:', date_seed )
                 if ( typeof date_seed === 'string' ) {
                     let _parts = date_seed.split(':')

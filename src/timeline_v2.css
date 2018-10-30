@@ -106,10 +106,10 @@
     overflow-y: hidden;
     background-color: #FFFFFF;
 }
-.hide-scrollbar {
+.jqtl-hide-scrollbar {
     -ms-overflow-style: -ms-autohiding-scrollbar;
 }
-.hide-scrollbar::-webkit-scrollbar {
+.jqtl-hide-scrollbar::-webkit-scrollbar {
     display: none;
 }
 .jqtl-main {
@@ -196,6 +196,7 @@
     position: relative;
     z-index: 2;
 }
+.jqtl-relation-lines,
 .jqtl-events {
     position: absolute;
     display: none;
@@ -203,13 +204,18 @@
     top: 0;
     width: 100%;
     height: 100%;
+}
+.jqtl-relation-lines {
     z-index: 3;
+}
+.jqtl-events {
+    z-index: 4;
 }
 /* ----------------------------------------------------------------------------
  * One event style
  * ----------------------------------------------------------------------------
  */
-.jqtl-event-node {
+.jqtl-event-node { /* bar type */
     position: absolute;
     display: flex;
     justify-content: start;
@@ -219,7 +225,7 @@
     padding-right: 5px;
     border-radius: 2px;
     overflow: hidden;
-    z-index: 5;
+    z-index: 7;
     cursor: pointer;
     transition: all .5s ease;
 }
@@ -254,7 +260,7 @@
     content: '';
     position: absolute;
     display: block;
-    z-index: 4;
+    z-index: 6;
     top: 0;
     right: 0;
     bottom: 0;
@@ -264,7 +270,7 @@
     transition: all .5s ease;
 }
 .jqtl-event-node:hover:after {
-    z-index: 4;
+    z-index: 6;
     background-color: rgba(0, 0, 0, 0.1);
 }
 .jqtl-event-thumbnail {
@@ -275,13 +281,35 @@
 .jqtl-event-node:hover .jqtl-event-thumbnail {
     opacity: .75;
 }
+.jqtl-event-node.jqtl-event-type-pointer { /* pointer type */
+    padding: 0;
+    border-radius: 50%;
+    border: solid 3px #6C757D;
+    background-image: none;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    transition: all .1s linear;
+}
+.jqtl-event-node.jqtl-event-type-pointer:hover {
+    border-color: #DC3545;
+}
+.jqtl-event-node.jqtl-event-type-pointer:after {
+    transition: all .1s linear;
+}
+.jqtl-event-node.jqtl-event-type-pointer > .jqtl-event-label {
+    display: none;
+}
+.jqtl-event-node.jqtl-event-type-pointer > .jqtl-event-thumbnail {
+    display: none;
+}
 /* ----------------------------------------------------------------------------
  * Sidebar index style
  * ----------------------------------------------------------------------------
  */
 .jqtl-side-index {
     position: relative;
-    left: 1px;
+    left: 0;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
@@ -295,10 +323,10 @@
     position: -webkit-sticky;
     position: sticky;
 }
-.jqtl-side-index > [class^="jqtl-side-index-"] {
+.jqtl-side-index > [class^="jqtl-side-index-"] { /* .jqtl-side-index-margin, .jqtl-side-index-item */
     display: table-cell;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: .5rem;
+    padding-right: .5rem;
     width: 100%;
     font-size: 14px;
     vertical-align: middle;
@@ -315,11 +343,65 @@
 .jqtl-side-index-item:first-child {
     border-top: solid 1px #DDD;
 }
+.jqtl-side-index-item img {
+    position: relative;
+    display: inline-block;
+    margin-right: .5rem;
+    height: calc( 100% - 6px );
+    width: auto;
+    text-align: left;
+    vertical-align: middle;
+}
 .jqtl-overlay {
     background-color: rgba(255,255,255,.65) !important;
 }
 .jqtl-overlay:nth-child(odd) {
     background-color: rgba(247,247,247,.45) !important;
+}
+/* ----------------------------------------------------------------------------
+ * Event Viewer
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-event-view,
+.timeline-event-view {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+    align-content: space-between;
+    transition: all .5s ease;
+}
+.jqtl-event-image-wrapper {
+    flex-order: 0;
+    flex-grow: 1;
+    align-self: center;
+}
+.jqtl-event-image {
+    width: 100%;
+    height: auto;
+}
+.jqtl-event-title {
+    flex-order: 0;
+    flex-grow: 1;
+    align-self: flex-start;
+    padding: 1rem;
+}
+.jqtl-event-title > .event-content {
+    color: #C0C0C0;
+}
+.jqtl-event-content {
+    flex-order: 0;
+    flex-grow: 1;
+    align-self: stretch;
+    padding: 1rem;
+}
+.jqtl-event-meta {
+    flex-order: 0;
+    flex-grow: 1;
+    align-self: flex-end;
+    padding: .5rem 1rem;
 }
 /* ----------------------------------------------------------------------------
  * Footer style
