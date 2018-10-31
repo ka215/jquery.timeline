@@ -1,22 +1,25 @@
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css" integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
+
 <p align="center">
-    <a href="https://ka2.org/">
-        <img src="" alt="jQuery.Timeline">
-    </a>
-    
-    <h3 align="center">jQuery.Timeline V2</h3>
-    
-    <p align="center">
-        You are able to easily create two types of horizontal timeline with this jQuery plugin.
-        <br>
-        <a href="https://ka2.org/jquery.timeline/docs/v2/">Explore jQuery.Timeline docs »</a>
-        <br>
-        <br>
-        <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug.md">Report bug</a>
-        ·
-        <a href="https://github.com/ka215/jquery.timeline/issues/new?template=feature.md&labels=feature">Request feature</a>
-        ·
-        <a href="https://ka2.org/">Blog</a>
-    </p>
+<!--
+  <a href="https://ka2.org/">
+    <img src="" alt="jQuery.Timeline">
+  </a>
+-->    
+  <h3 align="center">jQuery.Timeline V2</h3>
+
+  <p align="center">
+    You are able to easily create two types of horizontal timeline with this jQuery plugin.
+    <br>
+    <a href="https://ka2.org/jquery.timeline/docs/v2/">Explore jQuery.Timeline docs »</a>
+    <br>
+    <br>
+    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug.md">Report bug</a>
+    ·
+    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=feature.md&labels=feature">Request feature</a>
+    ·
+    <a href="https://ka2.org/">Blog</a>
+  </p>
 </p>
 
 <br>
@@ -25,19 +28,22 @@
 
 - [Quick start](#quick-start)
 - [Status](#status)
-
+- [What's included](#whats-included)
+- [Supported browsers](#supported-browsers)
+- [Documentation](#documentation)
+- [Example as demonstration](#example-as-demonstration)
+- [Creators](#creators)
+- [Copyright and license](#copyright-and-license)
 
 ## Quick start
 
 Several quick start options are available:
 
 - [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a1.zip)
-- Clone the repo: `git clone https://github.com/ka215/jquery.timeline.git`
+- Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
 - Install with [npm](https://www.npmjs.com/): `npm install jquery.timeline`
-- [What's included](#whats-included)
-- [Documentation](#documentation)
 
-Read the [Getting started page](https://ka2.org/jquery.timeline/docs/v2/getting-started/introduction/) for information on the framework contents, templates and examples, and more.
+Read the [Getting started page](https://ka2.org/jquery.timeline/docs/v2/getting-started/introduction/) for information on the plugin contents and examples, and more.
 
 
 ## Status
@@ -52,30 +58,79 @@ Within the download you'll find the following directories and files, logically g
 ```
 ```
 
-We provide compiled CSS and JS (`bootstrap.*`), as well as compiled and minified CSS and JS (`bootstrap.min.*`). [source maps](https://developers.google.com/web/tools/chrome-devtools/debug/readability/source-maps) (`bootstrap.*.map`) are available for use with certain browsers' developer tools. Bundled JS files (`bootstrap.bundle.js` and minified `bootstrap.bundle.min.js`) include [Popper](https://popper.js.org/), but not [jQuery](https://jquery.com/).
+We provide compiled CSS and JS (`timeline.*`), as well as compiled and minified CSS and JS (`timeline.min.*`). [source maps](https://developers.google.com/web/tools/chrome-devtools/debug/readability/source-maps) (`timeline.*.map`) are available for use with certain browsers' developer tools.
+
+
+## Supported browsers
+
+jQuery.Timeline version 2.x supports the following browsers:
+
+<table>
+<thead>
+<tr>
+<th><img src="https://ka215.github.io/jquery.timeline/imgs/chrome-brands.svg" alt="Chrome" /></th>
+<th><img src="https://ka215.github.io/jquery.timeline/imgs/firefox-brands.svg" alt="Firefox" /></th>
+<th><img src="https://ka215.github.io/jquery.timeline/imgs/safari-brands.svg" alt="Safari" /></th>
+<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/internet-explorer-brands.svg" alt="IE" /></th>
+<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/edge-brands.svg" alt="Edge" /></th>
+<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/opera-brands.svg" alt="Opera" /></th>
+<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/android-brands.svg" alt="Android" /></th>
+<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" alt="iOS Safari" /></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>Firefox</td>
+<td>Safari</td>
+<td>IE</td>
+<td>Edge</td>
+<td>Opera</td>
+<td>Android</td>
+<td>iOS Safari</td>
+</tr>
+<tr>
+<td>OK</td>
+<td><i class="octicon oct-check"></i></td>
+<td><i class="octicon oct-check"></i></td>
+<td><i class="octicon oct-check"></i></td>
+<td><i class="octicon oct-check"></i></td>
+<td><i class="octicon oct-check"></i></td>
+<td><i class="octicon oct-check"></i></td>
+<td>？</td>
+</tr>
+</tbody>
+</table>
 
 
 ## Documentation
 
-Bootstrap's documentation, included in this repo in the root directory, is built with [Jekyll](https://jekyllrb.com/) and publicly hosted on GitHub Pages at <https://getbootstrap.com/>. The docs may also be run locally.
+jQuery.Timeline's documentation, included in this repository in the root directory, is built with [Jekyll](https://jekyllrb.com/) and publicly hosted on GitHub Pages at <https://ka2.org/>. The docs may also be run locally.
 
+<!--
 Documentation search is powered by [Algolia's DocSearch](https://community.algolia.com/docsearch/). Working on our search? Be sure to set `debug: true` in `site/docs/4.1/assets/js/src/search.js` file.
+-->
 
 ### Documentation for previous releases
 
 - For v1.0.x: <https://ka2.org/>
+
+## Example as demonstration
+
 
 ## Creators
 
 **ka2 (Katsuhiko Maeno)**
 
 - <https://ka2.org/>
+<!--
 - <https://twitter.com/ka215>
 - <https://github.com/ka215>
+-->
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/) Code released under the [MIT License]().
+Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code released under the [MIT License]().
 
 ## Structure of the DOM element of the timeline container:
 
