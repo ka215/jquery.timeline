@@ -127,10 +127,13 @@ Documentation search is powered by [Algolia's DocSearch](https://community.algol
 
 ### Documentation for previous releases
 
-- For v1.0.x: <https://ka2.org/>
+- For v2.0.x: (WIP)
+- For v1.0.x: <https://github.com/ka215/jquery.timeline/blob/master/README.md>
+- For v1.0.x (Japanese): <https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/>
 
 ## Example as demonstration
 
+(WIP)
 
 ## Creators
 
