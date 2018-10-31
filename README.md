@@ -11,12 +11,14 @@
   <p align="center">
     You are able to easily create two types of horizontal timeline with this jQuery plugin.
     <br>
-    <a href="https://ka2.org/jquery.timeline/docs/v2/" disabled>Explore jQuery.Timeline docs »</a>
+<!--
+    <a href="https://ka2.org/jquery.timeline/docs/v2/">Explore jQuery.Timeline docs »</a>
     <br>
+-->
     <br>
-    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug.md">Report bug</a>
+    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug_report.md">Report bug</a>
     ·
-    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=feature.md&labels=feature">Request feature</a>
+    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=feature_request.md">Request feature</a>
     ·
     <a href="https://ka2.org/">Blog</a>
   </p>
