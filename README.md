@@ -11,7 +11,7 @@
   <p align="center">
     You are able to easily create two types of horizontal timeline with this jQuery plugin.
     <br>
-    <a href="https://ka2.org/jquery.timeline/docs/v2/">Explore jQuery.Timeline docs »</a>
+    <a href="https://ka2.org/jquery.timeline/docs/v2/" disabled>Explore jQuery.Timeline docs »</a>
     <br>
     <br>
     <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug.md">Report bug</a>
@@ -39,12 +39,17 @@
 
 Several quick start options are available:
 
+<!--
 - [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a1.zip)
+-->
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
+<!--
 - Install with [npm](https://www.npmjs.com/): `npm install jquery.timeline`
+-->
 
+<!--
 Read the [Getting started page](https://ka2.org/jquery.timeline/docs/v2/getting-started/introduction/) for information on the plugin contents and examples, and more.
-
+-->
 
 ## Status
 
@@ -56,6 +61,7 @@ Read the [Getting started page](https://ka2.org/jquery.timeline/docs/v2/getting-
 Within the download you'll find the following directories and files, logically grouping common assets and providing both compiled and minified variations. You'll see something like this:
 
 ```
+(WIP)
 ```
 
 We provide compiled CSS and JS (`timeline.*`), as well as compiled and minified CSS and JS (`timeline.min.*`). [source maps](https://developers.google.com/web/tools/chrome-devtools/debug/readability/source-maps) (`timeline.*.map`) are available for use with certain browsers' developer tools.
@@ -68,17 +74,22 @@ jQuery.Timeline version 2.x supports the following browsers:
 <table>
 <thead>
 <tr>
-<th><img src="https://ka215.github.io/jquery.timeline/imgs/chrome-brands.svg" alt="Chrome" /></th>
-<th><img src="https://ka215.github.io/jquery.timeline/imgs/firefox-brands.svg" alt="Firefox" /></th>
-<th><img src="https://ka215.github.io/jquery.timeline/imgs/safari-brands.svg" alt="Safari" /></th>
-<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/internet-explorer-brands.svg" alt="IE" /></th>
-<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/edge-brands.svg" alt="Edge" /></th>
-<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/opera-brands.svg" alt="Opera" /></th>
-<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/android-brands.svg" alt="Android" /></th>
-<th><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" alt="iOS Safari" /></th>
+<th colspan="6">PC</th>
+<th colspan="2">Mobile</th>
+</tr>
+<tr>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/chrome-brands.svg" width="32" alt="Chrome" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/firefox-brands.svg" width="32" alt="Firefox" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" width="32" alt="Safari" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/internet-explorer-brands.svg" width="32" alt="IE" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/edge-brands.svg" width="32" alt="Edge" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/opera-brands.svg" width="32" alt="Opera" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/android-brands.svg" width="32" alt="Android" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" width="32" alt="iOS Safari" /></th>
 </tr>
 </thead>
 <tbody>
+<!--
 <tr>
 <td>Chrome</td>
 <td>Firefox</td>
@@ -89,15 +100,16 @@ jQuery.Timeline version 2.x supports the following browsers:
 <td>Android</td>
 <td>iOS Safari</td>
 </tr>
+-->
 <tr>
-<td>OK</td>
-<td><i class="octicon oct-check"></i></td>
-<td><i class="octicon oct-check"></i></td>
-<td><i class="octicon oct-check"></i></td>
-<td><i class="octicon oct-check"></i></td>
-<td><i class="octicon oct-check"></i></td>
-<td><i class="octicon oct-check"></i></td>
-<td>？</td>
+<td> Ok </td>
+<td> ? </td>
+<td> ? </td>
+<td> ? </td>
+<td> ? </td>
+<td> ? </td>
+<td> ? </td>
+<td> ? </td>
 </tr>
 </tbody>
 </table>
@@ -132,17 +144,18 @@ Documentation search is powered by [Algolia's DocSearch](https://community.algol
 
 Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code released under the [MIT License]().
 
+<!--
 ## Structure of the DOM element of the timeline container:
 
-```
+` ` `
 <{{ Element with selector specified by user }}>
-  <div class="jqtl-headline"><!-- ------------- Headline -->
+  <div class="jqtl-headline">< !-- ------------- Headline -- >
     <div class="jqtl-headline-wrapper">
       <h3 class="jqtl-timeline-title">{{ Title }}</h3>
       <div class="jqtl-range-meta jqtl-align-self-right">{{ Meta }}</div>
   </div>
   <{{ Any element defined default events: .timeline-events }}>
-  <div class="jqtl-container"><!-- ------- Timeline Body -->
+  <div class="jqtl-container">< !-- ------- Timeline Body -- >
     <div class="jqtl-side-index">{{ Sidebar Index Contents }}</div>
     <div class="jqtl-main">
       <div class="jqtl-ruler-top">
@@ -160,9 +173,10 @@ Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code rel
     </div>
     <div class="jqtl-loader">{{ Loader }}</div>
   </div>
-  <div class="jqtl-footer"><!-- ----------------- Footer -->
+  <div class="jqtl-footer">< !-- ----------------- Footer -- >
     <div class="jqtl-range-meta jqtl-align-self-right">{{ Meta }}</div>
     <div class="jqtl-footer-content">{{ Footer Content }}</div>
   </div>
 </{{ Element with selector specified by user }}>
-```
+` ` `
+-->
