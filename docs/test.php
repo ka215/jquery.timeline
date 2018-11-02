@@ -70,8 +70,8 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <!-- Font Awesome latest 5.3.1 -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
   <!-- jQuery Timeline -->
-  <link rel="stylesheet" href="../src/timeline_v2.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2.css' ); ?>">
-  <!-- link rel="stylesheet" href="../src/timeline_v2_demo.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2_demo.css' ); ?>" -->
+  <link rel="stylesheet" href="../src/timeline.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline.css' ); ?>">
+  <!-- link rel="stylesheet" href="../src/timeline-demo.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline-demo.css' ); ?>" -->
 </head>
 <body>
 <div class="container-fluid">
@@ -184,12 +184,15 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 <!-- REQUIRED JS SCRIPTS -->
 
 <!-- jQuery (latest 3.3.1) -->
+<!-- -->
 <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<!-- -->
 <!-- Bootstrap 4.1.3 -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!-- custom_datetime.js -->
-<script src="../src/timeline_v2.js?v=<?= filemtime( CURRENT_DIR . '/src/timeline_v2.js' ); ?>"></script>
+<!-- script type="module" src="../src/timeline.js?v=<?= filemtime( CURRENT_DIR . '/src/timeline.js' ); ?>"></script -->
+<script src="js/bundle.js?v=<?= filemtime( CURRENT_DIR . '/docs/js/bundle.js' ); ?>"></script>
 <!-- local scripts -->
 <script>
 $(function () {
@@ -282,7 +285,7 @@ let _d = new Date()
 _d.setDate( _d.getDate() - 1 )
 //console.log( _d )
 
-$('#my-timeline').timeline({
+$('#my-timeline').Timeline({
     type          : 'point',
     //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',

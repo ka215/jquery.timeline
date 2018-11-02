@@ -2593,5 +2593,6 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
     }
     
     
+    module.exports = Timeline
 })
 );
