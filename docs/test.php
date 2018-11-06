@@ -70,8 +70,14 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
   <!-- Font Awesome latest 5.3.1 -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
   <!-- jQuery Timeline -->
-  <link rel="stylesheet" href="../src/timeline.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline.css' ); ?>">
-  <!-- link rel="stylesheet" href="../src/timeline-demo.css?v=<?= filemtime( CURRENT_DIR . '/src/timeline-demo.css' ); ?>" -->
+<?php 
+$style_file = '/docs/css/jquery.timeline.min.css';
+$use4demo = false;
+?>
+  <link rel="stylesheet" href="..<?= $style_file ?>?v=<?= filemtime( CURRENT_DIR . $style_file ); ?>">
+<?php if ( $use4demo ) : ?>
+  <link rel="stylesheet" href="../docs/css/jquery.timeline.demo.css?v=<?= filemtime( CURRENT_DIR . '/docs/css/jquery.timeline.demo.css' ); ?>">
+<?php endif; ?>
 </head>
 <body>
 <div class="container-fluid">
@@ -191,8 +197,13 @@ define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILEN
 <!-- Bootstrap 4.1.3 -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!-- custom_datetime.js -->
+<?php 
+// $script_file = '/src/timeline-es6.js';
+$script_file = '/docs/js/jquery.timeline.min.js';
+// $script_file = '/dist/timeline.min.js';
+?>
+<script src="..<?= $script_file ?>?v=<?= filemtime( CURRENT_DIR . $script_file ); ?>"></script>
 <!-- script type="module" src="../src/timeline.js?v=<?= filemtime( CURRENT_DIR . '/src/timeline.js' ); ?>"></script -->
-<script src="js/bundle.js?v=<?= filemtime( CURRENT_DIR . '/docs/js/bundle.js' ); ?>"></script>
 <!-- local scripts -->
 <script>
 $(function () {
@@ -367,31 +378,31 @@ $('#my-timeline').Timeline({
     
     debug         : true
 })
-//.timeline('initialized', function(elem,opt){ alert( 'initialized!' ); } )
-.timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
-//.timeline('destroy')
-//.timeline('_init')
-.timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
+//.Timeline('initialized', function(elem,opt){ alert( 'initialized!' ); } )
+.Timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
+//.Timeline('destroy')
+//.Timeline('_init')
+.Timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
 //.css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
 ;
 
 /*
 $('#my-timeline')
-//.timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
-.timeline('hide')
-.timeline('show')
+//.Timeline('initialized', function(elem,opt){ alert( '!!!' ); } )
+.Timeline('hide')
+.Timeline('show')
 .css( 'border', 'dotted 1px #DDD' )
 ;
 */
 
 //console.log( $('#my-timeline').VERSION );
 
-//$('.my-timeline').timeline();
+//$('.my-timeline').Timeline();
 
 /*
-$('#my-timeline2').timeline()
-.timeline('initialized', function(elem,opt){ console.log( elem, opt ) } )
+$('#my-timeline2').Timeline()
+.Timeline('initialized', function(elem,opt){ console.log( elem, opt ) } )
 .css( 'border', 'solid 1px #F03333' )
 ;
 */

@@ -4,18 +4,19 @@
     "description": "You are able to easily create two types of horizontal timeline with this jQuery plugin.",
     "keywords": [
         "timeline",
-        "horizontal"
+        "horizontal",
+        "es8"
     ],
-    "version": "1.0.5",
+    "version": "2.0.0a1",
     "author": {
-        "name": "ka2",
+        "name": "ka2 (Katsuhiko Maeno)",
         "email": "ka2@ka2.org",
-        "url": "https://ka2.org"
+        "url": "https://ka2.org/"
     },
     "licenses": [
         {
             "type": "MIT",
-            "url": "https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE"
+            "url": "https://github.com/ka215/jquery.timeline/blob/master/LICENSE"
         }
     ],
     "bugs": "https://github.com/ka215/jquery.timeline/issues",
@@ -23,6 +24,6 @@
     "demo": "https://ka215.github.io/jquery.timeline/index.html",
     "download": "https://github.com/ka215/jquery.timeline/releases",
     "dependencies": {
-        "jquery": ">=1.9.0"
+        "jquery": ">=1.9.1"
     }
 }
