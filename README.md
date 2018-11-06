@@ -38,6 +38,7 @@
 - [Quick start](#quick-start)
 - [Status](#status)
 - [What's included](#whats-included)
+- [Usage](#usage)
 - [Supported browsers](#supported-browsers)
 - [Documentation](#documentation)
 - [Example as demonstration](#example-as-demonstration)
@@ -67,13 +68,40 @@ Read the [Getting started page](https://ka2.org/jquery.timeline/docs/v2/getting-
 
 ## What's included
 
-Within the download you'll find the following directories and files, logically grouping common assets and providing both compiled and minified variations. You'll see something like this:
+Within the download you'll find the following directories and files, logically grouping common assets and providing compiled and minified variations. You'll see something like this:
 
 ```
-(WIP)
+jquery.timeline/
+└── dist/
+    ├── fonts/
+    │   ├── jQueryTimeline.eot
+    │   ├── jQueryTimeline.svg
+    │   ├── jQueryTimeline.ttf
+    │   └── jQueryTimeline.woff
+    ├── jquery.timeline.min.css
+    ├── jquery.timeline.min.css.map
+    ├── jquery.timeline.min.js
+    └── jquery.timeline.min.js.map
 ```
 
-We provide compiled CSS and JS (`timeline.*`), as well as compiled and minified CSS and JS (`timeline.min.*`). [source maps](https://developers.google.com/web/tools/chrome-devtools/debug/readability/source-maps) (`timeline.*.map`) are available for use with certain browsers' developer tools.
+We provide compiled and minified CSS and JS (jquery.timeline.min.*). source maps (jquery.timeline.*.map) are available for use with certain browsers' developer tools.
+
+
+## Usage
+
+Include the installed files into your html:
+
+```
+<link rel="stylesheet" src="./jquery.timeline/dist/jquery.timeline.min.css">
+
+<script src="./jquery.timeline/dist/jquery.timeline.min.js"></script>
+```
+
+Bind this plugin in the scope had imported the jQuery:
+
+```
+$('#myTimeline').Timeline()
+```
 
 
 ## Supported browsers
