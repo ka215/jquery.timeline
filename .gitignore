@@ -2,3 +2,4 @@ node_modules/
 dist/imgs/
 *.org.*
 docs/debug*
+docs/imgs/thumb_*
