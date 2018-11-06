@@ -163,7 +163,7 @@ Documentation search is powered by [Algolia's DocSearch](https://community.algol
 ### Documentation for previous releases
 
 - For v2.0.x: (WIP)
-- For v1.0.x: <https://github.com/ka215/jquery.timeline/blob/master/README.md>
+- For v1.0.x: <https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md>
 - For v1.0.x (Japanese): <https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/>
 
 ## Example as demonstration
@@ -182,7 +182,7 @@ Documentation search is powered by [Algolia's DocSearch](https://community.algol
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code released under the [MIT License]().
+Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).
 
 <!--
 ## Structure of the DOM element of the timeline container:
