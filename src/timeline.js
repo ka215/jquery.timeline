@@ -22,7 +22,6 @@ const MIN_POINTER_SIZE   = 12
 
 //const DATA_API_KEY       = ".data-api"
 const JQUERY_NO_CONFLICT = $.fn[NAME]
-//const ESCAPE_KEYCODE     = 27 // KeyboardEvent.which value for Escape (Esc) key
 
 /*
  * Defaults of plugin options
@@ -76,7 +75,7 @@ const Default = {
     marginHeight    : 2, // Margin (pixel) top and bottom of events on the timeline; Added new since v2.0.0
     ruler           : { // Settings of ruler; Added new since v2.0.0
         top         : { // Can define the ruler position to top or bottom and both
-            lines      : [], // defaults to this.option.scale
+            lines      : [], // defaults to this.option.scale; c.g. [ 'year', 'month', 'day', 'weekday' ]
             height     : 30,
             fontSize   : 14,
             color      : "#777777",
@@ -91,7 +90,7 @@ const Default = {
         right       : `${PREFIX}circle-right`
     },
     loader          : "default", // Custom loader definition, possible values are "default", false and selector of loader element; Added new since v2.0.0
-    hideScrollbar   : false,
+    hideScrollbar   : false, // Whether or not to display the scroll bar displayed when the width of the timeline overflows (even if it is set to non-display, it will not function depending on the browser); Added new since v2.0.0
     eventMeta       : { // Display meta of range on event node when the timeline type is "bar"; Added new since v2.0.0
         display     : false,
         scale       : "day",
@@ -104,7 +103,7 @@ const Default = {
     // langsDir     : "./langs/", // --> Deprecated since v1.0.6
     // httpLanguage : false, // --> Deprecated since v1.0.6
     // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
-    debug           : true,
+    debug           : false,
 }
 
 /*
@@ -165,9 +164,7 @@ const EventParams = {
 const Event = {
     INITIALIZED        : `initialized${EVENT_KEY}`,
     HIDE               : `hide${EVENT_KEY}`,
-    //HIDDEN      : `hidden${EVENT_KEY}`,
     SHOW               : `show${EVENT_KEY}`,
-    //SHOWN       : `shown${EVENT_KEY}`,
     CLICK_EVENT        : `click.open${EVENT_KEY}`,
     MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
     MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
@@ -290,7 +287,8 @@ class Timeline {
         this._debug( '_init' )
         
         let _elem       = this._element,
-    _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`
+            _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`
+        
         this._selector = _selector.toLowerCase()
         
         if ( this._isInitialized || this._isCompleted ) {
