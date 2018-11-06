@@ -91,7 +91,7 @@ We provide compiled and minified CSS and JS (jquery.timeline.min.*). source maps
 
 Include the installed files into your html:
 
-```
+```HTML
 <link rel="stylesheet" src="./jquery.timeline/dist/jquery.timeline.min.css">
 
 <script src="./jquery.timeline/dist/jquery.timeline.min.js"></script>
@@ -99,7 +99,7 @@ Include the installed files into your html:
 
 Bind this plugin in the scope had imported the jQuery:
 
-```
+```JavaScript
 $('#myTimeline').Timeline()
 ```
 
