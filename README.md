@@ -8,10 +8,12 @@
 -->    
   <h3 align="center">jQuery.Timeline V2</h3>
 
-  <div style="display:flex;">
-    <img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_bar.png" />
-    <img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_point.png" />
-  </div>
+  <table border="0">
+    <tr>
+    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_bar.png" width="99%" /></td>
+    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_point.png" width="99%" /></td>
+    </tr>
+  </table>
 
   <p align="center">
     You are able to easily create two types of horizontal timeline with this jQuery plugin.
@@ -109,14 +111,14 @@ jQuery.Timeline version 2.x supports the following browsers:
 </tr>
 -->
 <tr>
-<td> Ok </td>
-<td> ? </td>
-<td> ? </td>
-<td> ? </td>
-<td> ? </td>
-<td> ? </td>
-<td> ? </td>
-<td> ? </td>
+<td name="PC:Chrome"> Ok </td>
+<td name="PC:Firefox"> Ok </td>
+<td name="PC:Safari"> ? </td>
+<td name="PC:IE"> ? </td>
+<td name="PC:Edge"> Ok </td>
+<td name="PC:Opera"> ? </td>
+<td name="MP:Android"> ? </td>
+<td name="MP:iOS Safari"> ? </td>
 </tr>
 </tbody>
 </table>
