@@ -84,7 +84,7 @@ jquery.timeline/
     └── jquery.timeline.min.js.map
 ```
 
-We provide compiled and minified CSS and JS (jquery.timeline.min.*). source maps (jquery.timeline.*.map) are available for use with certain browsers' developer tools.
+We provide compiled and minified CSS and JS (`jquery.timeline.min.*`). source maps (`jquery.timeline.*.map`) are available for use with certain browsers' developer tools.
 
 
 ## Usage
