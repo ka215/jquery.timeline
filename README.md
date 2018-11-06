@@ -8,6 +8,11 @@
 -->    
   <h3 align="center">jQuery.Timeline V2</h3>
 
+  <div style="display:flex;">
+    <img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_bar.png" />
+    <img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_point.png" />
+  </div>
+
   <p align="center">
     You are able to easily create two types of horizontal timeline with this jQuery plugin.
     <br>

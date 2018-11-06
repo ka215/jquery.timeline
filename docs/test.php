@@ -297,7 +297,7 @@ _d.setDate( _d.getDate() - 1 )
 //console.log( _d )
 
 $('#my-timeline').Timeline({
-    type          : 'point',
+    type          : 'bar',
     //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
     //startDatetime : '2000/1/1',
@@ -306,24 +306,24 @@ $('#my-timeline').Timeline({
     //endDatetime   : '2019-1-3 23:59:59',
     // endDatetime : `${new Date().toLocaleDateString()} 6:59`,
     //endDatetime   : '2020/12/31',
-    // scale         : 'half-hour',
+    //scale         : 'month',
     scale         : 'day',
     //rows          : 7,
-    minGridSize   : 40,
+    minGridSize   : 60,
     showHeadline  : true,
     headline      : {
         display   : true,
         title     : 'jQuery Timeline Ver.2.0.0a1',
         range     : true,
-        locale    : 'ja-JP-u-ca-japanese',
-        format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }
+        //locale    : 'ja-JP-u-ca-japanese',
+        //format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'long', year: 'numeric', month: 'numeric', day: 'numeric' }
     },
     footer        : {
         display   : true,
-        content   : `<small>&copy; MAGIC METHODS ${new Date().getFullYear()}</small>`,
+        content   : `<small>&copy; ka2.org ${new Date().getFullYear()}</small>`,
         range     : true,
-        locale    : 'ja-JP-u-ca-iso8601',
-        format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'narrow', year: 'zerofill', month: 'numeric', day: '2-digit' }
+        //locale    : 'ja-JP-u-ca-iso8601',
+        //format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'narrow', year: 'zerofill', month: 'numeric', day: '2-digit' }
     },
     sidebar       : {
         sticky : true,
@@ -355,12 +355,12 @@ $('#my-timeline').Timeline({
             //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
             //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month' ],
             //lines      : [ 'year', 'month', 'week', 'day', 'weekday', 'hour', 'half-hour', 'quarter-hour'/*, 'minute'/*, 'second'*/ ],
-            lines      : [ 'year', 'month', 'day' ],
+            lines      : [ 'year', 'month', 'day', 'weekday' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
             background : '#FFF',
-            locale     : 'ja-JP',
+            //locale     : 'ja-JP',
             format     : { timeZone: 'Asia/Tokyo', hour12: false, decade: 'ordinal', lustrum: 'ordinal', year: 'numeric', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
         },
         bottom : {
