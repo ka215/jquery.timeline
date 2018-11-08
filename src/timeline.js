@@ -1,4 +1,4 @@
-import '@babel/polyfill'
+//import '@babel/polyfill'
 
 /*!
  * jQuery Timeline
@@ -412,9 +412,53 @@ class Timeline {
     _getPluggableDatetime( key, round_type = '' ) {
         let _opts        = this._config,
             _date        = null,
-            getFirstDate = ( dateObj, scale ) => /^years?$/i.test( scale ) ? new Date( dateObj.getFullYear(), 0, 1 ) : new Date( dateObj.getFullYear(), dateObj.getMonth(), 1 ),
+            getFirstDate = ( dateObj, scale ) => {
+                switch ( true ) {
+                    case /^millenniums?|millennia$/i.test( scale ):
+                    case /^century$/i.test( scale ):
+                    case /^dec(ade|ennium)$/i.test( scale ):
+                    case /^lustrum$/i.test( scale ):
+                    case /^years?$/i.test( scale ):
+                        return new Date( dateObj.getFullYear(), 0, 1 )
+                    case /^months?$/i.test( scale ):
+                        return new Date( dateObj.getFullYear(), dateObj.getMonth(), 1 )
+                    case /^(week|day)s?$/i.test( scale ):
+                        return new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() )
+                    case /^(|half|quarter)-?hours?$/i.test( scale ):
+                        return new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours() )
+                    case /^minutes?$/i.test( scale ):
+                        return new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes() )
+                    case /^seconds?$/i.test( scale ):
+                        return new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds() )
+                }
+            },
             getLastDate  = ( dateObj, scale ) => {
-                let _tmpDate = /^years?$/i.test( scale ) ? new Date( dateObj.getFullYear() + 1, 0, 1 ) : new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                let _tmpDate
+                
+                switch ( true ) {
+                    case /^millenniums?|millennia$/i.test( scale ):
+                    case /^century$/i.test( scale ):
+                    case /^dec(ade|ennium)$/i.test( scale ):
+                    case /^lustrum$/i.test( scale ):
+                    case /^years?$/i.test( scale ):
+                        _tmpDate = new Date( dateObj.getFullYear() + 1, 0, 1 )
+                        break
+                    case /^months?$/i.test( scale ):
+                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                        break
+                    case /^(week|day)s?$/i.test( scale ):
+                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + 1 )
+                        break
+                    case /^(|half|quarter)-?hours?$/i.test( scale ):
+                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours() + 1 )
+                        break
+                    case /^minutes?$/i.test( scale ):
+                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes() + 1 )
+                        break
+                    case /^seconds?$/i.test( scale ):
+                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds() + 1 )
+                        break
+                }
                 return new Date( _tmpDate.getTime() - 1 )
             }
         
@@ -429,9 +473,9 @@ class Timeline {
                 
                 if ( /^current(|ly)$/i.test( _opts.startDatetime ) ) {
                     _date = new Date()
-                    if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+                    //if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
                         _date = getFirstDate( _date, _opts.scale )
-                    }
+                    //}
                 } else {
                     _date = this.getCorrectDatetime( _opts.startDatetime )
                 }
@@ -457,14 +501,15 @@ class Timeline {
                     }
                     _date.setTime( _date.getTime() + ( _ms * LimitScaleGrids[this._filterScaleKeyName( _opts.scale )] ) )
                 }
-//console.log( '!_getPluggableDatetime::auto:', _opts.scale, this.getHigherScale( _opts.scale ), key, _date.getTime() )
+// console.log( '!_getPluggableDatetime::auto:', _opts.scale, this.getHigherScale( _opts.scale ), key, _date.getTime() )
                 break
             }
             default:
                 _date = this.getCorrectDatetime( key )
                 break
         }
-        if ( ! this.is_empty( round_type ) && /^(year|month)s?$/i.test( _opts.scale ) ) {
+        //if ( ! this.is_empty( round_type ) && /^(year|month|day)s?$/i.test( _opts.scale ) ) {
+        if ( ! this.is_empty( round_type ) ) {
             if ( 'first' === round_type ) {
                 _date = getFirstDate( _date, _opts.scale )
             } else
@@ -682,7 +727,7 @@ class Timeline {
         }
         if ( _range ) {
             if ( _begin && _end ) {
-            let _meta = `${new Date( _begin ).toLocaleString( _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${new Date( _end ).toLocaleString( _locale, _format )}`
+                let _meta = `${new Date( _begin ).toLocaleString( _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${new Date( _end ).toLocaleString( _locale, _format )}`
                 //let _meta = this.getCorrectDatetime( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ this.getCorrectDatetime( _end ).toLocaleString( _locale, _format )
                 
                 _wrapper.append( `<div class="${ClassName.RANGE_META}">${_meta}</div>` )
@@ -1118,7 +1163,7 @@ class Timeline {
         
         if ( _range ) {
             if ( _begin && _end ) {
-            let _meta = `${this.getLocaleString( _begin, _opts.scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _opts.scale, _locale, _format )}`
+                let _meta = `${new Date( _begin ).toLocaleString( _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${new Date( _end ).toLocaleString( _locale, _format )}`
                 //let _meta = this.getCorrectDatetime( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ this.getCorrectDatetime( _end ).toLocaleString( _locale, _format )
                 
                 _tl_footer.append( `<div class="${ClassName.RANGE_META} ${ClassName.ALIGN_SELF_RIGHT}">${_meta}</div>` )
@@ -1675,6 +1720,18 @@ class Timeline {
                                 } else {
                                     _curveType[_ba] = _tmp[0]
                                 }
+                            } else
+                            if ( ( typeof evt.relation[_key] === 'boolean' && evt.relation[_key] ) || ( typeof evt.relation[_key] === 'number' && Boolean( evt.relation[_key] ) ) ) {
+                                // 自動判定処理
+console.log( _sx, _sy, _ex, _ey, evt, _ba )
+                                if ( _ba === 'before' ) {
+                                    // before: targetEvent[ _sy, _sy ] ---- selfEvent[ _ex, _ey ]
+                                    
+                                } else
+                                if ( _ba === 'after' ) {
+                                    // after: selfEvent[ _sx, _sy ] ---- targetEvent[ _ex, _ey ]
+                                    
+                                }
                             }
                             break
                     }
@@ -1687,7 +1744,7 @@ class Timeline {
                     let _radius = _props.scaleSize / 2
                     //    _cpx    = Math.abs( _ex - _sx ) > ( _props.scaleSize / 2 ) ? _sx
                     //    _cpy
-//console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
+console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
                     switch ( true ) {
                         case /^lb$/i.test( _curveType[_ba] ):
                             ctx_relations.moveTo( _sx, _sy )
@@ -1715,6 +1772,7 @@ class Timeline {
                 _targetId, _targetEvent
             
             if ( _rel.hasOwnProperty( 'before' ) ) {
+                // before: targetEvent[ _sy, _sy ] ---- selfEvent[ _ex, _ey ]
                 _ex = _rel.x
                 _ey = _rel.y
                 _targetId = parseInt( _rel.before, 10 )
@@ -1734,6 +1792,7 @@ class Timeline {
                 }
             }
             if ( _rel.hasOwnProperty( 'after' ) ) {
+                // after: selfEvent[ _sx, _sy ] ---- targetEvent[ _ex, _ey ]
                 _sx = _rel.x
                 _sy = _rel.y
                 _targetId = parseInt( _rel.after, 10 )
@@ -2282,7 +2341,7 @@ class Timeline {
                 _options[_prop] = options[_prop]
             }
         }
-//console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
+console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
         
         switch ( true ) {
             case /^millenniums?|millennia$/i.test( scale ):
