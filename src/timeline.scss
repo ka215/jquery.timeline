@@ -303,6 +303,13 @@ $font_path: "./fonts/";
     z-index: 7;
     cursor: pointer;
     transition: all .5s ease;
+    
+    &:not(.jqtl-event-type-pointer) {
+        &.active {
+            color: #FEFEFE;
+            background-color: #F73333;
+        }
+    }
 }
 .jqtl-event-label,
 .jqtl-event-node > * {
@@ -365,6 +372,10 @@ $font_path: "./fonts/";
     background-size: cover;
     background-position: center center;
     transition: all .1s linear;
+    
+    &.active {
+        border-color: #DC3545 !important;
+    }
 }
 .jqtl-event-node.jqtl-event-type-pointer:hover {
     border-color: #DC3545;

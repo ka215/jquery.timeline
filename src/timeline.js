@@ -166,6 +166,8 @@ const Event = {
     HIDE               : `hide${EVENT_KEY}`,
     SHOW               : `show${EVENT_KEY}`,
     CLICK_EVENT        : `click.open${EVENT_KEY}`,
+    FOCUSIN_EVENT      : `focusin.event${EVENT_KEY}`,
+    FOCUSOUT_EVENT     : `focusout.event${EVENT_KEY}`,
     MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
     MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
 }
@@ -218,6 +220,7 @@ const Selector = {
     TIMELINE_RELATION_LINES   : `.${ClassName.TIMELINE_RELATION_LINES}`,
     TIMELINE_EVENTS           : `.${ClassName.TIMELINE_EVENTS}`,
     TIMELINE_SIDEBAR_ITEM     : `.${ClassName.TIMELINE_SIDEBAR_ITEM}`,
+    TIMELINE_EVENT_NODE       : `.${ClassName.TIMELINE_EVENT_NODE}`,
     VIEWER_EVENT_TYPE_POINTER : `.${ClassName.VIEWER_EVENT_TYPE_POINTER}`,
     LOADER                    : `#${PREFIX}loader`,
     DEFAULT_EVENTS            : ".timeline-events"
@@ -325,6 +328,16 @@ class Timeline {
             Event.CLICK_EVENT,
             `${this._selector} ${Selector.EVENT_NODE}`,
             ( event ) => this.openEvent( event )
+        )
+        $(_elem).on(
+            Event.FOCUSIN_EVENT,
+            Selector.TIMELINE_EVENT_NODE,
+            ( event ) => this._activeEvent( event )
+        )
+        $(_elem).on(
+            Event.FOCUSOUT_EVENT,
+            Selector.TIMELINE_EVENT_NODE,
+            ( event ) => this._activeEvent( event )
         )
         
 //console.log( '!_init:', )
@@ -1726,7 +1739,7 @@ class Timeline {
                             } else
                             if ( ( typeof evt.relation[_key] === 'boolean' && evt.relation[_key] ) || ( typeof evt.relation[_key] === 'number' && Boolean( evt.relation[_key] ) ) ) {
                                 // Automatically set the necessary linearity type (:> 自動線形判定
-console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
+//console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
                                 if ( _ba === 'before' ) {
                                     // before: targetEvent[ _ex, _ey ] <---- selfEvent[ _sx, _sy ]
                                     if ( _sy > _ey ) {
@@ -1933,6 +1946,54 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
     }
     
     /*
+     * @private: Retrieve the mapping data that placed current events
+     */
+    _mapPlacedEvents() {
+        let _that      = this,
+            _tl_events = $(this._element).find( Selector.TIMELINE_EVENTS ).children(),
+            _cache     = null,
+            _events    = []
+        
+        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+            _cache = JSON.parse( sessionStorage.getItem( this._selector ) )
+        }
+        
+        _tl_events.each(function() {
+            let _uid  = $(this).data( 'uid' ),
+                _data = null
+            
+            if ( _cache ) {
+                _data = _cache.find( ( _evt ) => _evt.uid === _uid ) || null
+            } else {
+                _data = $(this).data()
+            }
+            
+            if ( ! _that.is_empty( _data ) ) {
+                _events.push( _data )
+            }
+        })
+//console.log( '!_mapPlacedEvents:', _events )
+        
+        return _events
+    }
+    
+    /*
+     * @private: Event when focus or blur
+     */
+    _activeEvent( event ) {
+// console.log( '!_activeEvent:', event )
+        let _elem = event.target
+        
+        if ( 'focusin' === event.type ) {
+            $( Selector.TIMELINE_EVENT_NODE ).removeClass( 'active' )
+            $(_elem).addClass( 'active' )
+        } else
+        if ( 'focusout' === event.type ) {
+            $(_elem).removeClass( 'active' )
+        }
+    }
+    
+    /*
      * @private: Event when hover on the pointer type event
      */
     _hoverPointer( event ) {
@@ -1954,6 +2015,9 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
             _x = this.numRound( _x - ( ( _w - _base.width ) / 2 ), 2 )
             _y = this.numRound( _y - ( ( _w - _base.width ) / 2 ), 2 )
             _z = 9
+            $(_elem).trigger( Event.FOCUSIN_EVENT )
+        } else {
+            $(_elem).trigger( Event.FOCUSOUT_EVENT )
         }
         $(_elem).css( 'left', `${_x}px` ).css( 'top', `${_y}px` ).css( 'width', `${_w}px` ).css( 'height', `${_w}px` ).css( 'z-index', _z )
     }
@@ -1962,13 +2026,16 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
      * @private: Echo the log of plugin for debugging
      */
     _debug( message, throwType = 'Notice' ) {
+        if ( ! this._config.debug ) {
+            return
+        }
         message = this.supplement( null, message )
         if ( message ) {
             let _msg = typeof $(this._element).data( DATA_KEY )[message] !== 'undefined' ? `Called method "${message}".` : message,
                 _sty = /^Called method "/.test(_msg) ? 'font-weight:600;color:blue;' : '',
                 _rst = ''
             
-            if ( this._config.debug && window.console && window.console.log ) {
+            if ( window.console && window.console.log ) {
                 if ( throwType === 'Notice' ) {
                     window.console.log( '%c%s%c', _sty, _msg, _rst )
                 } else {
@@ -1983,18 +2050,21 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
     /*
      * @public: This method is able to call only once after completed an initializing of the plugin
      */
-    initialized( callback ) {
+    initialized( ...args ) {
         let _message = this._isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized'
         this._debug( _message )
         
-        let _elem = this._element,
-            _opts = this._config
+        let _elem    = this._element,
+            _opts    = this._config,
+            _args    = args[0],
+            callback = _args.length > 0 && typeof _args[0] === 'function' ? _args[0] : null,
+            userdata = _args.length > 1 ? _args.slice(1) : null
         
-        if ( typeof callback === 'function' && ! this._isInitialized ) {
-            if ( _opts.debug ) {
-                this._debug( 'Fired the "initialized" method after initializing this plugin.' )
-            }
-            callback( _elem, _opts )
+// console.log( '!initialized:', callback, userdata )
+        if ( callback && ! this._isInitialized ) {
+            this._debug( 'Fired your callback function after initializing this plugin.' )
+            
+            callback( _elem, _opts, userdata )
         }
         
         this._isInitialized = true
@@ -2027,7 +2097,9 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
     /*
      * @public: This method has been deprecated since version 2.0.0
      */
-    render() {}
+    render() {
+        throw new ReferenceError( 'This method named "render" has been deprecated since version 2.0.0' )
+    }
     
     /*
      * @public: Show hidden timeline
@@ -2063,6 +2135,7 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
      * @public: 
      */
     dateback() {
+        this._debug( 'dateback' )
         
     }
     
@@ -2070,6 +2143,7 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
      * @public: 
      */
     dateforth() {
+        this._debug( 'dateforth' )
         
     }
     
@@ -2101,23 +2175,48 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
             case /^(right|end)$/i.test( position ):
                 _movX = _tl_container[0].scrollWidth - _elem.scrollWidth + 1
                 break
-            case /^latest$/i.test( position ):
+            case /^latest$/i.test( position ): {
+                let events    = this._mapPlacedEvents().sort( this.compareValues( 'x' ) ),
+                    lastEvent = events[events.length - 1]
+                
+                _movX = ! this.is_empty( lastEvent ) ? lastEvent.x : 0
+                
+// console.log( events, lastEvent, _movX, _elem.scrollWidth / 2 )
+                // Centering
+                if ( _elem.scrollWidth / 2 < _movX ) {
+                    _movX -= Math.ceil( _elem.scrollWidth / 2 )
+                } else {
+                    _movX = 0
+                }
+                
+                // Focus target event
+                $(`${Selector.TIMELINE_EVENT_NODE}[data-uid="${lastEvent.uid}"]`).trigger( Event.FOCUSIN_EVENT )
                 
                 break
-            case /^\d{1,}$/.test( position ):
-                let events      = {},
+            }
+            case /^\d{1,}$/.test( position ): {
+                let events      = this._mapPlacedEvents(),
                     targetEvent = {}
                 
-                if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-                    events = JSON.parse( sessionStorage.getItem( this._selector ) )
-                }
                 if ( events.length > 0 ) {
                     targetEvent = events.find( ( evt ) => evt.eventId == parseInt( position, 10 ) )
                 }
                 _movX = ! this.is_empty( targetEvent ) ? targetEvent.x : 0
+                
+                // Centering
+                if ( Math.ceil( _elem.scrollWidth / 2 ) < _movX ) {
+                    _movX -= Math.ceil( _elem.scrollWidth / 2 )
+                } else {
+                    _movX = 0
+                }
+                
+                // Focus target event
+                $(`${Selector.TIMELINE_EVENT_NODE}[data-uid="${targetEvent.uid}"]`).trigger( Event.FOCUSIN_EVENT )
+                
                 break
+            }
             case /^current(|ly)|now$/i.test( position ):
-            default:
+            default: {
                 let _now  = new Date().toString(),
                     _nowX = this.numRound( this._getCoordinateX( _now ), 2 )
                 
@@ -2131,8 +2230,9 @@ console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
                     _movX = 0
                 }
                 break
+            }
         }
-console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, _tl_container[0].scrollWidth, _tl_container[0].scrollLeft, _movX )
+//console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, _tl_container[0].scrollWidth, _tl_container[0].scrollLeft, _movX )
         
         _tl_container.scrollLeft( _movX )
     }
@@ -2140,26 +2240,72 @@ console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, 
     /*
      * @public: This method has been deprecated since version 2.0.0
      */
-    getOptions() {}
+    getOptions() {
+        throw new ReferenceError( 'This method named "getOptions" has been deprecated since version 2.0.0' )
+    }
     
     /*
-     * @public: 
+     * @public: Add new events to the rendered timeline object
      */
-    addEvent() {
+    addEvent( ...args ) {
+        this._debug( 'addEvent' )
+        
+        let _args        = args[0],
+            events       = this.supplement( null, _args[0] ),
+            callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata     = _args.length > 2 ? _args.slice(2) : null,
+            _cacheEvents = [],
+            lastEventId  = 0
+        
+        if ( this.is_empty( events ) || ! this._isCompleted ) {
+            return
+        }
+        
+        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+            _cacheEvents = JSON.parse( sessionStorage.getItem( this._selector ) )
+        }
+        
+        if ( ! this.is_empty( _cacheEvents ) ) {
+            _cacheEvents.sort( this.compareValues( 'eventId' ) )
+            lastEventId = parseInt( _cacheEvents[_cacheEvents.length - 1].eventId, 10 )
+        }
+//console.log( '!addEvent::before:', _cacheEvents, lastEventId, callback, userdata )
+        
+        events.forEach( ( evt ) => {
+            let _one_event = this._registerEventData( '<div></div>', evt )
+            
+            _one_event.eventId = Math.max( lastEventId + 1, parseInt( _one_event.eventId, 10 ) )
+            _cacheEvents.push( _one_event )
+            lastEventId = parseInt( _one_event.eventId, 10 )
+        })
+//console.log( '!addEvent::after:', _cacheEvents, lastEventId, callback, userdata )
+        // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
+        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+            sessionStorage.setItem( this._selector, JSON.stringify( _cacheEvents ) )
+        }
+        
+        this._placeEvent()
+        
+        if ( callback ) {
+            this._debug( 'Fired your callback function after placing additional events.' )
+            
+            callback( this._element, this._config, userdata )
+        }
+    }
+    
+    /*
+     * @public: Remove events from the currently timeline object
+     */
+    removeEvent( targets ) {
+        this._debug( 'removeEvent' )
         
     }
     
     /*
-     * @public: 
+     * @public: Update events on the currently timeline object
      */
-    removeEvent() {
-        
-    }
-    
-    /*
-     * @public: 
-     */
-    updateEvent() {
+    updateEvent( events ) {
+        this._debug( 'updateEvent' )
         
     }
     
@@ -2645,6 +2791,10 @@ console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, 
     
     /*
      * Get the rendering width of the given string (:> 指定された文字列のレンダリング幅を取得する
+     *
+     * @param string str (required)
+     *
+     * @return int
      */
     strWidth( str ) {
         let _str_ruler = $( '<span id="jqtl-str-ruler"></span>' ),
@@ -2655,6 +2805,36 @@ console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, 
         _width = $('#jqtl-str-ruler').text( str ).get(0).offsetWidth
         $('#jqtl-str-ruler').empty()
         return _width
+    }
+    
+    /*
+     * Sort an array by value of specific property (Note: destructive method) (:> 指定プロパティの値で配列をソートする（注:破壊的メソッド）
+     * Usage: Object.sort( this.compareValues( property, order ) )
+     *
+     * @param string key (required)
+     * @param string order (optional; defaults to 'asc')
+     *
+     * @return object
+     */
+    compareValues( key, order = 'asc' ) {
+        return ( a, b ) => {
+            if ( ! a.hasOwnProperty( key ) || ! b.hasOwnProperty( key ) ) {
+                return 0
+            }
+            
+            const varA = typeof a[key] === 'string' ? a[key].toUpperCase() : a[key]
+            const varB = typeof b[key] === 'string' ? b[key].toUpperCase() : b[key]
+            
+            let comparison = 0
+            
+            if ( varA > varB ) {
+                comparison = 1
+            } else
+            if ( varA < varB ) {
+                comparison = -1
+            }
+            return order === 'desc' ? comparison * -1 : comparison
+        }
     }
     
     /*
@@ -2676,10 +2856,7 @@ console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, 
     
     // Static
     
-    static _jQueryInterface() {
-        let config = arguments[0],
-            args   = arguments.length > 1 ? Array.prototype.slice.call( arguments, 1 ) : null
-        
+    static _jQueryInterface( config, ...args ) {
         return this.each(function () {
             let data = $(this).data( DATA_KEY )
             const _config = {
@@ -2688,7 +2865,7 @@ console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, 
                 ...typeof config === 'object' && config ? config : {}
             }
             
-//console.log( '!_jQueryInterface:', data, config, arguments )
+//console.log( '!_jQueryInterface:', data, config, args )
             if ( ! data ) {
                 // Apply the plugin and store the instance in data (:> プラグインを適用する
                 data = new Timeline( this, _config )
@@ -2698,7 +2875,7 @@ console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, 
             if ( typeof config === 'string' && config.charAt(0) != '_' ) {
                 if ( typeof data[config] === 'undefined' ) {
                     // Call no method
-                    throw new TypeError( `No method named "${config}"` )
+                    throw new ReferenceError( `No method named "${config}"` )
                 }
                 // Call public method (:> （インスタンスがpublicメソッドを持っている場合）メソッドを呼び出す
                 data[config]( args )

@@ -8,6 +8,7 @@ try {
     exit( 1 );
 }
 // タイムライン用設定値
+define( 'TIMELINE_TYPE', 'point' );
 define( 'TIMELINE_RANGE', 3 );
 define( 'TIMELINE_ROWS', 5 );
 // タイムラインの起点日時を算出して定数として定義
@@ -108,7 +109,7 @@ $use4demo = false;
     
         <div id="my-timeline" class="test-timeline test-1">
           <ul class="timeline-events">
-<?php /*
+<?php if ( TIMELINE_TYPE === 'bar' ) : ?>
             <li>無効なイベント</li>
             <li data-timeline-node="">無効なイベント・その２</li>
             <li data-timeline-node="{}">無効なイベント・その３</li>
@@ -128,16 +129,17 @@ $use4demo = false;
             <li data-timeline-node="{id:16,start:'2018-10-21 10:50',row:2,content:'サイズ指定は「small」',size:'small',relation:{before:15,after:-1,lineSize:8,color:'red'}}">ポインター用イベント（2）</li>
             <li data-timeline-node="{id:17,start:'2018-10-23 3:45',row:3,content:'サイズ指定はピクセル値で「4」',size:4,bdColor:'blue',relation:{before:16,lineColor:'blue',size:1}}">ポインター用イベント（3）</li>
             <li data-timeline-node="{id:18,start:'2018-10-24 0:00',row:4,content:'サイズ指定はなし',relation:{before:17,curve:'lb'}}">ポインター用イベント（4）</li>
-*/ ?>
-            <li data-timeline-node="{id:1,start:'2018-11-1 23:29',row:1,content:'<?= $event_contents[0]['content'] ?>'}"><?= $$event_contents[0]['label'] ?></li>
-            <li data-timeline-node="{id:2,start:'2018-11-9 0:01',row:1,content:'<?= $event_contents[1]['content'] ?>',relation:{before:1}}"><?= $$event_contents[1]['label'] ?></li>
-            <li data-timeline-node="{id:3,start:'2018-11-11 16:56',row:3,content:'<?= $event_contents[2]['content'] ?>',relation:{before:2,curve:1}}"><?= $$event_contents[2]['label'] ?></li>
-            <li data-timeline-node="{id:4,start:'2018-11-14 10:50',row:5,content:'<?= $event_contents[3]['content'] ?>',relation:{before:3,after:5,curve:true}}"><?= $$event_contents[3]['label'] ?></li>
-            <li data-timeline-node="{id:5,start:'2018-11-16 12:05',row:7,content:'<?= $event_contents[4]['content'] ?>',relation:{after:6,curve:1}}"><?= $$event_contents[4]['label'] ?></li>
-            <li data-timeline-node="{id:6,start:'2018-11-19 6:55',row:9,content:'<?= $event_contents[5]['content'] ?>',relation:{after:-1}}"><?= $$event_contents[5]['label'] ?></li>
-            <li data-timeline-node="{id:7,start:'2018-11-11 0:00',row:2,content:'<?= $event_contents[6]['content'] ?>',relation:{before:8,color:'royalblue',curve:true}}"><?= $$event_contents[6]['label'] ?></li>
-            <li data-timeline-node="{id:8,start:'2018-11-13 0:00',row:4,content:'<?= $event_contents[7]['content'] ?>',relation:{after:9,color:'royalblue',curve:1}}"><?= $$event_contents[7]['label'] ?></li>
-            <li data-timeline-node="{id:9,start:'2018-11-12 0:00',row:6,content:'<?= $event_contents[8]['content'] ?>',relation:{}}"><?= $$event_contents[8]['label'] ?></li>
+<?php else : ?>
+            <li data-timeline-node="{id:1,start:'2018-11-1 23:29',row:1,content:'<?= $event_contents[0]['content'] ?>'}"><?= $event_contents[0]['label'] ?></li>
+            <li data-timeline-node="{id:2,start:'2018-11-9 0:01',row:1,content:'<?= $event_contents[1]['content'] ?>',relation:{before:1}}"><?= $event_contents[1]['label'] ?></li>
+            <li data-timeline-node="{id:3,start:'2018-11-11 16:56',row:3,content:'<?= $event_contents[2]['content'] ?>',relation:{before:2,curve:1}}"><?= $event_contents[2]['label'] ?></li>
+            <li data-timeline-node="{id:4,start:'2018-11-14 10:50',row:5,content:'<?= $event_contents[3]['content'] ?>',relation:{before:3,after:5,curve:true}}"><?= $event_contents[3]['label'] ?></li>
+            <li data-timeline-node="{id:5,start:'2018-11-16 12:05',row:7,content:'<?= $event_contents[4]['content'] ?>',relation:{after:6,curve:1}}"><?= $event_contents[4]['label'] ?></li>
+            <li data-timeline-node="{id:6,start:'2018-11-19 6:55',row:9,content:'<?= $event_contents[5]['content'] ?>',relation:{after:-1}}"><?= $event_contents[5]['label'] ?></li>
+            <li data-timeline-node="{id:7,start:'2018-11-11 0:00',row:2,content:'<?= $event_contents[6]['content'] ?>',relation:{before:8,color:'royalblue',curve:true}}"><?= $event_contents[6]['label'] ?></li>
+            <li data-timeline-node="{id:8,start:'2018-11-13 0:00',row:4,content:'<?= $event_contents[7]['content'] ?>',relation:{after:9,color:'royalblue',curve:1}}"><?= $event_contents[7]['label'] ?></li>
+            <li data-timeline-node="{id:9,start:'2018-11-12 0:00',row:6,content:'<?= $event_contents[8]['content'] ?>',relation:{}}"><?= $event_contents[8]['label'] ?></li>
+<?php endif; ?>
           </ul>
         </div>
         
@@ -156,7 +158,7 @@ $use4demo = false;
           <h5><i class="fa fa-cog"></i> Test Methods </h5>
           <div class="card-text">
             <!-- configuration content -->
-            
+            <button type="button" class="btn btn-secondary" id="add-event">Add Events</button>
           </div>
         </div>
       </div>
@@ -316,7 +318,7 @@ _d.setDate( _d.getDate() - 1 )
 //console.log( _d )
 
 $('#my-timeline').Timeline({
-    type          : 'pointer',
+    type          : '<?= TIMELINE_TYPE ?>',
     //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
     //startDatetime : '2000/1/1',
@@ -398,17 +400,32 @@ $('#my-timeline').Timeline({
     
     debug         : true
 })
-//.Timeline('initialized', function(elem,opt){ alert( 'initialized!' ); } )
-.Timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
-//.Timeline('destroy')
+//.Timeline('initialized')
+//.Timeline('initialized', (element,option,userdata) => { console.log( 'callback after initialized!', element, option, userdata ) }, { user: 'custom-data' } )
+//.Timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
 //.Timeline('_init')
-.Timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
-.Timeline('alignment', 'right')
-.Timeline('alignment', 'begin')
-.Timeline('alignment', '7')
+//.Timeline('destroy')
+//.Timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
+//.Timeline('hide')
+//.Timeline('show')
+//.Timeline('alignment', 'right')
+//.Timeline('alignment', 'begin')
+//.Timeline('alignment', '7')
+//.Timeline('alignment', 'latest')
 //.css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
-;
+
+
+$('#add-event').on('click', function() {
+    $('#my-timeline').Timeline('addEvent', [
+        {start:'2018-11-16 00:00',end:'2018-11-20 02:00',row:2,label:'Add Event',content:'test'},
+        {start:'2018-11-18 12:00',end:'2018-11-22 12:00',row:3,label:'Add Event 2',content:'test 2'}
+    ], (e,c,d) => { console.log( 'Added Events!', e,c,d ) }, 'custom-data' )
+    $(this).prop( 'disabled', true )
+});
+
+
+//console.log( $('#my-timeline').Timeline('getOptions') )
 
 /*
 $('#my-timeline')
