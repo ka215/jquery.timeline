@@ -544,7 +544,7 @@ class Timeline {
      * @private: Retrieve the pluggable rows of the timeline (:> プラガブルなタイムラインの行数を取得する
      */
     _getPluggableRows() {
-        let _opts = this._config,
+        let _opts      = this._config,
             fixed_rows = this.supplement( 'auto', _opts.rows, this.validateNumeric )
         
         if ( fixed_rows === 'auto' ) {
@@ -1690,14 +1690,17 @@ class Timeline {
     }
     
     /*
-     * @private: Draw the relation lines
+     * @private: Draw the relation lines (:> 連結線を描画する
      */
     _drawRelationLine( events ) {
-        let _props        = this._instanceProps,
+        let _opts         = this._config,
+            _props        = this._instanceProps,
             _canvas       = $(this._element).find( Selector.TIMELINE_RELATION_LINES ),
             ctx_relations = _canvas[0].getContext('2d'),
             drawLine      = ( _sx, _sy, _ex, _ey, evt, _ba ) => {
-                let _curveType = {}
+                let _curveType = {},
+                    _radius    = this.numRound( Math.min( _props.scaleSize, _props.rowSize ) / 2, 2 ),
+                    _subRadius = this.numRound( this._getPointerSize( evt.size, _opts.marginHeight ) / 2, 2 )
                 
                 // Defaults
                 ctx_relations.strokeStyle = EventParams.bdColor
@@ -1722,15 +1725,75 @@ class Timeline {
                                 }
                             } else
                             if ( ( typeof evt.relation[_key] === 'boolean' && evt.relation[_key] ) || ( typeof evt.relation[_key] === 'number' && Boolean( evt.relation[_key] ) ) ) {
-                                // 自動判定処理
-console.log( _sx, _sy, _ex, _ey, evt, _ba )
+                                // Automatically set the necessary linearity type (:> 自動線形判定
+console.log( _sx, _sy, _ex, _ey, _radius, _ba, _subRadius )
                                 if ( _ba === 'before' ) {
-                                    // before: targetEvent[ _sy, _sy ] ---- selfEvent[ _ex, _ey ]
-                                    
+                                    // before: targetEvent[ _ex, _ey ] <---- selfEvent[ _sx, _sy ]
+                                    if ( _sy > _ey ) {
+                                        // 連結点が自分より上にある
+                                        if ( _sx > _ex ) {
+                                            // 連結点が自分より左にある "(_ex,_ey)└(_sx,_sy)" as "lb"
+                                            _curveType[_ba] = 'lb'
+                                        } else
+                                        if ( _sx < _ex ) {
+                                            // 連結点が自分より右にある "⊂￣" as "lb+lt"
+                                            _curveType[_ba] = 'lb+lt'
+                                        } else {
+                                            // 連結点が自分の直上 "│" to top
+                                            _curveType[_ba] = null
+                                        }
+                                    } else
+                                    if ( _sy < _ey ) {
+                                        // 連結点が自分より下にある
+                                        if ( _sx > _ex ) {
+                                            // 連結点が自分より左にある "(_ex,_ey)┌(_sx,_sy)" as "lt"
+                                            _curveType[_ba] = 'lt'
+                                        } else
+                                        if ( _sx < _ex ) {
+                                            // 連結点が自分より右にある "⊂_" as "rt+rb"
+                                            _curveType[_ba] = 'lt+lb'
+                                        } else {
+                                            // 連結点が自分の直下 "│" to bottom
+                                            _curveType[_ba] = null
+                                        }
+                                    } else {
+                                        // 連結点が自分と同じ水平上にある（左右どちらか） _sy == _ey; "─" to left or right
+                                        _curveType[_ba] = null
+                                    }
                                 } else
                                 if ( _ba === 'after' ) {
-                                    // after: selfEvent[ _sx, _sy ] ---- targetEvent[ _ex, _ey ]
-                                    
+                                    // after: selfEvent[ _sx, _sy ] ----> targetEvent[ _ex, _ey ]
+                                    if ( _sy < _ey ) {
+                                        // 連結点が自分の下にある
+                                        if ( _sx < _ex ) {
+                                            // 連結点が自分の右にある "(_sx,_sy)┐(_ex,_ey)" as "rt"
+                                            _curveType[_ba] = 'rt'
+                                        } else
+                                        if ( _sx > _ex ) {
+                                            // 連結点が自分より左にある "_⊃" as "rt+rb"
+                                            _curveType[_ba] = 'rt+rb'
+                                        } else {
+                                            // 連結点が自分の直下 "│" to bottom
+                                            _curveType[_ba] = null
+                                        }
+                                    } else
+                                    if ( _sy > _ey ) {
+                                        // 連結点が自分より上にある
+                                        if ( _sx < _ex ) {
+                                            // 連結点が自分の右にある "┘" as "rb"
+                                            _curveType[_ba] = 'rb'
+                                        } else
+                                        if ( _sx > _ex ) {
+                                            // 連結点が自分より左にある "￣⊃" as "rb+rt"
+                                            _curveType[_ba] = 'rb+rt'
+                                        } else {
+                                            // 連結点が自分の直上 "│" to top
+                                            _curveType[_ba] = null
+                                        }
+                                    } else {
+                                        // 連結点が自分と同じ水平上にある（左右どちらか） _sy == _ey; "─" to left or right
+                                        _curveType[_ba] = null
+                                    }
                                 }
                             }
                             break
@@ -1741,20 +1804,73 @@ console.log( _sx, _sy, _ex, _ey, evt, _ba )
                 }
                 ctx_relations.beginPath()
                 if ( ! this.is_empty( _curveType ) ) {
-                    let _radius = _props.scaleSize / 2
-                    //    _cpx    = Math.abs( _ex - _sx ) > ( _props.scaleSize / 2 ) ? _sx
-                    //    _cpy
-console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
+// console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
                     switch ( true ) {
-                        case /^lb$/i.test( _curveType[_ba] ):
+                        case /^lt$/i.test( _curveType[_ba] ): // "(_ex,_ey)┌(_sx,_sy)"
                             ctx_relations.moveTo( _sx, _sy )
-                            ctx_relations.lineTo( _sx, _ey - _radius )
-                            ctx_relations.quadraticCurveTo( _sx, _ey, _sx + _radius, _ey )
-                            ctx_relations.lineTo( _ex, _ey )
+                            if ( Math.abs( _sx - _ex ) > _radius ) {
+                                ctx_relations.lineTo( _ex - _radius, _sy ) // "─"
+                            }
+                            if ( Math.abs( _ey - _sy ) > _radius ) {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _sy + _radius ) // "┌"
+                                ctx_relations.lineTo( _ex, _ey ) // "│"
+                            } else {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _ey ) // "┌"
+                            }
                             break
-                        case /^rb$/i.test( _curveType[_ba] ):
-                        case /^lt$/i.test( _curveType[_ba] ):
-                        case /^rt$/i.test( _curveType[_ba] ):
+                        case /^lb$/i.test( _curveType[_ba] ): // "(_ex,_ey)└(_sx,_sy)"
+                            ctx_relations.moveTo( _sx, _sy )
+                            if ( Math.abs( _sx - _ex ) > _radius ) {
+                                ctx_relations.lineTo( _ex + _radius, _sy ) // "─"
+                            }
+                            if ( Math.abs( _sy - _ey ) > _radius ) {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _sy - _radius ) // "└"
+                                ctx_relations.lineTo( _ex, _ey ) // "│"
+                            } else {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _ey ) // "└"
+                            }
+                            break
+                        case /^rt$/i.test( _curveType[_ba] ): // "(_sx,_sy)┐(_ex,_ey)"
+                            ctx_relations.moveTo( _sx, _sy )
+                            if ( Math.abs( _ex - _sx ) > _radius ) {
+                                ctx_relations.lineTo( _ex - _radius, _sy ) // "─"
+                            }
+                            if ( Math.abs( _ey - _sy ) > _radius ) {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _sy + _radius ) // "┐"
+                                ctx_relations.lineTo( _ex, _ey )
+                            } else {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _ey ) // "┐"
+                            }
+                            break
+                        case /^rb$/i.test( _curveType[_ba] ): // "(_sx,_sy)┘(_ex,_ey)"
+                            ctx_relations.moveTo( _sx, _sy )
+                            if ( Math.abs( _ex - _sx ) > _radius ) {
+                                ctx_relations.lineTo( _ex - _radius, _sy ) // "─"
+                            }
+                            if ( Math.abs( _sy - _ey ) > _radius ) {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _sy - _radius ) // "┘"
+                                ctx_relations.lineTo( _ex, _ey )
+                            } else {
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _ey ) // "┘"
+                            }
+                            break
+                        case /^lt\+lb$/i.test( _curveType[_ba] ): // "⊂＿"
+                        case /^lb\+lt$/i.test( _curveType[_ba] ): // "⊂￣"
+                            ctx_relations.moveTo( _sx, _sy )
+                            //ctx_relations.lineTo( _sx - _subRadius, _sy ) // "─"
+                            ctx_relations.lineTo( _sx - _radius, _sy ) // "─"
+                            //ctx_relations.bezierCurveTo( _sx - _subRadius - _radius, _sy, _sx - _subRadius - _radius, _ey, _sx - _subRadius, _ey ) // "⊂"
+                            ctx_relations.bezierCurveTo( _sx - _radius * 2, _sy, _sx - _radius * 2, _ey, _sx - _radius, _ey ) // "⊂"
+                            ctx_relations.lineTo( _ex, _ey ) // "─"
+                            break
+                        case /^rt\+rb$/i.test( _curveType[_ba] ): // "＿⊃"
+                        case /^rb\+rt$/i.test( _curveType[_ba] ): // "￣⊃"
+                            ctx_relations.moveTo( _sx, _sy )
+                            //ctx_relations.lineTo( _sx + _subRadius, _sy ) // "─"
+                            ctx_relations.lineTo( _sx + _radius, _sy ) // "─"
+                            //ctx_relations.bezierCurveTo( _sx + _subRadius + _radius, _sy, _sx + _subRadius + _radius, _ey, _sx + _subRadius, _ey ) // "⊃"
+                            ctx_relations.bezierCurveTo( _sx + _radius * 2, _sy, _sx + _radius * 2, _ey, _sx + _radius, _ey ) // "⊃"
+                            ctx_relations.lineTo( _ex, _ey ) // "─"
                             break
                     }
                 } else {
@@ -1772,19 +1888,19 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
                 _targetId, _targetEvent
             
             if ( _rel.hasOwnProperty( 'before' ) ) {
-                // before: targetEvent[ _sy, _sy ] ---- selfEvent[ _ex, _ey ]
-                _ex = _rel.x
-                _ey = _rel.y
+                // before: targetEvent[ _ex, _ey ] <---- selfEvent[ _sx, _sy ]
+                // (:> before: 自分を起点（ _sx, _sy ）として左方向の連結点（ _ex, _ey ）へ向かう描画方式
+                _sx = _rel.x
+                _sy = _rel.y
                 _targetId = parseInt( _rel.before, 10 )
                 if ( _targetId < 0 ) {
-                    _sx = 0
-                    _sy = _ey
+                    _ex = 0
+                    _ey = _sy
                 } else {
                     _targetEvent = events.find( ( _evt ) => parseInt( _evt.eventId, 10 ) == _targetId )
-//console.log( '!_drawRelationLine:', _targetEvent.relation )
                     if ( _targetEvent.relation ) {
-                        _sx = _targetEvent.relation.x
-                        _sy = _targetEvent.relation.y
+                        _ex = _targetEvent.relation.x < 0 ? 0 : _targetEvent.relation.x
+                        _ey = _targetEvent.relation.y
                     }
                 }
                 if ( _sx >= 0 && _sy >= 0 && _ex >= 0 && _ey >= 0 ) {
@@ -1792,7 +1908,8 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
                 }
             }
             if ( _rel.hasOwnProperty( 'after' ) ) {
-                // after: selfEvent[ _sx, _sy ] ---- targetEvent[ _ex, _ey ]
+                // after: selfEvent[ _sx, _sy ] ----> targetEvent[ _ex, _ey ]
+                // (:> after: 自分を起点（ _sx, _sy ）として右方向の連結点（ _ex, _ey ）へ向かう描画方式
                 _sx = _rel.x
                 _sy = _rel.y
                 _targetId = parseInt( _rel.after, 10 )
@@ -1802,7 +1919,7 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
                 } else {
                     _targetEvent = events.find( ( _evt ) => parseInt( _evt.eventId, 10 ) == _targetId )
                     if ( _targetEvent.relation ) {
-                        _ex = _targetEvent.relation.x
+                        _ex = _targetEvent.relation.x > _props.fullwidth ? _props.fullwidth : _targetEvent.relation.x
                         _ey = _targetEvent.relation.y
                     }
                 }
@@ -1918,7 +2035,7 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
     show() {
         this._debug( 'show' )
         
-        let _elem = this.element
+        let _elem = this._element
         
         if ( ! this._isShown ) {
             $(_elem).removeClass( ClassName.HIDE )
@@ -1933,7 +2050,7 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
     hide() {
         this._debug( 'hide' )
         
-        let _elem = this.element
+        let _elem = this._element
         
         if ( this._isShown ) {
             $(_elem).addClass( ClassName.HIDE )
@@ -1957,10 +2074,67 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
     }
     
     /*
-     * @public: 
+     * @public: Move the display position of the timeline container to the specified position
      */
-    alignment() {
+    alignment( position ) {
+        this._debug( 'alignment' )
         
+        let _opts         = this._config,
+            _props        = this._instanceProps,
+            _elem         = this._element,
+            _tl_container = $(_elem).find( Selector.TIMELINE_CONTAINER ),
+            _movX         = 0
+        
+        position = this.is_array( position ) ? position[0] : _opts.rangeAlign
+        
+        if ( _props.fullwidth <= _elem.scrollWidth ) {
+            return
+        }
+        
+        switch ( true ) {
+            case /^(left|begin)$/i.test( position ):
+                _movX = 0
+                break
+            case /^center$/i.test( position ):
+                _movX = ( _tl_container[0].scrollWidth - _elem.scrollWidth ) / 2 + 1
+                break
+            case /^(right|end)$/i.test( position ):
+                _movX = _tl_container[0].scrollWidth - _elem.scrollWidth + 1
+                break
+            case /^latest$/i.test( position ):
+                
+                break
+            case /^\d{1,}$/.test( position ):
+                let events      = {},
+                    targetEvent = {}
+                
+                if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+                    events = JSON.parse( sessionStorage.getItem( this._selector ) )
+                }
+                if ( events.length > 0 ) {
+                    targetEvent = events.find( ( evt ) => evt.eventId == parseInt( position, 10 ) )
+                }
+                _movX = ! this.is_empty( targetEvent ) ? targetEvent.x : 0
+                break
+            case /^current(|ly)|now$/i.test( position ):
+            default:
+                let _now  = new Date().toString(),
+                    _nowX = this.numRound( this._getCoordinateX( _now ), 2 )
+                
+                if ( _nowX >= 0 ) {
+                    if ( _tl_container[0].scrollWidth - _elem.scrollWidth + 1 < _nowX ) {
+                        _movX = _tl_container[0].scrollWidth - _elem.scrollWidth + 1
+                    } else {
+                        _movX = _nowX
+                    }
+                } else {
+                    _movX = 0
+                }
+                break
+        }
+console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, _tl_container[0].scrollWidth, _tl_container[0].scrollLeft, _movX )
+        
+        _tl_container.scrollLeft( _movX )
     }
     
     /*
@@ -2341,7 +2515,7 @@ console.log( '!_drawLine:', _curveType, _sx, _sy, _ex, _ey, _radius )
                 _options[_prop] = options[_prop]
             }
         }
-console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
+//console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
         
         switch ( true ) {
             case /^millenniums?|millennia$/i.test( scale ):
@@ -2502,7 +2676,10 @@ console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
     
     // Static
     
-    static _jQueryInterface( config ) {
+    static _jQueryInterface() {
+        let config = arguments[0],
+            args   = arguments.length > 1 ? Array.prototype.slice.call( arguments, 1 ) : null
+        
         return this.each(function () {
             let data = $(this).data( DATA_KEY )
             const _config = {
@@ -2511,7 +2688,7 @@ console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
                 ...typeof config === 'object' && config ? config : {}
             }
             
-//console.log( '!_jQueryInterface:', data, config )
+//console.log( '!_jQueryInterface:', data, config, arguments )
             if ( ! data ) {
                 // Apply the plugin and store the instance in data (:> プラグインを適用する
                 data = new Timeline( this, _config )
@@ -2524,7 +2701,7 @@ console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
                     throw new TypeError( `No method named "${config}"` )
                 }
                 // Call public method (:> （インスタンスがpublicメソッドを持っている場合）メソッドを呼び出す
-                data[config]()
+                data[config]( args )
             } else {
                 if ( ! data._isInitialized ) {
                     data._init()

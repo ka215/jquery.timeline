@@ -57,6 +57,14 @@ $event_contents = [
 ];
 
 define( 'CURRENT_DIR', str_replace( '/docs', '', dirname( $_SERVER['SCRIPT_FILENAME'] ) ) );
+
+function loadAsset( $file_relative_path ) {
+    if ( file_exists( CURRENT_DIR . '/docs/'. $file_relative_path ) ) {
+        return $file_relative_path;
+    } else {
+        return '';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,6 +108,7 @@ $use4demo = false;
     
         <div id="my-timeline" class="test-timeline test-1">
           <ul class="timeline-events">
+<?php /*
             <li>無効なイベント</li>
             <li data-timeline-node="">無効なイベント・その２</li>
             <li data-timeline-node="{}">無効なイベント・その３</li>
@@ -119,6 +128,16 @@ $use4demo = false;
             <li data-timeline-node="{id:16,start:'2018-10-21 10:50',row:2,content:'サイズ指定は「small」',size:'small',relation:{before:15,after:-1,lineSize:8,color:'red'}}">ポインター用イベント（2）</li>
             <li data-timeline-node="{id:17,start:'2018-10-23 3:45',row:3,content:'サイズ指定はピクセル値で「4」',size:4,bdColor:'blue',relation:{before:16,lineColor:'blue',size:1}}">ポインター用イベント（3）</li>
             <li data-timeline-node="{id:18,start:'2018-10-24 0:00',row:4,content:'サイズ指定はなし',relation:{before:17,curve:'lb'}}">ポインター用イベント（4）</li>
+*/ ?>
+            <li data-timeline-node="{id:1,start:'2018-11-1 23:29',row:1,content:'<?= $event_contents[0]['content'] ?>'}"><?= $$event_contents[0]['label'] ?></li>
+            <li data-timeline-node="{id:2,start:'2018-11-9 0:01',row:1,content:'<?= $event_contents[1]['content'] ?>',relation:{before:1}}"><?= $$event_contents[1]['label'] ?></li>
+            <li data-timeline-node="{id:3,start:'2018-11-11 16:56',row:3,content:'<?= $event_contents[2]['content'] ?>',relation:{before:2,curve:1}}"><?= $$event_contents[2]['label'] ?></li>
+            <li data-timeline-node="{id:4,start:'2018-11-14 10:50',row:5,content:'<?= $event_contents[3]['content'] ?>',relation:{before:3,after:5,curve:true}}"><?= $$event_contents[3]['label'] ?></li>
+            <li data-timeline-node="{id:5,start:'2018-11-16 12:05',row:7,content:'<?= $event_contents[4]['content'] ?>',relation:{after:6,curve:1}}"><?= $$event_contents[4]['label'] ?></li>
+            <li data-timeline-node="{id:6,start:'2018-11-19 6:55',row:9,content:'<?= $event_contents[5]['content'] ?>',relation:{after:-1}}"><?= $$event_contents[5]['label'] ?></li>
+            <li data-timeline-node="{id:7,start:'2018-11-11 0:00',row:2,content:'<?= $event_contents[6]['content'] ?>',relation:{before:8,color:'royalblue',curve:true}}"><?= $$event_contents[6]['label'] ?></li>
+            <li data-timeline-node="{id:8,start:'2018-11-13 0:00',row:4,content:'<?= $event_contents[7]['content'] ?>',relation:{after:9,color:'royalblue',curve:1}}"><?= $$event_contents[7]['label'] ?></li>
+            <li data-timeline-node="{id:9,start:'2018-11-12 0:00',row:6,content:'<?= $event_contents[8]['content'] ?>',relation:{}}"><?= $$event_contents[8]['label'] ?></li>
           </ul>
         </div>
         
@@ -198,8 +217,8 @@ $use4demo = false;
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!-- custom_datetime.js -->
 <?php 
-// $script_file = '/src/timeline-es6.js';
-$script_file = '/docs/js/jquery.timeline.min.js';
+$script_file = '/src/timeline.js';
+// $script_file = '/docs/js/jquery.timeline.min.js';
 // $script_file = '/dist/timeline.min.js';
 ?>
 <script src="..<?= $script_file ?>?v=<?= filemtime( CURRENT_DIR . $script_file ); ?>"></script>
@@ -297,19 +316,20 @@ _d.setDate( _d.getDate() - 1 )
 //console.log( _d )
 
 $('#my-timeline').Timeline({
-    type          : 'bar',
+    type          : 'pointer',
     //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
     //startDatetime : '2000/1/1',
-    startDatetime : '2018-10-14 0:00',
+    //startDatetime : '2018-10-14 0:00',
     // startDatetime : `${_d.toLocaleDateString()} 0:00`,
     //endDatetime   : '2019-1-3 23:59:59',
     // endDatetime : `${new Date().toLocaleDateString()} 6:59`,
     //endDatetime   : '2020/12/31',
     //scale         : 'month',
+    //scale         : 'hour',
     scale         : 'day',
     //rows          : 7,
-    minGridSize   : 60,
+    minGridSize   : 24 * 2,
     showHeadline  : true,
     headline      : {
         display   : true,
@@ -328,25 +348,25 @@ $('#my-timeline').Timeline({
     sidebar       : {
         sticky : true,
         list   : [ 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_002.png" class="rounded"></span> "Tony" Stark</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_003.png" class="rounded"></span> Steve Rogers</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_004.png" class="rounded"></span> Thor</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_005.png" class="rounded"></span> Hulk</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_006.png" class="rounded"></span> Natasha Romanoff</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_007.png" class="rounded"></span> Stephen Strange</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_008.png" class="rounded"></span> Peter Quill</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_013.png" class="rounded"></span> T\'Challa</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_001.png" class="rounded"></span> Peter Parker</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_015.png" class="rounded"></span> Wanda Maximoff</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_002.png' ) ?>" class="rounded"></span> "Tony" Stark</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_003.png' ) ?>" class="rounded"></span> Steve Rogers</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_004.png' ) ?>" class="rounded"></span> Thor</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_005.png' ) ?>" class="rounded"></span> Hulk</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_006.png' ) ?>" class="rounded"></span> Natasha Romanoff</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_007.png' ) ?>" class="rounded"></span> Stephen Strange</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_008.png' ) ?>" class="rounded"></span> Peter Quill</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_013.png' ) ?>" class="rounded"></span> T\'Challa</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_001.png' ) ?>" class="rounded"></span> Peter Parker</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_015.png' ) ?>" class="rounded"></span> Wanda Maximoff</a>', 
 /*
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_018.png" class="rounded"></span> Vision</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_009.png" class="rounded"></span> Groot</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_010.png" class="rounded"></span> Rocket Raccoon</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_011.png" class="rounded"></span> Gamora</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_012.png" class="rounded"></span> Drax the Destroyer</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_014.png" class="rounded"></span> "Bucky" Barnes</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_016.png" class="rounded"></span> Samuel Wilson</a>', 
-            '<a href="#"><span class="avatar-icon"><img src="imgs/thumb_017.png" class="rounded"></span> James "Rhodey" Rhodes</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_018.png' ) ?>" class="rounded"></span> Vision</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_009.png' ) ?>" class="rounded"></span> Groot</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_010.png' ) ?>" class="rounded"></span> Rocket Raccoon</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_011.png' ) ?>" class="rounded"></span> Gamora</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_012.png' ) ?>" class="rounded"></span> Drax the Destroyer</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_014.png' ) ?>" class="rounded"></span> "Bucky" Barnes</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_016.png' ) ?>" class="rounded"></span> Samuel Wilson</a>', 
+            '<a href="#"><span class="avatar-icon"><img src="<?= loadAsset( 'imgs/thumb_017.png' ) ?>" class="rounded"></span> James "Rhodey" Rhodes</a>', 
 */
         ]
     },
@@ -383,6 +403,9 @@ $('#my-timeline').Timeline({
 //.Timeline('destroy')
 //.Timeline('_init')
 .Timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
+.Timeline('alignment', 'right')
+.Timeline('alignment', 'begin')
+.Timeline('alignment', '7')
 //.css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
 ;
