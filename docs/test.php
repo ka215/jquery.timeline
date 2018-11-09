@@ -158,7 +158,9 @@ $use4demo = false;
           <h5><i class="fa fa-cog"></i> Test Methods </h5>
           <div class="card-text">
             <!-- configuration content -->
-            <button type="button" class="btn btn-secondary" id="add-event">Add Events</button>
+            <button type="button" class="btn btn-primary" id="add-event">Add Event</button>
+            <button type="button" class="btn btn-secondary" id="remove-event">Remove Event</button>
+            <button type="button" class="btn btn-default" id="update-event">Update Event</button>
           </div>
         </div>
       </div>
@@ -418,11 +420,28 @@ $('#my-timeline').Timeline({
 
 $('#add-event').on('click', function() {
     $('#my-timeline').Timeline('addEvent', [
-        {start:'2018-11-16 00:00',end:'2018-11-20 02:00',row:2,label:'Add Event',content:'test'},
-        {start:'2018-11-18 12:00',end:'2018-11-22 12:00',row:3,label:'Add Event 2',content:'test 2'}
-    ], (e,c,d) => { console.log( 'Added Events!', e,c,d ) }, 'custom-data' )
+        {id:21,start:'2018-11-16 00:00',end:'2018-11-20 02:00',row:2,label:'Add Event',content:'test',extend:{toggle:'modal',target:'#myModal'},relation:{after:22,curve:1}},
+        {id:22,start:'2018-11-18 12:00',end:'2018-11-22 12:00',row:3,label:'Add Event 2',content:'test 2',extend:{toggle:'popover',placement:'top',trigger:'hover'}}
+    ], (e,c,d) => { console.log( 'Added Events!', e,c,d ); $('[data-toggle="popover"]').popover(); /* 注: popoverの場合は再度バインドが必要 */ }, 'custom-data' )
     $(this).prop( 'disabled', true )
-});
+})
+
+$('#remove-event').on('click', function() {
+    $('#my-timeline').Timeline('removeEvent', [
+        //'2018/11/11'
+        //',2018/11/13 23:59:59'
+        //'2018/11/11 0:00,2018/11/13 23:59:59'
+        'Lorem ipsum'
+    ], (e,c,d) => { console.log( 'Removed Events!', e,c,d ) }, 'custom-data' )
+    //$(this).prop( 'disabled', true )
+})
+
+$('#update-event').on('click', function() {
+    $('#my-timeline').Timeline('updateEvent', [
+        
+    ], (e,c,d) => { console.log( 'Updated Events!', e,c,d ) }, 'custom-data' )
+    //$(this).prop( 'disabled', true )
+})
 
 
 //console.log( $('#my-timeline').Timeline('getOptions') )

@@ -1444,8 +1444,12 @@ class Timeline {
             
             Object.keys( new_event ).forEach( ( _prop ) => {
                 switch( true ) {
-                    case /^(|event)id$/i.test( _prop ):
-                        new_event.eventId = parseInt( params[_prop], 10 ) || 0
+                    case /^eventId$/i.test( _prop ):
+                        if ( params.hasOwnProperty( 'id' ) && this.is_empty( new_event.eventId ) ) {
+                            new_event.eventId = parseInt( params.id, 10 )
+                        } else {
+                            new_event.eventId = parseInt( params[_prop], 10 ) || 0
+                        }
                         break
                     case /^(label|content)$/i.test( _prop ):
                         if ( params.hasOwnProperty( _prop ) && ! this.is_empty( params[_prop] ) ) {
@@ -1525,6 +1529,7 @@ class Timeline {
         }
         
         if ( events.length > 0 ) {
+            _evt_container.empty()
             events.forEach( ( _evt ) => {
                 let _evt_elem = this._createEventNode( _evt )
                 
@@ -1894,6 +1899,7 @@ class Timeline {
                 ctx_relations.stroke()
             }
         
+        ctx_relations.clearRect( 0, 0, _canvas[0].width, _canvas[0].height )
 //console.log( '!_drawRelationLine:', _props, events, _canvas )
         events.forEach( ( evt ) => {
             let _rel = evt.relation,
@@ -1911,7 +1917,7 @@ class Timeline {
                     _ey = _sy
                 } else {
                     _targetEvent = events.find( ( _evt ) => parseInt( _evt.eventId, 10 ) == _targetId )
-                    if ( _targetEvent.relation ) {
+                    if ( ! this.is_empty( _targetEvent ) && _targetEvent.relation ) {
                         _ex = _targetEvent.relation.x < 0 ? 0 : _targetEvent.relation.x
                         _ey = _targetEvent.relation.y
                     }
@@ -1931,7 +1937,7 @@ class Timeline {
                     _ey = _sy
                 } else {
                     _targetEvent = events.find( ( _evt ) => parseInt( _evt.eventId, 10 ) == _targetId )
-                    if ( _targetEvent.relation ) {
+                    if ( ! this.is_empty( _targetEvent ) && _targetEvent.relation ) {
                         _ex = _targetEvent.relation.x > _props.fullwidth ? _props.fullwidth : _targetEvent.relation.x
                         _ey = _targetEvent.relation.y
                     }
@@ -2251,7 +2257,7 @@ class Timeline {
         this._debug( 'addEvent' )
         
         let _args        = args[0],
-            events       = this.supplement( null, _args[0] ),
+            events       = this.supplement( null, _args[0], this.validateArray ),
             callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
             userdata     = _args.length > 2 ? _args.slice(2) : null,
             _cacheEvents = [],
@@ -2287,7 +2293,7 @@ class Timeline {
         this._placeEvent()
         
         if ( callback ) {
-            this._debug( 'Fired your callback function after placing additional events.' )
+            this._debug( 'Fired your callback function after replacing events.' )
             
             callback( this._element, this._config, userdata )
         }
@@ -2296,16 +2302,118 @@ class Timeline {
     /*
      * @public: Remove events from the currently timeline object
      */
-    removeEvent( targets ) {
+    removeEvent( ...args ) {
         this._debug( 'removeEvent' )
         
+        let _args        = args[0],
+            targets      = this.supplement( null, _args[0], this.validateArray ),
+            callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata     = _args.length > 2 ? _args.slice(2) : null,
+            _cacheEvents = [],
+            condition    = {}
+        
+        if ( this.is_empty( targets ) || ! this._isCompleted ) {
+            return
+        }
+        
+        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+            _cacheEvents = JSON.parse( sessionStorage.getItem( this._selector ) )
+        }
+        
+        if ( this.is_empty( _cacheEvents ) ) {
+            return
+        }
+        
+        targets.forEach( ( cond ) => {
+            switch ( true ) {
+                case /^\d{1,}$/.test( cond ):
+                    // By matching event ID
+                    condition.type  = 'eventId'
+                    condition.value = parseInt( cond, 10 )
+                    break
+                case /^(|\d{1,}(-|\/)\d{1,2}(-|\/)\d{1,2}(|\s\d{1,2}:\d{1,2}(|:\d{1,2})))(|,\d{1,}(-|\/)\d{1,2}(-|\/)\d{1,2}(|\s\d{1,2}:\d{1,2}(|:\d{1,2})))$/.test( cond ): {
+                    // By matching range of datetime
+                    let _tmp = cond.split(',')
+                    
+                    condition.type  = 'daterange'
+                    condition.value = {}
+                    condition.value['from'] = this.is_empty( _tmp[0] ) ? null : new Date( _tmp[0] )
+                    condition.value['to']   = this.is_empty( _tmp[1] ) ? null : new Date( _tmp[1] )
+                    break
+                }
+                default:
+                    // By matching regex string
+                    condition.type  = 'regex'
+                    condition.value = new RegExp( cond )
+                    break
+            }
+            _cacheEvents.forEach( ( evt, _idx ) => {
+                switch ( condition.type ) {
+                    case 'eventId':
+                        if ( parseInt( evt.eventId, 10 ) == condition.value ) {
+//console.log( `!removeEvent::${condition.type}:${condition.value}:`, _cacheEvents[_idx] )
+                            _cacheEvents.splice( _idx, 1 )
+                        }
+                        break
+                    case 'daterange': {
+//console.log( condition.value )
+                        let _fromX = condition.value.from ? Math.ceil( this._getCoordinateX( condition.value.from.toString() ) ) : 0,
+                            _toX   = condition.value.to   ? Math.floor( this._getCoordinateX( condition.value.to.toString() ) ) : _fromX
+                        
+                        if ( _fromX <= evt.x && evt.x <= _toX ) {
+//console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, _fromX, _toX, evt.x )
+                            _cacheEvents.splice( _idx, 1 )
+                        }
+                        break
+                    }
+                    case 'regex':
+//console.log( `!removeEvent::${condition.type}:${condition.value}:`, JSON.stringify( evt ) )
+                        if ( condition.value.test( JSON.stringify( evt ) ) ) {
+                            _cacheEvents.splice( _idx, 1 )
+                        }
+                        break
+                }
+            })
+        })
+//console.log( `!removeEvent::after:`, _cacheEvents )
+        // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
+        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+            sessionStorage.setItem( this._selector, JSON.stringify( _cacheEvents ) )
+        }
+        
+        this._placeEvent()
+        
+        if ( callback ) {
+            this._debug( 'Fired your callback function after placing additional events.' )
+            
+            callback( this._element, this._config, userdata )
+        }
     }
     
     /*
      * @public: Update events on the currently timeline object
      */
-    updateEvent( events ) {
+    updateEvent( ...args ) {
         this._debug( 'updateEvent' )
+        
+        let _args        = args[0],
+            events       = this.supplement( null, _args[0], this.validateArray ),
+            callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata     = _args.length > 2 ? _args.slice(2) : null,
+            _cacheEvents = []
+        
+        if ( this.is_empty( events ) || ! this._isCompleted ) {
+            return
+        }
+        
+        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
+            _cacheEvents = JSON.parse( sessionStorage.getItem( this._selector ) )
+        }
+        
+        if ( this.is_empty( _cacheEvents ) ) {
+            return
+        }
+        
         
     }
     
@@ -2851,6 +2959,9 @@ class Timeline {
     }
     validateObject( def, val ) {
         return typeof val === 'object' ? val : def
+    }
+    validateArray( def, val ) {
+        return Object.prototype.toString.call( val ) === '[object Array]' ? val : def
     }
     
     
