@@ -11,6 +11,7 @@
     "arrow-body-style": "error",
     "arrow-parens": "error",
     "arrow-spacing": "error",
+    "guard-for-in": "error",
     "generator-star-spacing": "error",
     "no-duplicate-imports": "error",
     "no-useless-computed-key": "error",
