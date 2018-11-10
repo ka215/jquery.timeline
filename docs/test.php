@@ -438,8 +438,16 @@ $('#remove-event').on('click', function() {
 
 $('#update-event').on('click', function() {
     $('#my-timeline').Timeline('updateEvent', [
+        {id:22,start:'2018-11-18 12:00',end:'2018-11-22 12:00',row:3,label:'Update Event',content:'update test',extend:{toggle:'modal',target:'#myModal'},relation:{after:6,curve:1}}
         
     ], (e,c,d) => { console.log( 'Updated Events!', e,c,d ) }, 'custom-data' )
+    //$(this).prop( 'disabled', true )
+})
+
+$('#reload').on('click', function() {
+    $('#my-timeline').Timeline('reload', {
+        // You can override any options when reload the timeline
+    }, (e,c,d) => { console.log( 'Reloaded Timeline!', e, c, d ) }, { userdata: 'custom' } )
     //$(this).prop( 'disabled', true )
 })
 

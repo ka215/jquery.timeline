@@ -103,6 +103,7 @@ const Default = {
     // langsDir     : "./langs/", // --> Deprecated since v1.0.6
     // httpLanguage : false, // --> Deprecated since v1.0.6
     // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
+    storage         : 'session', // Specification of Web storage to cache event data, defaults to sessionStorage; Added new since v2.0.0
     debug           : false,
 }
 
@@ -824,8 +825,8 @@ class Timeline {
             let _bc = /^years?$/i.test( _opts.scale ) ? 365 : 30,
                 _sy = 0
             
-            for ( let _key in _props.variableScale ) {
-                _sy += this.numRound( ( _props.variableScale[_key] * _props.scaleSize ) / _bc, 2 )
+            for ( let _val of _props.variableScale ) {
+                _sy += this.numRound( ( _val * _props.scaleSize ) / _bc, 2 )
                 drawVerticalLine( _sy, false )
             }
         } else {
@@ -892,8 +893,8 @@ class Timeline {
                 // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
                 _line_grids = this._filterVariableScale( line_scale )
                 
-                for ( let _key in _line_grids ) {
-                    _grid_x += this.numRound( _line_grids[_key], 2 )
+                for ( let _val of _line_grids ) {
+                    _grid_x += this.numRound( _val, 2 )
                     
                     ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
                     ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
@@ -902,11 +903,11 @@ class Timeline {
                 // In case of fixed length scale (:> 固定長スケールの場合
                 _line_grids = this._getGridsPerScale( line_scale )
                 
-                for ( let _key in _line_grids ) {
-                    if ( this.is_empty( _key ) || _line_grids[_key] >= _props.grids ) {
+                for ( let _val of _line_grids ) {
+                    if ( this.is_empty( _val ) || _val >= _props.grids ) {
                         break
                     }
-                    let _grid_width = _line_grids[_key] * _props.scaleSize
+                    let _grid_width = _val * _props.scaleSize
                     
                     _grid_x += _grid_width
                     if ( Math.ceil( _grid_x ) - _correction >= ctx_ruler.canvas.width ) {
@@ -939,7 +940,7 @@ class Timeline {
             scales = _props.variableScale,
             retObj = {}
         
-        for ( let _dt in scales ) {
+        for ( let _dt of Object.keys( scales ) ) {
             let _days     = scales[_dt],
                 grid_size = this.numRound( ( _days * _props.scaleSize ) / _bc, 2 ),
                 _newKey   = null,
@@ -1078,7 +1079,7 @@ class Timeline {
         })
 //console.log( '!_getGridsPerScale:', target_scale, _scale_grids )
         
-        return _scale_grids
+        return this.toIterableObject( _scale_grids )
     }
     
     /*
@@ -1094,14 +1095,14 @@ class Timeline {
             format       = this.supplement( Default.ruler.top.format, ruler.format, this.validateObject ),
             _ruler_lines = $('<div></div>', { class: ClassName.TIMELINE_RULER_LINES, style: `width:100%;height:${line_height}px;` })
         
-        for ( let _key in _line_grids ) {
+        for ( let _key of Object.keys( _line_grids ) ) {
             let _item_width      = /^(year|month)s?$/i.test( _opts.scale ) ? _line_grids[_key] : _line_grids[_key] * _props.scaleSize,
                 _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
                 _ruler_string    = this.getLocaleString( _key, line_scale, locale, format ),
                 _data_ruler_item = ''
 //console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, locale, format, _item_width, _ruler_string )
             
-        _data_ruler_item  = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
+            _data_ruler_item = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
             _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string )
             
             if ( _item_width > this.strWidth( _ruler_string ) ) {
@@ -1359,12 +1360,8 @@ class Timeline {
             }
             cacheIds.push( _this[_i].eventId )
         });
-        // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
-        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            sessionStorage.setItem( this._selector, JSON.stringify( events ) )
-            
-            this._isCached = true
-        }
+        
+        this._isCached = this._saveToCache( events )
         
     }
     
@@ -1511,6 +1508,66 @@ class Timeline {
         return coordinate_x
     }
     
+    /*
+     * @private: Cache the event data to the web storage (:> イベントデータをWEBストレージへキャッシュ
+     */
+    _saveToCache( data ) {
+        let strageEngine = /^local(|Storage)$/i.test( this._config.storage ) ? 'localStorage' : 'sessionStorage',
+            is_available = ( strageEngine in window ) && ( ( strageEngine === 'localStorage' ? window.localStorage : window.sessionStorage ) !== null )
+        
+        if ( is_available ) {
+            if ( strageEngine === 'localStorage' ) {
+                localStorage.setItem( this._selector, JSON.stringify( data ) )
+            } else {
+                sessionStorage.setItem( this._selector, JSON.stringify( data ) )
+            }
+            return true
+        } else {
+            throw new TypeError( `The storage named "${strageEngine}" can not be available.` )
+        }
+    }
+    
+    /*
+     * @private: Load the cached event data from the web storage (:> キャッシュされたイベントデータをWEBストレージから読み込む
+     */
+    _loadToCache() {
+        let strageEngine = /^local(|Storage)$/i.test( this._config.storage ) ? 'localStorage' : 'sessionStorage',
+            is_available = ( strageEngine in window ) && ( ( strageEngine === 'localStorage' ? window.localStorage : window.sessionStorage ) !== null ),
+            data         = null
+        
+        if ( is_available ) {
+            if ( strageEngine === 'localStorage' ) {
+                data = JSON.parse( localStorage.getItem( this._selector ) )
+            } else {
+                data = JSON.parse( sessionStorage.getItem( this._selector ) )
+            }
+        } else {
+            throw new TypeError( `The storage named "${strageEngine}" can not be available.` )
+        }
+        return data
+    }
+    
+    /*
+     * @private: Remove the cache data on the web storage (:> WEBストレージ上のキャッシュデータを削除する
+     */
+    _removeCache() {
+        let strageEngine = /^local(|Storage)$/i.test( this._config.storage ) ? 'localStorage' : 'sessionStorage',
+            is_available = ( strageEngine in window ) && ( ( strageEngine === 'localStorage' ? window.localStorage : window.sessionStorage ) !== null )
+        
+        if ( is_available ) {
+            if ( strageEngine === 'localStorage' ) {
+                localStorage.removeItem( this._selector )
+            } else {
+                sessionStorage.removeItem( this._selector )
+            }
+        } else {
+            throw new TypeError( `The storage named "${strageEngine}" can not be available.` )
+        }
+    }
+    
+    /*
+     * @private: Controller method to place event data on timeline
+     */
     _placeEvent() {
         this._debug( '_placeEvent' )
         
@@ -1522,11 +1579,7 @@ class Timeline {
             _opts           = this._config,
             _evt_container  = $(_elem).find( Selector.TIMELINE_EVENTS ),
             _relation_lines = $(_elem).find( Selector.TIMELINE_RELATION_LINES ),
-            events          = {}
-        
-        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            events = JSON.parse( sessionStorage.getItem( this._selector ) )
-        }
+            events          = this._loadToCache()
         
         if ( events.length > 0 ) {
             _evt_container.empty()
@@ -1653,9 +1706,9 @@ class Timeline {
         }
         
         if ( ! this.is_empty( params.extend ) ) {
-            for ( let _prop in params.extend ) {
-                _evt_elem.attr( `data-${_prop}`, params.extend[_prop] )
-                if ( _prop === 'toggle' && [ 'popover', 'tooltip' ].includes( params.extend[_prop] ) ) {
+            for ( let [ _prop, _val ] of params.extend ) {
+                _evt_elem.attr( `data-${_prop}`, _val )
+                if ( _prop === 'toggle' && [ 'popover', 'tooltip' ].includes( _val ) ) {
                     // for bootstrap's popover or tooltip
                     _evt_elem.attr( 'title', params.label )
                     if ( ! params.extend.hasOwnProperty( 'content' ) ) {
@@ -1724,7 +1777,8 @@ class Timeline {
                 ctx_relations.strokeStyle = EventParams.bdColor
                 ctx_relations.lineWidth   = 2.5
                 ctx_relations.filter      = 'url(#crisp)'
-                for ( let _key in evt.relation ) {
+                
+                for ( let _key of Object.keys( evt.relation ) ) {
                     switch ( true ) {
                         case /^(|line)color$/i.test( _key ):
                             ctx_relations.strokeStyle = evt.relation[_key]
@@ -1733,7 +1787,7 @@ class Timeline {
                             ctx_relations.lineWidth = parseInt( evt.relation[_key], 10 ) || 2.5
                             break
                         case /^curve$/i.test( _key ):
-                            if ( /^(r|l)(t|b),?(r|l)?(t|b)?$/i.test( evt.relation[_key] ) ) {
+                        if ( /^(r|l)(t|b),?(r|l)?(t|b)?$/i.test( evt.relation[_key] ) ) {
                                 let _tmp = evt.relation[_key].split(',')
                                 if ( _tmp.length == 2 ) {
                                     _curveType.before = _tmp[0]
@@ -1957,11 +2011,11 @@ class Timeline {
     _mapPlacedEvents() {
         let _that      = this,
             _tl_events = $(this._element).find( Selector.TIMELINE_EVENTS ).children(),
-            _cache     = null,
+            _cache     = this._loadToCache(),
             _events    = []
         
-        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            _cache = JSON.parse( sessionStorage.getItem( this._selector ) )
+        if ( ! this._isCached || this.is_empty( _cache ) ) {
+            return _events
         }
         
         _tl_events.each(function() {
@@ -2089,12 +2143,9 @@ class Timeline {
         
         $(this._element).remove()
         
-        // Remove the cached data on the session storage (:> セッションストレージ上にキャッシュしているデータを削除
-        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) && this._isCached ) {
-            sessionStorage.removeItem( this._selector )
-        }
+        this._removeCache()
         
-        for ( let _prop in this ) {
+        for ( let _prop of Object.keys( this ) ) {
             this[_prop] = null
             delete this[_prop]
         }
@@ -2260,15 +2311,12 @@ class Timeline {
             events       = this.supplement( null, _args[0], this.validateArray ),
             callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
             userdata     = _args.length > 2 ? _args.slice(2) : null,
-            _cacheEvents = [],
-            lastEventId  = 0
+            _cacheEvents = this._loadToCache(),
+            lastEventId  = 0,
+            add_done     = false
         
         if ( this.is_empty( events ) || ! this._isCompleted ) {
             return
-        }
-        
-        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            _cacheEvents = JSON.parse( sessionStorage.getItem( this._selector ) )
         }
         
         if ( ! this.is_empty( _cacheEvents ) ) {
@@ -2280,15 +2328,19 @@ class Timeline {
         events.forEach( ( evt ) => {
             let _one_event = this._registerEventData( '<div></div>', evt )
             
-            _one_event.eventId = Math.max( lastEventId + 1, parseInt( _one_event.eventId, 10 ) )
-            _cacheEvents.push( _one_event )
-            lastEventId = parseInt( _one_event.eventId, 10 )
+            if ( ! this.is_empty( _one_event ) ) {
+                _one_event.eventId = Math.max( lastEventId + 1, parseInt( _one_event.eventId, 10 ) )
+                _cacheEvents.push( _one_event )
+                lastEventId = parseInt( _one_event.eventId, 10 )
+                add_done = true
+            }
         })
 //console.log( '!addEvent::after:', _cacheEvents, lastEventId, callback, userdata )
-        // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
-        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            sessionStorage.setItem( this._selector, JSON.stringify( _cacheEvents ) )
+        if ( ! add_done ) {
+            return
         }
+        
+        this._saveToCache( _cacheEvents )
         
         this._placeEvent()
         
@@ -2309,18 +2361,11 @@ class Timeline {
             targets      = this.supplement( null, _args[0], this.validateArray ),
             callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
             userdata     = _args.length > 2 ? _args.slice(2) : null,
-            _cacheEvents = [],
-            condition    = {}
+            _cacheEvents = this._loadToCache(),
+            condition    = {},
+            remove_done  = false
         
-        if ( this.is_empty( targets ) || ! this._isCompleted ) {
-            return
-        }
-        
-        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            _cacheEvents = JSON.parse( sessionStorage.getItem( this._selector ) )
-        }
-        
-        if ( this.is_empty( _cacheEvents ) ) {
+        if ( this.is_empty( targets ) || ! this._isCompleted || this.is_empty( _cacheEvents ) ) {
             return
         }
         
@@ -2353,6 +2398,7 @@ class Timeline {
                         if ( parseInt( evt.eventId, 10 ) == condition.value ) {
 //console.log( `!removeEvent::${condition.type}:${condition.value}:`, _cacheEvents[_idx] )
                             _cacheEvents.splice( _idx, 1 )
+                            remove_done = true
                         }
                         break
                     case 'daterange': {
@@ -2363,6 +2409,7 @@ class Timeline {
                         if ( _fromX <= evt.x && evt.x <= _toX ) {
 //console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, _fromX, _toX, evt.x )
                             _cacheEvents.splice( _idx, 1 )
+                            remove_done = true
                         }
                         break
                     }
@@ -2370,16 +2417,18 @@ class Timeline {
 //console.log( `!removeEvent::${condition.type}:${condition.value}:`, JSON.stringify( evt ) )
                         if ( condition.value.test( JSON.stringify( evt ) ) ) {
                             _cacheEvents.splice( _idx, 1 )
+                            remove_done = true
                         }
                         break
                 }
             })
         })
 //console.log( `!removeEvent::after:`, _cacheEvents )
-        // Cache the event data to the session storage (:> イベントデータをセッションストレージへキャッシュ
-        if ( ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            sessionStorage.setItem( this._selector, JSON.stringify( _cacheEvents ) )
+        if ( ! remove_done ) {
+            return
         }
+        
+        this._saveToCache( _cacheEvents )
         
         this._placeEvent()
         
@@ -2400,20 +2449,53 @@ class Timeline {
             events       = this.supplement( null, _args[0], this.validateArray ),
             callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
             userdata     = _args.length > 2 ? _args.slice(2) : null,
-            _cacheEvents = []
+            _cacheEvents = this._loadToCache(),
+            update_done  = false
         
-        if ( this.is_empty( events ) || ! this._isCompleted ) {
+        if ( this.is_empty( events ) || ! this._isCompleted || this.is_empty( _cacheEvents ) ) {
             return
         }
         
-        if ( this._isCached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-            _cacheEvents = JSON.parse( sessionStorage.getItem( this._selector ) )
-        }
+        events.forEach( ( evt ) => {
+            let _upc_event = this._registerEventData( '<div></div>', evt ), // Update Candidate
+                _old_index = null,
+                _old_event = _cacheEvents.find( ( _evt, _idx ) => {
+                    _old_index = _idx
+                    return _evt.eventId == _upc_event.eventId
+                }),
+                _new_event = {}
+            
+            if ( ! this.is_empty( _old_event ) && ! this.is_empty( _upc_event ) ) {
+                if ( _upc_event.hasOwnProperty( 'uid' ) ) {
+                    delete _upc_event.uid
+                }
+                _new_event = Object.assign( _new_event, _old_event, _upc_event )
+//console.log( _new_event, _old_event, _upc_event, _old_index )
+                _cacheEvents[_old_index] = _new_event
+                update_done = true
+            }
+        })
         
-        if ( this.is_empty( _cacheEvents ) ) {
+        if ( ! update_done ) {
             return
         }
         
+        this._saveToCache( _cacheEvents )
+        
+        this._placeEvent()
+        
+        if ( callback ) {
+            this._debug( 'Fired your callback function after updating events.' )
+            
+            callback( this._element, this._config, userdata )
+        }
+    }
+    
+    /*
+     * @public: Reload the timeline with overridable any options
+     */
+    reload( ...args ) {
+        this._debug( 'reload' )
         
     }
     
@@ -2547,6 +2629,46 @@ class Timeline {
      */
     is_array( val ) {
         return Object.prototype.toString.call( val ) === '[object Array]'
+    }
+    
+    /*
+     * Determine whether the object is iterable (:> オブジェクトが反復可能かどうか調べる
+     *
+     * @param object obj (required)
+     *
+     * @return bool
+     */
+    is_iterable( obj ) {
+        return obj && typeof obj[Symbol.iterator] === 'function'
+    }
+    
+    /*
+     * Add an @@iterator method to non-iterable object (:> 反復不能なオブジェクトにイテレータメソッドを追加する
+     *
+     * @param object obj (required)
+     *
+     * @return object
+     */
+    toIterableObject( obj ) {
+        if ( this.is_iterable( obj ) ) {
+            return obj
+        }
+        
+        obj[Symbol.iterator] = () => {
+            let index = 0
+            
+            return {
+                next() {
+                    if ( obj.length <= index ) {
+                        return { done: true }
+                    } else {
+                        return { value: obj[index++] }
+                    }
+                }
+            }
+        }
+        
+        return obj
     }
     
     /*
