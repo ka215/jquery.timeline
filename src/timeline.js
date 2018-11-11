@@ -104,6 +104,7 @@ const Default = {
     // httpLanguage : false, // --> Deprecated since v1.0.6
     // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
     storage         : 'session', // Specification of Web storage to cache event data, defaults to sessionStorage; Added new since v2.0.0
+    // reloadCacheKeep : true, // Whether to load cached events during reloading, the cache is discarded if false
     debug           : false,
 }
 
@@ -299,11 +300,15 @@ class Timeline {
             return
         }
         
+        this.showLoader()
+        
         this._calcVars()
         
         if ( ! this._verifyMaxRenderableRange() ) {
             throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
         }
+        
+//    this.sleep( 2400 ).then(() => {
         
         if ( ! this._isInitialized ) {
             
@@ -356,6 +361,7 @@ class Timeline {
         }
         
         this._isCompleted = true
+//    }) // /sleep
     }
     
     /*
@@ -825,8 +831,8 @@ class Timeline {
             let _bc = /^years?$/i.test( _opts.scale ) ? 365 : 30,
                 _sy = 0
             
-            for ( let _val of _props.variableScale ) {
-                _sy += this.numRound( ( _val * _props.scaleSize ) / _bc, 2 )
+            for ( let _key of Object.keys( _props.variableScale ) ) {
+                _sy += this.numRound( ( _props.variableScale[_key] * _props.scaleSize ) / _bc, 2 )
                 drawVerticalLine( _sy, false )
             }
         } else {
@@ -893,8 +899,8 @@ class Timeline {
                 // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
                 _line_grids = this._filterVariableScale( line_scale )
                 
-                for ( let _val of _line_grids ) {
-                    _grid_x += this.numRound( _val, 2 )
+                for ( let _key of Object.keys( _line_grids ) ) {
+                    _grid_x += this.numRound( _line_grids[_key], 2 )
                     
                     ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
                     ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
@@ -1297,17 +1303,13 @@ class Timeline {
     }
     
     /*
-     * @private: Load all enabled events markuped on target element to the timeline object
+     * @private: Load all enabled events markupped on target element to the timeline object (:> 対象要素にマークアップされたすべての有効なイベントをタイムラインにロードする
      */
     _loadEvent() {
         this._debug( '_loadEvent' )
         
         let _that         = this,
             _elem         = this._element,
-            _opts         = this._config,
-            _container    = $(_elem).find( Selector.TIMELINE_CONTAINER ),
-            //_ruler_top    = $(_elem).find( Selector.TIMELINE_RULER_TOP ),
-            //_ruler_bottom = $(_elem).find( Selector.TIMELINE_RULER_BOTTOM ),
             _event_list   = $(_elem).find( Selector.DEFAULT_EVENTS ),
             _cnt          = 0,
             events        = [],
@@ -1325,17 +1327,6 @@ class Timeline {
             this._debug( 'Enable event does not exist.' )
         }
         
-        // Show loader
-        if ( _opts.loader !== false ) {
-            let _visible_width  = _container.width(),
-                _visible_height = _container.height()
-            //    _margin_top     = ( _visible_height - ( _ruler_top.height() || 0 ) - ( _ruler_bottom.height() || 0 ) ) / 2
-            
-//console.log( _visible_width, _visible_height, _margin_top )
-             $(_elem).find( Selector.TIMELINE_CONTAINER ).append( this._showLoader( _visible_width, _visible_height ) )
-        }
-        
-//console.log( _opts )
         // Register Event Data
         _event_list.children().each(function() {
             let _evt_params = _that._getPluggableParams( $(this).attr( 'data-timeline-node' ) ),
@@ -1363,36 +1354,6 @@ class Timeline {
         
         this._isCached = this._saveToCache( events )
         
-    }
-    
-    /*
-     * @private: Show the loader when the timeline creation (:> タイムライン作成時にローダーを表示
-     */
-    _showLoader( width, height, margin_top ) {
-        margin_top = this.supplement( 0, margin_top, this.validateNumeric )
-        let _opts   = this._config,
-            _loader = $('<div></div>', { id: 'jqtl-loader', style: `width:${width}px;height:${height}px;top:${margin_top}px;` })
-        
-        if ( $(_opts.loader).length == 0 ) {
-            height = height === 'auto' ? '240px' : height
-            let _loading_text = LOADING_MESSAGE.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter( Boolean )
-            
-            _loading_text.forEach( ( str, idx ) => {
-                let _fountain_text = $('<div></div>', { id: `jqtl-loading_${( idx + 1 )}`, class: ClassName.LOADER_ITEM }).text( str )
-                _loader.append( _fountain_text )
-            })
-        } else {
-            let _custom_loader = $(_opts.loader).clone().prop( 'hidden', false ).css( 'display', 'block' )
-            _loader.append( _custom_loader )
-        }
-        return _loader
-    }
-    
-    /*
-     * @private:  Hide the loader (:> ローダーを非表示
-     */
-    _hideLoader() {
-        $(this._element).find( Selector.LOADER ).remove()
     }
     
     /*
@@ -1598,7 +1559,7 @@ class Timeline {
         
 // console.log( '!_placeEvent:', _opts )
         this.sleep( 1 ).then(() => {
-            this._hideLoader()
+            this.hideLoader()
             _evt_container.fadeIn( 'fast', () => {
                 _relation_lines.fadeIn( 'fast' )
             })
@@ -1706,9 +1667,9 @@ class Timeline {
         }
         
         if ( ! this.is_empty( params.extend ) ) {
-            for ( let [ _prop, _val ] of params.extend ) {
-                _evt_elem.attr( `data-${_prop}`, _val )
-                if ( _prop === 'toggle' && [ 'popover', 'tooltip' ].includes( _val ) ) {
+            for ( let _prop of Object.keys( params.extend ) ) {
+                _evt_elem.attr( `data-${_prop}`, params.extend[_prop] )
+                if ( _prop === 'toggle' && [ 'popover', 'tooltip' ].includes( params.extend[_prop] ) ) {
                     // for bootstrap's popover or tooltip
                     _evt_elem.attr( 'title', params.label )
                     if ( ! params.extend.hasOwnProperty( 'content' ) ) {
@@ -1721,14 +1682,6 @@ class Timeline {
         if ( ! this.is_empty( params.callback ) ) {
             _evt_elem.attr( 'data-callback', params.callback )
         }
-        
-        /*
-        $(document).on( 'mouseenter', `#evt-${params.eventId}`, (e) => {
-            $(e.target).css( 'background-color', this.hexToRgbA( params.bgColor, 0.65 ) )
-        }).on( 'mouseleave', `#evt-${params.eventId}`, (e) => {
-            $(e.target).css( 'background-color', this.hexToRgbA( params.bgColor, 1 ) )
-        })
-        */
         
         return _evt_elem
     }
@@ -1836,30 +1789,30 @@ class Timeline {
                                 if ( _ba === 'after' ) {
                                     // after: selfEvent[ _sx, _sy ] ----> targetEvent[ _ex, _ey ]
                                     if ( _sy < _ey ) {
-                                        // 連結点が自分の下にある
+                                        // Relational endpoint is located "under" self (:> 連結点が自分の下にある
                                         if ( _sx < _ex ) {
-                                            // 連結点が自分の右にある "(_sx,_sy)┐(_ex,_ey)" as "rt"
+                                            // Then relational endpoint is located "right" self (:> 連結点が自分の右にある "(_sx,_sy)┐(_ex,_ey)" as "rt"
                                             _curveType[_ba] = 'rt'
                                         } else
                                         if ( _sx > _ex ) {
-                                            // 連結点が自分より左にある "_⊃" as "rt+rb"
+                                            // Then relational endpoint is located "left" self (:> 連結点が自分より左にある "_⊃" as "rt+rb"
                                             _curveType[_ba] = 'rt+rb'
                                         } else {
-                                            // 連結点が自分の直下 "│" to bottom
+                                            // Relational endpoint is located "just under" self (:> 連結点が自分の直下 "│" to bottom
                                             _curveType[_ba] = null
                                         }
                                     } else
                                     if ( _sy > _ey ) {
-                                        // 連結点が自分より上にある
+                                        // Relational endpoint is located "above" self (:> 連結点が自分より上にある
                                         if ( _sx < _ex ) {
-                                            // 連結点が自分の右にある "┘" as "rb"
+                                            // Then relational endpoint is located "right" self (:> 連結点が自分の右にある "┘" as "rb"
                                             _curveType[_ba] = 'rb'
                                         } else
                                         if ( _sx > _ex ) {
-                                            // 連結点が自分より左にある "￣⊃" as "rb+rt"
+                                            // Then relational endpoint is located "left" self (:> 連結点が自分より左にある "￣⊃" as "rb+rt"
                                             _curveType[_ba] = 'rb+rt'
                                         } else {
-                                            // 連結点が自分の直上 "│" to top
+                                            // Relational endpoint is located "just under" self (:> 連結点が自分の直上 "│" to top
                                             _curveType[_ba] = null
                                         }
                                     } else {
@@ -2497,6 +2450,64 @@ class Timeline {
     reload( ...args ) {
         this._debug( 'reload' )
         
+        let _args        = args[0],
+            _upc_options = this.supplement( null, _args[0], this.validateObject ),
+            callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata     = _args.length > 2 ? _args.slice(2) : null,
+            _elem        = this._element,
+            $default_evt = $(_elem).find( Selector.DEFAULT_EVENTS ),
+            _old_options = this._config,
+            _new_options = {}
+            //_cacheEvents = this._loadToCache(),
+            //_renewEvents = []
+        
+        if ( ! this.is_empty( _upc_options ) ) {
+            _new_options = Object.assign( _new_options, _old_options, _upc_options )
+// console.log( _new_options, _old_options, _upc_options )
+            this._config = _new_options
+        }
+        
+        this._isInitialized = false
+        this._isCached      = false
+        this._isCompleted   = false
+        this._instanceProps = {}
+        
+        $(_elem).empty().append( $default_evt )
+        
+        this._calcVars()
+        
+        if ( ! this._verifyMaxRenderableRange() ) {
+            throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
+        }
+        
+        if ( ! this._isInitialized ) {
+            this._renderView()
+            this._isInitialized = true
+        }
+        
+        /*
+        if ( this._config.reloadCacheKeep ) {
+            if ( ! this.is_empty( _cacheEvents ) ) {
+                _cacheEvents.forEach( ( evt ) => {
+                    _renewEvents.push( this._registerEventData( '<div></div>', evt ) )
+                })
+            }
+            this._isCached = this._saveToCache( _renewEvents )
+        } else {
+            this._loadEvent()
+        }
+        */
+        this._loadEvent()
+        
+        this._placeEvent()
+        
+        this._isCompleted = true
+        
+        if ( callback ) {
+            this._debug( 'Fired your callback function after reloading timeline.' )
+            
+            callback( this._element, this._config, userdata )
+        }
     }
     
     /*
@@ -2508,9 +2519,6 @@ class Timeline {
         this._debug( 'openEvent' )
         
         let _that     = this,
-            _opts     = this._config,
-            _cached   = this._isCached,
-            _selector = this._selector,
             _self     = event.target,
             $viewer   = $(document).find( Selector.EVENT_VIEW ),
             //eventId   = parseInt( $(_self).attr( 'id' ).replace( 'evt-', '' ), 10 ),
@@ -2521,17 +2529,13 @@ class Timeline {
         
         if ( $viewer.length > 0 ) {
             $viewer.each(function() {
-                let _cacheEvents = null,
-                    _eventData   = null,
+                let _cacheEvents = this._loadToCache(),
+                    _eventData   = _cacheEvents.find( ( event ) => event.uid === uid ),
                     _label       = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
                     _content     = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
                     _meta        = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
                     _image       = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER })
                 
-                if ( _cached && ( 'sessionStorage' in window ) && ( window.sessionStorage !== null ) ) {
-                    _cacheEvents = JSON.parse( sessionStorage.getItem( _selector ) )
-                    _eventData = _cacheEvents.find( ( event ) => event.uid === uid )
-                }
 //console.log( '!openEvent:', $(this), $(_self).html(), _eventData.label )
                 
                 $(this).empty() // Initialize Viewer
@@ -2556,9 +2560,8 @@ class Timeline {
         }
         
         if ( callback ) {
-            if ( _opts.debug ) {
-                this._debug( `The callback "${callback}" was called by the "openEvent" method.` )
-            }
+            this._debug( `The callback "${callback}" was called by the "openEvent" method.` )
+            
             try {
                 Function.call( null, `return ${callback}` )()
             } catch ( e ) {
@@ -2566,6 +2569,55 @@ class Timeline {
             }
         }
     }
+    
+    /*
+     * @public: Show the loader (:> ローダー表示
+     */
+    showLoader() {
+        this._debug( 'showLoader' )
+        
+        let _elem      = this._element,
+            _opts      = this._config,
+            _container = $(_elem).find( Selector.TIMELINE_CONTAINER ),
+            width      = _container.length > 0 ? _container.width() : $(_elem).width(),
+            height     = ( _container.length > 0 ? _container.height() : $(_elem).height() ) || 120,
+            _loader    = $('<div></div>', { id: 'jqtl-loader', style: `width:${width}px;height:${height}px;` })
+        
+//console.log( '!showLoader:', width, height, _container.length )
+        if ( _opts.loader === false ) {
+            return
+        }
+        
+        if ( $(_opts.loader).length == 0 ) {
+            let _loading_text = LOADING_MESSAGE.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter( Boolean )
+            
+            _loading_text.forEach( ( str, idx ) => {
+                let _fountain_text = $('<div></div>', { id: `jqtl-loading_${( idx + 1 )}`, class: ClassName.LOADER_ITEM }).text( str )
+                _loader.append( _fountain_text )
+            })
+        } else {
+            let _custom_loader = $(_opts.loader).clone().prop( 'hidden', false ).css( 'display', 'block' )
+            _loader.append( _custom_loader )
+        }
+        
+        if ( $(_elem).find( Selector.LOADER ).length == 0 ) {
+            if ( _container.length > 0 ) {
+                _container.append( _loader )
+            } else {
+                $(_elem).css( 'position', 'relative' ).css( 'min-height', `${height}px` ).append( _loader )
+            }
+        }
+    }
+    
+    /*
+     * @public:  Hide the loader (:> ローダー非表示
+     */
+    hideLoader() {
+        this._debug( 'hideLoader' )
+        
+        $(this._element).find( Selector.LOADER ).remove()
+    }
+    
     
     /* ----------------------------------------------------------------------------------------------------------------
      * Utility Api

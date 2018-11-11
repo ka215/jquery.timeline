@@ -161,6 +161,7 @@ $use4demo = false;
             <button type="button" class="btn btn-primary" id="add-event">Add Event</button>
             <button type="button" class="btn btn-secondary" id="remove-event">Remove Event</button>
             <button type="button" class="btn btn-default" id="update-event">Update Event</button>
+            <button type="button" class="btn btn-default" id="reload">Reload</button>
           </div>
         </div>
       </div>
@@ -437,16 +438,18 @@ $('#remove-event').on('click', function() {
 })
 
 $('#update-event').on('click', function() {
-    $('#my-timeline').Timeline('updateEvent', [
+    $('#my-timeline').Timeline('showLoader')
+    .Timeline('updateEvent', [
         {id:22,start:'2018-11-18 12:00',end:'2018-11-22 12:00',row:3,label:'Update Event',content:'update test',extend:{toggle:'modal',target:'#myModal'},relation:{after:6,curve:1}}
         
-    ], (e,c,d) => { console.log( 'Updated Events!', e,c,d ) }, 'custom-data' )
+    ], ( e,c,d ) => { console.log( 'Updated Events!', e, c, d ) }, 'custom-data' )
     //$(this).prop( 'disabled', true )
 })
 
 $('#reload').on('click', function() {
     $('#my-timeline').Timeline('reload', {
         // You can override any options when reload the timeline
+        scale: 'month'
     }, (e,c,d) => { console.log( 'Reloaded Timeline!', e, c, d ) }, { userdata: 'custom' } )
     //$(this).prop( 'disabled', true )
 })

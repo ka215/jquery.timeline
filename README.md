@@ -189,6 +189,7 @@ Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code rel
 
 ` ` `
 <{{ Element with selector specified by user }}>
+  <div class="jqtl-loader">{{ Loader }}</div>
   <div class="jqtl-headline">< !-- ------------- Headline -- >
     <div class="jqtl-headline-wrapper">
       <h3 class="jqtl-timeline-title">{{ Title }}</h3>
@@ -211,7 +212,6 @@ Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code rel
         <div class="jqtl-ruler-content-bottom">{{ Ruler }}</div>
       </div>
     </div>
-    <div class="jqtl-loader">{{ Loader }}</div>
   </div>
   <div class="jqtl-footer">< !-- ----------------- Footer -- >
     <div class="jqtl-range-meta jqtl-align-self-right">{{ Meta }}</div>
