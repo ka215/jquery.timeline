@@ -222,8 +222,8 @@ $use4demo = false;
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!-- custom_datetime.js -->
 <?php 
-$script_file = '/src/timeline.js';
-// $script_file = '/docs/js/jquery.timeline.min.js';
+//$script_file = '/src/timeline.js';
+$script_file = '/docs/js/jquery.timeline.min.js';
 // $script_file = '/dist/timeline.min.js';
 ?>
 <script src="..<?= $script_file ?>?v=<?= filemtime( CURRENT_DIR . $script_file ); ?>"></script>
@@ -267,18 +267,38 @@ const dates = [
     '79/4/3',
     '0083/7/6',
     '166/4/1',
+    '2018/11'
 ];
-/*
+/* * /
 dates.forEach( ( dt ) => {
-    let _d = getLocaleString( dt, 'year', 'en-US', {
-            hour12: false, year: 'zerofill'
-        } )
-    
-    //if ( _d ) {
-        console.log( `"${dt}"`, _d )
-    //}
-});
-*/
+    console.log( `"${dt}"`, getCorrectDatetime( dt ) )
+})
+/ * */
+
+function getCorrectDatetime( datetime_str ) {
+        let normalizeDate = ( dateString ) => {
+                // For Safari, IE
+                let _d = dateString.replace(/-/g, '/')
+//console.log( _d, /^\d{1,4}\/\d{1,2}$/.test( _d ) )
+                return /^\d{1,4}\/\d{1,2}$/.test( _d ) ? `${_d}/1` : _d
+            }
+        
+console.log( '!getCorrectDatetime:', datetime_str, normalizeDate( datetime_str ), Date.parse( normalizeDate( datetime_str ) ) )
+        if ( isNaN( Date.parse( normalizeDate( datetime_str ) ) ) ) {
+            console.warn( `"${datetime_str}" Cannot parse date because invalid format.` )
+            return null
+        }
+        let _tempDate = new Date( normalizeDate( datetime_str ) ),
+            _chk_date = datetime_str.split( /-|\// )
+        
+        if ( parseInt( _chk_date[0], 10 ) < 100 ) {
+            // Remapping if year is 0-99
+            _tempDate.setFullYear( parseInt( _chk_date[0], 10 ) )
+        }
+        
+        return _tempDate
+}
+
 
 const test_date = [
     { date1: date1.toLocaleString(), date2: '2018/9/26 02:00:00' },
@@ -449,7 +469,8 @@ $('#update-event').on('click', function() {
 $('#reload').on('click', function() {
     $('#my-timeline').Timeline('reload', {
         // You can override any options when reload the timeline
-        scale: 'month'
+        scale: 'month',
+        ruler: { top: { lines: [ 'year', 'month' ] } }
     }, (e,c,d) => { console.log( 'Reloaded Timeline!', e, c, d ) }, { userdata: 'custom' } )
     //$(this).prop( 'disabled', true )
 })

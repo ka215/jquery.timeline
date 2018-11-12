@@ -1,4 +1,4 @@
-//import '@babel/polyfill'
+import '@babel/polyfill'
 
 /*!
  * jQuery Timeline
@@ -104,7 +104,7 @@ const Default = {
     // httpLanguage : false, // --> Deprecated since v1.0.6
     // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
     storage         : 'session', // Specification of Web storage to cache event data, defaults to sessionStorage; Added new since v2.0.0
-    // reloadCacheKeep : true, // Whether to load cached events during reloading, the cache is discarded if false
+    reloadCacheKeep : true, // Whether to load cached events during reloading, the cache is discarded if false
     debug           : false,
 }
 
@@ -137,15 +137,18 @@ const DefaultType = {
  * Defaults of event parameters on timeline
  */
 const EventParams = {
-    uid       : '',
+    uid       : '',                                           // for cache only
     eventId   : '',
-    x         : 0,
-    y         : Default.marginHeight,
-    width     : Default.minGridSize,
-    height    : Default.rowHeight - Default.marginHeight * 2,
-    bgColor   : '#E7E7E7', // background color
-    color     : '#343A40', // text color
-    bdColor   : '#6C757D', // border color
+    x         : 0,                                            // for cache only
+    y         : Default.marginHeight,                         // for cache only
+    width     : Default.minGridSize,                          // for cache only
+    height    : Default.rowHeight - Default.marginHeight * 2, // for cache only
+    start     : '',                                           // for cache only
+    end       : '',                                           // for cache only
+    row       : 1,                                            // for cache only
+    bgColor   : '#E7E7E7',
+    color     : '#343A40',
+    bdColor   : '#6C757D',
     label     : '',
     content   : '',
     image     : '',
@@ -153,7 +156,7 @@ const EventParams = {
     rangeMeta : '',
     size      : 'normal', // diameter of pointer
     extend    : {},
-    callback() {},
+    remote    : false,
     relation  : { /*
         before    : 
         after     : 
@@ -161,6 +164,7 @@ const EventParams = {
         linecolor : 
         curve     : 
     */ },
+    callback() {}
 }
 
 const Event = {
@@ -683,7 +687,7 @@ class Timeline {
         }
         
         if ( _opts.debug ) {
-            console.log( `Timeline:{ fullWidth: ${_props.fullwidth}px,`, `fullHeight: ${_props.fullheight}px,`, `viewWidth: ${_props.visibleWidth}`, `viewHeight: ${_props.visibleHeight} }` )
+            console.info( `Timeline:{ fullWidth: ${_props.fullwidth}px,`, `fullHeight: ${_props.fullheight}px,`, `viewWidth: ${_props.visibleWidth}`, `viewHeight: ${_props.visibleHeight} }` )
         }
         
         $(_elem).css( 'position', 'relative' ) // initialize; not .empty()
@@ -851,7 +855,7 @@ class Timeline {
     _createRuler( position ) {
         let _opts       = this._config,
             _props      = this._instanceProps,
-            ruler_line  = this.supplement( [ _opts.scale ], _opts.ruler[position].lines, ( def, val ) => this.is_array( val ) && val.length > 0 ? val : def ),
+            ruler_line  = this.supplement( [ _opts.scale ], _opts.ruler[position].lines, ( def, val ) => Array.isArray( val ) && val.length > 0 ? val : def ),
             line_height = this.supplement( Default.ruler.top.height, _opts.ruler[position].height ),
             font_size   = this.supplement( Default.ruler.top.fontSize, _opts.ruler[position].fontSize ),
             text_color  = this.supplement( Default.ruler.top.color, _opts.ruler[position].color ),
@@ -1373,10 +1377,10 @@ class Timeline {
             _x, _w, _c //, _pointSize
 //console.log( '!_registerEventData:', _opts, params )
         
-        if ( params.hasOwnProperty( 'start' ) ) {
+        if ( params.hasOwnProperty( 'start' ) && ! this.is_empty( params.start ) ) {
             _x = this._getCoordinateX( params.start )
             new_event.x = this.numRound( _x, 2 )
-            if ( params.hasOwnProperty( 'end' ) ) {
+            if ( params.hasOwnProperty( 'end' ) && ! this.is_empty( params.end ) ) {
                 _x = this._getCoordinateX( params.end )
                 _w = _x - new_event.x
                 new_event.width = this.numRound( _w, 2 )
@@ -2169,7 +2173,7 @@ class Timeline {
             _tl_container = $(_elem).find( Selector.TIMELINE_CONTAINER ),
             _movX         = 0
         
-        position = this.is_array( position ) ? position[0] : _opts.rangeAlign
+        position = Array.isArray( position ) ? position[0] : _opts.rangeAlign
         
         if ( _props.fullwidth <= _elem.scrollWidth ) {
             return
@@ -2458,11 +2462,10 @@ class Timeline {
             $default_evt = $(_elem).find( Selector.DEFAULT_EVENTS ),
             _old_options = this._config,
             _new_options = {}
-            //_cacheEvents = this._loadToCache(),
-            //_renewEvents = []
         
         if ( ! this.is_empty( _upc_options ) ) {
-            _new_options = Object.assign( _new_options, _old_options, _upc_options )
+            // _new_options = Object.assign( _new_options, _old_options, _upc_options )
+            _new_options = this.mergeDeep( _old_options, _upc_options )
 // console.log( _new_options, _old_options, _upc_options )
             this._config = _new_options
         }
@@ -2485,10 +2488,19 @@ class Timeline {
             this._isInitialized = true
         }
         
-        /*
         if ( this._config.reloadCacheKeep ) {
+            let _cacheEvents = this._loadToCache(),
+                _renewEvents = []
+            
             if ( ! this.is_empty( _cacheEvents ) ) {
                 _cacheEvents.forEach( ( evt ) => {
+                    delete evt.uid
+                    delete evt.x
+                    delete evt.Y
+                    delete evt.width
+                    delete evt.height
+                    delete evt.relation.x
+                    delete evt.relation.y
                     _renewEvents.push( this._registerEventData( '<div></div>', evt ) )
                 })
             }
@@ -2496,8 +2508,6 @@ class Timeline {
         } else {
             this._loadEvent()
         }
-        */
-        this._loadEvent()
         
         this._placeEvent()
         
@@ -2673,14 +2683,41 @@ class Timeline {
     }
     
     /*
-     * Determine whether variable is an array (:> 変数が配列かどうかを調べる
+     * Determine whether variable is an Object (:> 変数がオブジェクトかどうかを調べる
      *
-     * @param mixed val (required)
+     * @param mixed item (required)
      *
      * @return bool
      */
-    is_array( val ) {
-        return Object.prototype.toString.call( val ) === '[object Array]'
+    is_Object( item ) {
+        return (item && typeof item === 'object' && ! Array.isArray( item ))
+    }
+    
+    /*
+     * Merge two objects deeply as polyfill for instead "$.extend(true,target,source)"
+     *
+     * @param object target (required)
+     * @param object source (required)
+     *
+     * @return object output
+     */
+    mergeDeep( target, source ) {
+        let output = Object.assign( {}, target )
+        
+        if ( this.is_Object( target ) && this.is_Object( source ) ) {
+            for ( const key of Object.keys( source ) ) {
+                if ( this.is_Object( source[key] ) ) {
+                    if ( ! ( key in target ) ) {
+                        Object.assign( output, { [key]: source[key] } )
+                    } else {
+                        output[key] = this.mergeDeep( target[key], source[key] )
+                    }
+                } else {
+                    Object.assign( output, { [key]: source[key] } )
+                }
+            }
+        }
+        return output
     }
     
     /*
@@ -2821,7 +2858,11 @@ class Timeline {
      * @return Date Object, or null if failed
      */
     getCorrectDatetime( datetime_str ) {
-        let normalizeDate = ( dateString ) => dateString.replace(/-/g, '/') // For Safari, IE
+        let normalizeDate = ( dateString ) => {
+                // For Safari, IE
+                let _d = dateString.replace(/-/g, '/')
+                return /^\d{1,4}\/\d{1,2}$/.test( _d ) ? `${_d}/1` : _d
+            }
         
         if ( isNaN( Date.parse( normalizeDate( datetime_str ) ) ) ) {
             console.warn( `"${datetime_str}" Cannot parse date because invalid format.` )
