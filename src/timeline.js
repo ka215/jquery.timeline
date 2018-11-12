@@ -1,4 +1,4 @@
-import '@babel/polyfill'
+//import '@babel/polyfill'
 
 /*!
  * jQuery Timeline
@@ -31,7 +31,7 @@ const Default = {
     scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute"; Enhanced since v2.0.0
     startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
     endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
-    datetimePrefix  : "", // The prefix of the date and time notation displayed in the headline
+    // datetimePrefix : "", // --> Deprecated since v2.0.0
     // showHeadline : true, // --> Deprecated since v2.0.0
     headline        : { // Content in the headline; Added new since v2.0.0
         display     : true, // Whether to display headline is instead of former showHeadline
@@ -59,7 +59,7 @@ const Default = {
         metato      : "" // --> Deprecated since v2.0.0
     }, */
     // minuteInterval : 30, // --> Deprecated since v2.0.0
-    zerofillYear    : false, // It's outputted at the "0099" if true, the "99" if false
+    // zerofillYear   : false, // --> Deprecated since v2.0.0
     range           : 3, // Override the scale range of the timeline to be rendered when endDatetime is undefined or "auto"; Enhanced since v2.0.0
     sidebar         : { // Settings of sidebar; Added new since v2.0.0
         sticky      : false,
@@ -84,7 +84,7 @@ const Default = {
             format     : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
         },
     },
-    rangeAlign      : "current", // Possible values are "left", "center", "right", "current", "latest" and specific event id
+    rangeAlign      : "latest", // Possible values are "left", "center", "right", "current", "latest" and specific event id
     naviIcon        : { // Define class name
         left        : `${PREFIX}circle-left`,
         right       : `${PREFIX}circle-right`
@@ -365,6 +365,8 @@ class Timeline {
         }
         
         this._isCompleted = true
+        
+        this.alignment()
 //    }) // /sleep
     }
     
@@ -384,6 +386,7 @@ class Timeline {
         _props.height     = this.supplement( null, _opts.height, this.validateNumeric )
         
         this._instanceProps = _props // pre-cache
+console.log( new Date( _props.begin ) )
         
         if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
@@ -532,7 +535,9 @@ class Timeline {
                 _date = this.getCorrectDatetime( key )
                 break
         }
-        //if ( ! this.is_empty( round_type ) && /^(year|month|day)s?$/i.test( _opts.scale ) ) {
+        
+        let is_remapping = _date.getFullYear() < 100
+        
         if ( ! this.is_empty( round_type ) ) {
             if ( 'first' === round_type ) {
                 _date = getFirstDate( _date, _opts.scale )
@@ -540,6 +545,9 @@ class Timeline {
             if ( 'last' === round_type ) {
                 _date = getLastDate( _date, _opts.scale )
             }
+        }
+        if ( is_remapping ) {
+            _date.setFullYear( String( _date.getFullYear() ).substr(-2) )
         }
         
         return _date.getTime()
@@ -1179,6 +1187,7 @@ class Timeline {
             _display = this.supplement( Default.footer.display, _opts.footer.display ),
             _content = this.supplement( null, _opts.footer.content ),
             _range   = this.supplement( Default.footer.range, _opts.footer.range ),
+            _scale   = this.supplement( Default.footer.scale, _opts.footer.scale ),
             _locale  = this.supplement( Default.footer.locale, _opts.footer.locale ),
             _format  = this.supplement( Default.footer.format, _opts.footer.format ),
             _begin   = this.supplement( null, _props.begin ),
@@ -2164,17 +2173,19 @@ class Timeline {
     /*
      * @public: Move the display position of the timeline container to the specified position
      */
-    alignment( position ) {
+    alignment( ...args ) {
         this._debug( 'alignment' )
         
         let _opts         = this._config,
             _props        = this._instanceProps,
             _elem         = this._element,
             _tl_container = $(_elem).find( Selector.TIMELINE_CONTAINER ),
-            _movX         = 0
+            _movX         = 0,
+            _args         = ! this.is_empty( args ) ? args[0] : [],
+            position      = _args.length > 0 && typeof _args[0] === 'string' ? _args[0] : _opts.rangeAlign,
+            duration      = _args.length > 1 && /^(\d{1,}|fast|normal|slow)$/i.test( _args[1] ) ? _args[1] : 0
         
-        position = Array.isArray( position ) ? position[0] : _opts.rangeAlign
-        
+//console.log( args, _args, position, duration )
         if ( _props.fullwidth <= _elem.scrollWidth ) {
             return
         }
@@ -2204,8 +2215,9 @@ class Timeline {
                 }
                 
                 // Focus target event
-                $(`${Selector.TIMELINE_EVENT_NODE}[data-uid="${lastEvent.uid}"]`).trigger( Event.FOCUSIN_EVENT )
-                
+                if ( ! this.is_empty( lastEvent ) ) {
+                    $(`${Selector.TIMELINE_EVENT_NODE}[data-uid="${lastEvent.uid}"]`).trigger( Event.FOCUSIN_EVENT )
+                }
                 break
             }
             case /^\d{1,}$/.test( position ): {
@@ -2225,8 +2237,9 @@ class Timeline {
                 }
                 
                 // Focus target event
-                $(`${Selector.TIMELINE_EVENT_NODE}[data-uid="${targetEvent.uid}"]`).trigger( Event.FOCUSIN_EVENT )
-                
+                if ( ! this.is_empty( targetEvent ) ) {
+                    $(`${Selector.TIMELINE_EVENT_NODE}[data-uid="${targetEvent.uid}"]`).trigger( Event.FOCUSIN_EVENT )
+                }
                 break
             }
             case /^current(|ly)|now$/i.test( position ):
@@ -2247,8 +2260,11 @@ class Timeline {
             }
         }
 //console.log( `!alignment::${position}:`, _props.fullwidth, _props.visibleWidth, _tl_container[0].scrollWidth, _tl_container[0].scrollLeft, _movX )
-        
-        _tl_container.scrollLeft( _movX )
+        if ( duration === '0' ) {
+            _tl_container.scrollLeft( _movX )
+        } else {
+            _tl_container.animate({ scrollLeft: _movX }, duration )
+        }
     }
     
     /*
@@ -2949,13 +2965,13 @@ class Timeline {
      * Retrieve the date string of specified locale (:> 指定されたロケールの日付文字列を取得する
      *
      * @param string date_seed (required)
-     * @param string scale (required)
+     * @param string scale (optional)
      * @param string locales (optional)
      * @param object options (optional)
      *
      * @return string locale_string
      */
-    getLocaleString( date_seed, scale, locales = 'en-US', options = {} ) {
+    getLocaleString( date_seed, scale = '', locales = 'en-US', options = {} ) {
         function toLocaleStringSupportsLocales() {
             try {
                 new Date().toLocaleString( 'i' )
@@ -2973,7 +2989,7 @@ class Timeline {
             },
             getZerofill = ( num, digit = 4 ) => {
                 let strDuplicate = ( n, str ) => Array( n + 1 ).join( str ),
-                    zero = strDuplicate( digit - 1, '0' )
+                    zero = strDuplicate( digit - num.length, '0' )
                 
                 return String( num ).length == digit ? String( num ) : ( zero + num ).substr( num * -1 )
             },
@@ -2984,7 +3000,7 @@ class Timeline {
                 _options[_prop] = options[_prop]
             }
         }
-//console.log( '!2', date_seed, scale, locales, options[scale], is_toLocalString )
+//console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], is_toLocalString )
         
         switch ( true ) {
             case /^millenniums?|millennia$/i.test( scale ):
@@ -3052,7 +3068,6 @@ class Timeline {
                 break
             case /^hours?$/i.test( scale ):
             case /^(half|quarter)-?hours?$/i.test( scale ):
-// console.log( '!getLocaleString:', date_seed )
                 if ( typeof date_seed === 'string' ) {
                     let _parts = date_seed.split(':')
                     if ( _parts.length == 1 ) {
@@ -3109,6 +3124,7 @@ class Timeline {
                 //locale_string = this.getCorrectDatetime( date_seed )
                 break
         }
+//console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], locale_string )
         return locale_string
     }
     

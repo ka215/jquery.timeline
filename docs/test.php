@@ -222,8 +222,8 @@ $use4demo = false;
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!-- custom_datetime.js -->
 <?php 
-//$script_file = '/src/timeline.js';
-$script_file = '/docs/js/jquery.timeline.min.js';
+$script_file = '/src/timeline.js';
+//$script_file = '/docs/js/jquery.timeline.min.js';
 // $script_file = '/dist/timeline.min.js';
 ?>
 <script src="..<?= $script_file ?>?v=<?= filemtime( CURRENT_DIR . $script_file ); ?>"></script>
@@ -342,7 +342,7 @@ _d.setDate( _d.getDate() - 1 )
 
 $('#my-timeline').Timeline({
     type          : '<?= TIMELINE_TYPE ?>',
-    //startDatetime : '79/1/1 0:00',
+    startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
     //startDatetime : '2000/1/1',
     //startDatetime : '2018-10-14 0:00',
@@ -350,9 +350,9 @@ $('#my-timeline').Timeline({
     //endDatetime   : '2019-1-3 23:59:59',
     // endDatetime : `${new Date().toLocaleDateString()} 6:59`,
     //endDatetime   : '2020/12/31',
-    //scale         : 'month',
+    scale         : 'month',
     //scale         : 'hour',
-    scale         : 'day',
+    //scale         : 'day',
     //rows          : 7,
     minGridSize   : 24 * 2,
     showHeadline  : true,
@@ -369,6 +369,7 @@ $('#my-timeline').Timeline({
         range     : true,
         //locale    : 'ja-JP-u-ca-iso8601',
         //format    : { timeZone: 'Asia/Tokyo', hour12: false, era: 'narrow', year: 'zerofill', month: 'numeric', day: '2-digit' }
+        format    : { hour12: false, year: 'numeric', month: 'short', day: '2-digit' }
     },
     sidebar       : {
         sticky : true,
@@ -406,13 +407,14 @@ $('#my-timeline').Timeline({
             color      : '#777',
             background : '#FFF',
             //locale     : 'ja-JP',
-            format     : { timeZone: 'Asia/Tokyo', hour12: false, decade: 'ordinal', lustrum: 'ordinal', year: 'numeric', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
+            format     : { timeZone: 'Asia/Tokyo', hour12: false, decade: 'ordinal', lustrum: 'ordinal', year: 'zerofill', month: 'long', weekday: 'short', hour: 'numeric', minute: 'numeric', /* second: 'numeric' */ },
         },
         bottom : {
             //lines      : [ 'hour' ],
             lines      : [ 'week', 'year' ],
         }
     },
+    //rangeAlign      : 'right',
     eventMeta       : {
         display     : true,
         scale       : 'hour',
@@ -432,9 +434,9 @@ $('#my-timeline').Timeline({
 //.Timeline('hide')
 //.Timeline('show')
 //.Timeline('alignment', 'right')
-//.Timeline('alignment', 'begin')
+//.Timeline('alignment', 'center', 1000 )
 //.Timeline('alignment', '7')
-//.Timeline('alignment', 'latest')
+//.Timeline('alignment', 'latest', 'slow' )
 //.css( 'border', 'solid 1px #F03333' )
 //.css({ width: '100%', height: '200px' })
 

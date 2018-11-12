@@ -57,10 +57,6 @@ export const styles = () => src('src/timeline.scss')
     .pipe(dest('dist'))
 
 
-export const fonts = () => src('src/fonts/*')
-    .pipe(dest('dist/fonts'))
-    .pipe(dest('docs/css/fonts'))
-
 export const docsJS = () => src([
         'dist/jquery.timeline.min.js',
         'dist/jquery.timeline.min.js.map'
@@ -76,7 +72,8 @@ export const docsCSS = () => src([
 
 
 //export default series( scripts, styles, docsJS, docsCSS )
-export default series( parallel( series( check, scripts ), styles, fonts ), docsJS, docsCSS )
+export default series( parallel( series( check, scripts ), styles ), docsJS, docsCSS )
+
 
 export const dev = () => {
     watch( 'src/timeline.js', series( check, scripts, docsJS ) )

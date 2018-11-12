@@ -73,11 +73,6 @@ Within the download you'll find the following directories and files, logically g
 ```
 jquery.timeline/
 └── dist/
-    ├── fonts/
-    │   ├── jQueryTimeline.eot
-    │   ├── jQueryTimeline.svg
-    │   ├── jQueryTimeline.ttf
-    │   └── jQueryTimeline.woff
     ├── jquery.timeline.min.css
     ├── jquery.timeline.min.css.map
     ├── jquery.timeline.min.js
