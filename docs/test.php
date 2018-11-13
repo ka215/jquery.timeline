@@ -162,6 +162,7 @@ $use4demo = false;
             <button type="button" class="btn btn-secondary" id="remove-event">Remove Event</button>
             <button type="button" class="btn btn-default" id="update-event">Update Event</button>
             <button type="button" class="btn btn-default" id="reload">Reload</button>
+            <button type="button" class="btn btn-default" id="reset">Reset (Reload)</button>
           </div>
         </div>
       </div>
@@ -344,7 +345,7 @@ let _d = new Date()
 _d.setDate( _d.getDate() - 1 )
 //console.log( _d )
 
-$('#my-timeline').Timeline({
+let test_options = {
     type          : '<?= TIMELINE_TYPE ?>',
     //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
@@ -428,10 +429,12 @@ $('#my-timeline').Timeline({
     },
     zoom          : true,
     debug         : true
-})
+}
+
+$('#my-timeline').Timeline( test_options )
 //.Timeline('initialized')
 //.Timeline('initialized', (element,option,userdata) => { console.log( 'callback after initialized!', element, option, userdata ) }, { user: 'custom-data' } )
-//.Timeline('initialized', function(elem,opt){ console.log( 'callback2:', elem, opt ); } )
+.Timeline( 'initialized', ( elem, opt ) => { test_options = opt; console.log( test_options ) } )
 //.Timeline('_init')
 //.Timeline('destroy')
 //.Timeline('initialized', function(elem,opt){ console.log( 'callback3:', elem, opt ); } )
@@ -479,6 +482,11 @@ $('#reload').on('click', function() {
         ruler: { top: { lines: [ 'year', 'month' ] } }
     }, (e,c,d) => { console.log( 'Reloaded Timeline!', e, c, d ) }, { userdata: 'custom' } )
     //$(this).prop( 'disabled', true )
+})
+
+$('#reset').on('click', function() {
+    $('#my-timeline').Timeline('reload', test_options, (e,c,d) => { console.log( 'Reset Timeline!', e, c, d ) }, { userdata: 'format' } )
+    // ↑ $.Timeline( 'initialized', ( elem, opt ) => { test_options = opt } ) と初期化時に初期設定をローカル変数に保存しておき、その初期設定を上書きリロードすることでタイムラインのリセットが可能
 })
 
 

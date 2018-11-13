@@ -1,4 +1,4 @@
-//import '@babel/polyfill'
+import '@babel/polyfill'
 
 /*!
  * jQuery Timeline
@@ -976,6 +976,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
             if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
                 // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
                 _line_grids = this._filterVariableScale( line_scale )
+//console.log( '!_createRuler:', line_scale, _line_grids )
                 
                 for ( let _key of Object.keys( _line_grids ) ) {
                     _grid_x += this.numRound( _line_grids[_key], 2 )
@@ -1083,6 +1084,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
                 case /^weeks?$/i.test( target_scale ):
                     _arr  = _dt.split(',')
                     _temp = this.getWeek( _arr[0] )
+//console.log( '!_filterVariableScale::week:', _dt, _arr[0], _temp )
                     retObj[`${this.getCorrectDatetime( _arr[0] ).getFullYear()},${_temp}`] = grid_size
                     break
                 case /^weekdays?$/i.test( target_scale ):
@@ -1136,7 +1138,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
                 _h   = _tmp.getHours(),
                 _min = _tmp.getMinutes(),
                 _s   = _tmp.getSeconds()
-//console.log( '!!:', _tmp, `y: ${_y}`, `mil: ${_mil}`, `cen: ${_cen}`, `dec: ${_dec}`, `lus: ${_lus}` )
+// console.log( '!!:', _tmp, `y: ${_y}`, `w: ${_w}`, /* `mil: ${_mil}`, `cen: ${_cen}`, `dec: ${_dec}`, `lus: ${_lus}` */ )
             
             _scopes.push({
                 millennium : _mil,
@@ -3125,8 +3127,12 @@ console.log( '!_getPluggableDatetime::NaN:', key )
         let targetDate, _str, _onejan,
             _millisecInDay = 24 * 60 * 60 * 1000
         
-        if ( /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))$/.test( date_str ) ) {
+        if ( /^\d{1,4}(|\/\d{1,2}(|\/\d{1,2}))$/.test( date_str ) ) {
             _str = date_str.split('/')
+            if ( ! this.is_empty( _str[1] ) ) {
+                _str[1] = parseInt( _str[1], 10 ) - 1 // To month index
+            }
+//console.log( '!getWeek:', _str )
             targetDate = new Date( ..._str )
         } else {
             targetDate = new Date( date_str )
@@ -3272,7 +3278,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
                 if ( is_toLocalString && options.hasOwnProperty( scale ) ) {
                     if ( [ 'numeric', '2-digit', 'narrow', 'short', 'long' ].includes( options[scale] ) ) {
                         _options.month = options[scale]
-                        locale_string = new Date( date_seed ).toLocaleString( locales, _options )
+                        locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
                         //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
                     }
                 }
@@ -3285,11 +3291,12 @@ console.log( '!_getPluggableDatetime::NaN:', key )
                 }
                 break
             case /^weeks?$/i.test( scale ):
-                _temp = date_seed.split(',')
+                [ _str, _num ] = date_seed.split(',')
+//console.log( date_seed, _str, _num, new Date( _str ), parseDatetime( _str ), this.getCorrectDatetime( _str ) )
                 if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
-                    locale_string = getOrdinal( _temp[1] )
+                    locale_string = getOrdinal( parseInt( _num, 10 ) )
                 } else {
-                    locale_string = _temp[1]
+                    locale_string = _num
                 }
                 break
             case /^weekdays?$/i.test( scale ):
