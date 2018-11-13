@@ -299,6 +299,10 @@ console.log( '!getCorrectDatetime:', datetime_str, normalizeDate( datetime_str )
         return _tempDate
 }
 
+console.log( 'Hey!', isNaN( new Date( 'Hey!' ) ) )
+
+
+
 
 const test_date = [
     { date1: date1.toLocaleString(), date2: '2018/9/26 02:00:00' },
@@ -342,7 +346,7 @@ _d.setDate( _d.getDate() - 1 )
 
 $('#my-timeline').Timeline({
     type          : '<?= TIMELINE_TYPE ?>',
-    startDatetime : '79/1/1 0:00',
+    //startDatetime : '79/1/1 0:00',
     //startDatetime : '166-1-1 0:00',
     //startDatetime : '2000/1/1',
     //startDatetime : '2018-10-14 0:00',
@@ -398,10 +402,10 @@ $('#my-timeline').Timeline({
     },
     ruler         : {
         top    : {
-            //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
+            lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'weekday', 'hour', 'minute', 'second' ],
             //lines      : [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month' ],
             //lines      : [ 'year', 'month', 'week', 'day', 'weekday', 'hour', 'half-hour', 'quarter-hour'/*, 'minute'/*, 'second'*/ ],
-            lines      : [ 'year', 'month', 'day', 'weekday' ],
+            //lines      : [ 'year', 'month', 'day', 'weekday' ],
             height     : 26,
             fontSize   : 13,
             color      : '#777',
@@ -422,7 +426,7 @@ $('#my-timeline').Timeline({
         //format      : { hour12: false, month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' },
         //content     : ''
     },
-    
+    zoom          : true,
     debug         : true
 })
 //.Timeline('initialized')
