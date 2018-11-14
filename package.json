@@ -79,7 +79,7 @@
     "node": ">=6"
   },
   "files": [
-    "dist/**/*.{css,js,map}",
-    "src/**/*.{scss,js,map}"
+    "lib/**/*.{css,js,map}",
+    "src/**/*.{scss,js}"
   ]
 }
