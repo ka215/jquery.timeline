@@ -1,17 +1,16 @@
 {
-  "name": "jquery.timeline",
+  "name": "jquery-timeline",
   "description": "jQuery plugin for the horizontal timeline creation",
   "version": "2.0.0a2",
   "version_short": "2.0",
   "keywords": [
     "javascript",
-    "jquery",
+    "jquery-plugin",
     "horizontal",
     "timeline",
-    "plugin",
     "mobile",
     "web",
-    "es8"
+    "es7"
   ],
   "homepage": "https://ka215.github.io/jquery.timeline/",
   "author": {
@@ -23,7 +22,7 @@
   "scripts": {
     "gulp": "node ./node_modules/gulp/bin/gulp.js",
     "test": "$(npm bin)/mocha src/tests/*.js",
-    "build": "browserify ./src/timeline.js -t babelify -o ./docs/js/timeline.js",
+    "build": "browserify ./src/timeline.js -t babelify -o ./lib/timeline.js",
     "watch": "node ./node_modules/gulp/bin/gulp.js dev"
   },
   "style": "dist/timeline.min.css",
@@ -79,7 +78,6 @@
     "node": ">=6"
   },
   "files": [
-    "lib/**/*.{css,js,map}",
-    "src/**/*.{scss,js}"
+    "lib"
   ]
 }
