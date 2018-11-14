@@ -2,6 +2,8 @@
 _gh_pages
 _site
 site/docs/4.1/dist/
+docs/*.php
+docs/imgs/thumb_*.png
 
 # Numerous always-ignore extensions
 *.diff
@@ -27,7 +29,3 @@ Thumbs.db
 # Folders to ignore
 node_modules
 dist/imgs/
-docs/debug.php
-# docs/test.php
-# src/custom_datetime.js
-docs/imgs/thumb_*.png

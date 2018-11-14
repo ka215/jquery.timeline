@@ -49,9 +49,7 @@
 
 Several quick start options are available:
 
-<!--
-- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a1.zip)
--->
+- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a2.zip)
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
 <!--
 - Install with [npm](https://www.npmjs.com/): `npm install jquery.timeline`
@@ -134,17 +132,19 @@ jQuery.Timeline version 2.x supports the following browsers:
 </tr>
 -->
 <tr>
-<td name="PC:Chrome"> Ok </td>
-<td name="PC:Firefox"> Ok </td>
-<td name="PC:Safari"> ? </td>
-<td name="PC:IE"> ? </td>
-<td name="PC:Edge"> Ok </td>
-<td name="PC:Opera"> ? </td>
-<td name="MP:Android"> ? </td>
-<td name="MP:iOS Safari"> ? </td>
+<td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Safari" align="center"><b style="color:#CCC">?</b></td>
+<td name="PC:IE" align="center"><b style="color:red">NG</b></td>
+<td name="PC:Edge" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Opera" align="center"><b style="color:#CCC">?</b></td>
+<td name="MP:Android" align="center"><b style="color:#CCC">?</b></td>
+<td name="MP:iOS Safari" align="center"><b style="color:#CCC">?</b></td>
 </tr>
 </tbody>
 </table>
+
+Unfortunately as for the Internet Explorer etc., several methods of this plugin does not work because JavaScript implementation of browser is too immature. Please note that we are not go to support for these legacy browsers in the future.
 
 
 ## Documentation
