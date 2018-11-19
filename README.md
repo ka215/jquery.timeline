@@ -1,11 +1,4 @@
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css" integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
-
 <p align="center">
-<!--
-  <a href="https://ka2.org/">
-    <img src="" alt="jQuery.Timeline">
-  </a>
--->    
   <h3 align="center">jQuery.Timeline V2</h3>
 
   <table border="0">
@@ -18,10 +11,6 @@
   <p align="center">
     You are able to easily create two types of horizontal timeline with this jQuery plugin.
     <br>
-<!--
-    <a href="https://ka2.org/jquery.timeline/docs/v2/">Explore jQuery.Timeline docs »</a>
-    <br>
--->
     <br>
     <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug_report.md">Report bug</a>
     ·
@@ -51,13 +40,7 @@ Several quick start options are available:
 
 - [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a2.zip)
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
-<!--
-- Install with [npm](https://www.npmjs.com/): `npm install jquery.timeline`
--->
 
-<!--
-Read the [Getting started page](https://ka2.org/jquery.timeline/docs/v2/getting-started/introduction/) for information on the plugin contents and examples, and more.
--->
 
 ## Status
 
@@ -119,18 +102,6 @@ jQuery.Timeline version 2.x supports the following browsers:
 </tr>
 </thead>
 <tbody>
-<!--
-<tr>
-<td>Chrome</td>
-<td>Firefox</td>
-<td>Safari</td>
-<td>IE</td>
-<td>Edge</td>
-<td>Opera</td>
-<td>Android</td>
-<td>iOS Safari</td>
-</tr>
--->
 <tr>
 <td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
 <td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
@@ -149,11 +120,8 @@ Unfortunately as for the Internet Explorer etc., several methods of this plugin 
 
 ## Documentation
 
-jQuery.Timeline's documentation, included in this repository in the root directory, is built with [Jekyll](https://jekyllrb.com/) and publicly hosted on GitHub Pages at <https://ka2.org/>. The docs may also be run locally.
+jQuery.Timeline's documentation, included in this repository in the root directory, is built with [ESDoc](https://esdoc.org/) and publicly hosted on GitHub Pages at <https://ka2.org/>. The docs may also be run locally.
 
-<!--
-Documentation search is powered by [Algolia's DocSearch](https://community.algolia.com/docsearch/). Working on our search? Be sure to set `debug: true` in `site/docs/4.1/assets/js/src/search.js` file.
--->
 
 ### Documentation for previous releases
 
@@ -170,48 +138,8 @@ Documentation search is powered by [Algolia's DocSearch](https://community.algol
 **ka2 (Katsuhiko Maeno)**
 
 - <https://ka2.org/>
-<!--
-- <https://twitter.com/ka215>
-- <https://github.com/ka215>
--->
 
 ## Copyright and license
 
 Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).
 
-<!--
-## Structure of the DOM element of the timeline container:
-
-` ` `
-<{{ Element with selector specified by user }}>
-  <div class="jqtl-loader">{{ Loader }}</div>
-  <div class="jqtl-headline">< !-- ------------- Headline -- >
-    <div class="jqtl-headline-wrapper">
-      <h3 class="jqtl-timeline-title">{{ Title }}</h3>
-      <div class="jqtl-range-meta jqtl-align-self-right">{{ Meta }}</div>
-  </div>
-  <{{ Any element defined default events: .timeline-events }}>
-  <div class="jqtl-container">< !-- ------- Timeline Body -- >
-    <div class="jqtl-side-index">{{ Sidebar Index Contents }}</div>
-    <div class="jqtl-main">
-      <div class="jqtl-ruler-top">
-        <canvas class="jqtl-ruler-bg-top"></canvas>
-        <div class="jqtl-ruler-content-top">{{ Ruler }}</div>
-      </div>
-      <div class="jqtl-event-container">
-        <canvas class="jqtl-bg-grid"></canvas>
-        <div class="jqtl-events">{{ Events }}</div>
-      </div>
-      <div class="jqtl-ruler-bottom">
-        <canvas class="jqtl-ruler-bg-bottom"></canvas>
-        <div class="jqtl-ruler-content-bottom">{{ Ruler }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="jqtl-footer">< !-- ----------------- Footer -- >
-    <div class="jqtl-range-meta jqtl-align-self-right">{{ Meta }}</div>
-    <div class="jqtl-footer-content">{{ Footer Content }}</div>
-  </div>
-</{{ Element with selector specified by user }}>
-` ` `
--->

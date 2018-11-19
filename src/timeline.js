@@ -24,8 +24,10 @@ const MIN_POINTER_SIZE   = 12
 //const DATA_API_KEY       = ".data-api"
 const JQUERY_NO_CONFLICT = $.fn[NAME]
 
-/*
+/**
  * Defaults of plugin options
+ * @type {Object}
+ * @property {string} type
  */
 const Default = {
     type            : "bar", // View type of timeline event is either "bar" or "point"
@@ -1438,8 +1440,9 @@ console.log( '!_getPluggableDatetime::NaN:', key )
         
     }
     
-    /*
-     * @private: Register one event data as object (:> イベントデータをオブジェクトとして登録する
+    /**
+     * @desc Register one event data as object (:> イベントデータをオブジェクトとして登録する
+     * @private
      */
     _registerEventData( event_element, params ) {
         let _opts     = this._config,
@@ -2142,8 +2145,9 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     
     // Public
     
-    /*
-     * @public: This method is able to call only once after completed an initializing of the plugin
+    /**
+     * @desc This method is able to call only once after completed an initializing of the plugin
+     * @public
      */
     initialized( ...args ) {
         let _message = this._isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized'

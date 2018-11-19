@@ -29,4 +29,5 @@ Thumbs.db
 # Folders to ignore
 node_modules
 lib
-dist/imgs/
+esdocs
+essrc
