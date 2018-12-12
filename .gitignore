@@ -30,4 +30,5 @@ Thumbs.db
 node_modules
 lib
 esdocs
-essrc
+esdoc_src
+.github

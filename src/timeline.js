@@ -3,7 +3,7 @@ import '@babel/polyfill'
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0a2
+ * Version: 2.0.0a3
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline/tree/develop
  * Lisenced: MIT
@@ -14,138 +14,113 @@ import '@babel/polyfill'
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0a2"
+const VERSION            = "2.0.0a3"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
 const LOADING_MESSAGE    = "Loading..."
 const MIN_POINTER_SIZE   = 12
-
-//const DATA_API_KEY       = ".data-api"
+const DEBUG_SLEEP        = 2400
 const JQUERY_NO_CONFLICT = $.fn[NAME]
 
-/**
- * Defaults of plugin options
- * @type {Object}
- * @property {string} type
- */
 const Default = {
-    type            : "bar", // View type of timeline event is either "bar" or "point"
-    scale           : "day", // Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute"; Enhanced since v2.0.0
-    startDatetime   : "currently", // Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
-    endDatetime     : "auto", // Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"; Added new since v2.0.0
-    // datetimePrefix : "", // --> Deprecated since v2.0.0
-    // showHeadline : true, // --> Deprecated since v2.0.0
-    headline        : { // Content in the headline; Added new since v2.0.0
-        display     : true, // Whether to display headline is instead of former showHeadline
+    type            : "bar",
+    scale           : "day",
+    startDatetime   : "currently",
+    endDatetime     : "auto",
+    range           : 3,
+    rows            : "auto",
+    rowHeight       : 48,
+    width           : "auto",
+    height          : "auto",
+    minGridSize     : 30,
+    marginHeight    : 2,
+    headline        : {
+        display     : true,
         title       : "",
-        range       : true, // Hide if false
-        locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-        format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+        range       : true,
+        locale      : "en-US",
+        format      : { hour12: false }
     },
-    footer          : { // Content in the footer; Added new since v2.0.0
-        display     : true, // Whether to display footer
-        content     : "",
-        range       : false, // Visible if true
-        locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-        format      : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
-    },
-    /* datetimeFormat  : { // --> Deprecated since v2.0.0
-        full        : "j M Y", // or "Y/m/d" etc.
-        year        : "Y",
-        month       : "M Y", // or "F" etc.
-        day         : "D, j M", // or "j" etc.
-        years       : "Y", 
-        months      : "F", 
-        days        : "j",
-        meta        : "Y/m/d H:i", // start datetime in meta of Event Detail; or "g:i A, D F j, Y"
-        metato      : "" // --> Deprecated since v2.0.0
-    }, */
-    // minuteInterval : 30, // --> Deprecated since v2.0.0
-    // zerofillYear   : false, // --> Deprecated since v2.0.0
-    range           : 3, // Override the scale range of the timeline to be rendered when endDatetime is undefined or "auto"; Enhanced since v2.0.0
-    sidebar         : { // Settings of sidebar; Added new since v2.0.0
+    sidebar         : {
         sticky      : false,
         overlay     : false,
         list        : [],
     },
-    rows            : "auto", // Rows of timeline event area. defaults to "auto"; Enhanced since v2.0.0
-    rowHeight       : 48, // Height of one row
-    width           : "auto", // Fixed width (pixel) of timeline view. defaults to "auto"; Added new since v2.0.0
-    height          : "auto", // Fixed height (pixel) of timeline view. defaults to "auto" ( rows * rowHeight )
-    // minGridPer   : 2, // --> Deprecated since v2.0.0
-    minGridSize     : 30, // Override value of minimum size (pixel) of timeline grid; Enhanced since v2.0.0
-    marginHeight    : 2, // Margin (pixel) top and bottom of events on the timeline; Added new since v2.0.0
-    ruler           : { // Settings of ruler; Added new since v2.0.0
-        top         : { // Can define the ruler position to top or bottom and both
-            lines      : [], // defaults to this.option.scale; c.g. [ 'year', 'month', 'day', 'weekday' ]
+    ruler           : {
+        top         : {
+            lines      : [],
             height     : 30,
             fontSize   : 14,
             color      : "#777777",
             background : "#FFFFFF",
-            locale     : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-            format     : { hour12: false } // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
+            locale     : "en-US",
+            format     : { hour12: false }
         },
     },
-    rangeAlign      : "latest", // Possible values are "left", "center", "right", "current", "latest" and specific event id
-    // naviIcon     : { // --> Deprecated since v2.0.0
-    //    left      : `${PREFIX}circle-left`,
-    //    right     : `${PREFIX}circle-right`
-    // },
-    loader          : "default", // Custom loader definition, possible values are "default", false and selector of loader element; Added new since v2.0.0
-    hideScrollbar   : false, // Whether or not to display the scroll bar displayed when the width of the timeline overflows (even if it is set to non-display, it will not function depending on the browser); Added new since v2.0.0
-    eventMeta       : { // Display meta of range on event node when the timeline type is "bar"; Added new since v2.0.0
+    footer          : {
+        display     : true,
+        content     : "",
+        range       : false,
+        locale      : "en-US",
+        format      : { hour12: false }
+    },
+    eventMeta       : {
         display     : false,
         scale       : "day",
-        locale      : "en-US", // This value is an argument "locales" of `dateObj.toLocaleString([locales[, options]])`
-        format      : { hour12: false }, // This value is an argument "options" of `dateObj.toLocaleString([locales[, options]])`
-        content     : "" // This is value for if you want to show custom content on the meta
+        locale      : "en-US",
+        format      : { hour12: false },
+        content     : ""
     },
-    // showPointer  : true, // --> Deprecated since v1.0.6
-    // i18n         : {}, // --> Deprecated since v1.0.6
-    // langsDir     : "./langs/", // --> Deprecated since v1.0.6
-    // httpLanguage : false, // --> Deprecated since v1.0.6
-    // duration     : 150, // duration of animate as each transition effects; Added v1.0.6 --> Deprecated since v2.0.0
-    storage         : "session", // Specification of Web storage to cache event data, defaults to sessionStorage; Added new since v2.0.0
-    reloadCacheKeep : true, // Whether to load cached events during reloading, the cache is discarded if false
-    zoom            : false, // Whether to use the ability to zoom the scale of the timeline by double clicking on any scale on the ruler; Added new since v2.0.0
-    wrapScale       : true, // wrap scale when zoom
-    // engine       : "canvas", // Choose dependent module to core as rendering engine. It'll be "canvas" or "d3.js"; Maybe add in future version
+    rangeAlign      : "latest",
+    loader          : "default",
+    hideScrollbar   : false,
+    storage         : "session",
+    reloadCacheKeep : true,
+    zoom            : false,
+    wrapScale       : true,
+    engine          : "canvas",
     debug           : false,
+    // datetimeFormat : {},       // --> Deprecated since v2.0.0
+    // datetimePrefix : "",       // --> Deprecated since v2.0.0
+    // duration     : 150,        // --> Deprecated since v2.0.0
+    // showPointer  : true,       // --> Deprecated since v2.0.0
+    // httpLanguage : false,      // --> Deprecated since v2.0.0
+    // i18n         : {},         // --> Deprecated since v2.0.0
+    // langsDir     : "./langs/", // --> Deprecated since v2.0.0
+    // minGridPer   : 2,          // --> Deprecated since v2.0.0
+    // minuteInterval : 30,       // --> Deprecated since v2.0.0
+    // naviIcon     : {},         // --> Deprecated since v2.0.0
+    // showHeadline : true,       // --> Deprecated since v2.0.0
+    // zerofillYear   : false,    // --> Deprecated since v2.0.0
 }
 
-/*
- * Define the limited grid number per scale of timeline
- */
 const LimitScaleGrids = {
-    millennium  : 100,          // = 100 : 100000 years
-    century     : 100 * 5,      // = 500 : 50000 years
-    decade      : 10 * 50,      // = 500 : 5000 years
-    lustrum     : 5 * 100,      // = 500 : 2500 years
-    year        : 500,          // = 500 : 500 years
-    month       : 12 * 45,      // = 540 : 45 years
-    week        : 53 * 10,      // = 530 : 10 years
-    day         : 366,          // = 366 : 1 year
-    hour        : 24 * 30,      // = 720 : 30 days
-    quarterHour : 24 * 4 * 7.5, // = 720 : 7.5 days
-    halfHour    : 24 * 2 * 15,  // = 720 : 15 days
-    minute      : 60 * 12,      // = 720 : 12 hours
-    second      : 60 * 15       // = 900 : 15 minutes
+    millennium  : 100,
+    century     : 100 * 5,
+    decade      : 10 * 50,
+    lustrum     : 5 * 100,
+    year        : 500,
+    month       : 12 * 45,
+    week        : 53 * 10,
+    day         : 366,
+    hour        : 24 * 30,
+    quarterHour : 24 * 4 * 7.5,
+    halfHour    : 24 * 2 * 15,
+    minute      : 60 * 12,
+    second      : 60 * 15
 }
 
-/*
- * Defaults of event parameters on timeline
- */
 const EventParams = {
-    uid       : '',                                           // for cache only
+    uid       : '',
     eventId   : '',
-    x         : 0,                                            // for cache only
-    y         : Default.marginHeight,                         // for cache only
-    width     : Default.minGridSize,                          // for cache only
-    height    : Default.rowHeight - Default.marginHeight * 2, // for cache only
-    start     : '',                                           // for cache only
-    end       : '',                                           // for cache only
-    row       : 1,                                            // for cache only
+    x         : 0,
+    y         : Default.marginHeight,
+    width     : Default.minGridSize,
+    height    : Default.rowHeight - Default.marginHeight * 2,
+    start     : '',
+    end       : '',
+    row       : 1,
     bgColor   : '#E7E7E7',
     color     : '#343A40',
     bdColor   : '#6C757D',
@@ -154,22 +129,13 @@ const EventParams = {
     image     : '',
     margin    : Default.marginHeight,
     rangeMeta : '',
-    size      : 'normal', // diameter of pointer
+    size      : 'normal',
     extend    : {},
     remote    : false,
-    relation  : { /*
-        before    : 
-        after     : 
-        linesize  : 
-        linecolor : 
-        curve     : 
-    */ },
+    relation  : {},
     callback() {}
 }
 
-/*
- * Binding Custom Events
- */
 const Event = {
     INITIALIZED        : `initialized${EVENT_KEY}`,
     HIDE               : `hide${EVENT_KEY}`,
@@ -182,9 +148,6 @@ const Event = {
     ZOOMIN_SCALE       : `dblclick.zoom${EVENT_KEY}`
 }
 
-/*
- * Class name of the timeline elements created by the plugin
- */
 const ClassName = {
     TIMELINE_CONTAINER         : `${PREFIX}container`,
     TIMELINE_MAIN              : `${PREFIX}main`,
@@ -222,9 +185,6 @@ const ClassName = {
     LOADER_ITEM                : `${PREFIX}loading`
 }
 
-/*
- * Selectors assigned on the timeline element
- */
 const Selector = {
     EVENT_NODE                : `.${PREFIX}event-node`,
     EVENT_VIEW                : `.timeline-event-view, .${PREFIX}event-view`,
@@ -280,7 +240,7 @@ class Timeline {
             ...Default,
             ...config
         }
-        return config;
+        return config
     }
     
     /*
@@ -309,7 +269,8 @@ class Timeline {
         this._debug( '_init' )
         
         let _elem       = this._element,
-            _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`
+            _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`,
+            _sleep      = this._config.debug ? DEBUG_SLEEP : 1
         
         this._selector = _selector.toLowerCase()
         
@@ -325,68 +286,69 @@ class Timeline {
             throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
         }
         
-//    this.sleep( 2400 ).then(() => {
-        
-        if ( ! this._isInitialized ) {
+        this.sleep( _sleep ).then(() => {
             
-            this._renderView()
+            if ( ! this._isInitialized ) {
+                
+                this._renderView()
+                
+                const afterInitEvent = $.Event( Event.INITIALIZED, { _elem } )
+                
+                $(_elem).trigger( afterInitEvent )
+                
+                $(_elem).off( Event.INITIALIZED )
+            }
             
-            const afterInitEvent = $.Event( Event.INITIALIZED, { _elem } )
+            if ( ! this._isCached ) {
+                this._loadEvent()
+            }
             
-            $(_elem).trigger( afterInitEvent )
+            if ( this._isCached ) {
+                this._placeEvent()
+            }
             
-            $(_elem).off( Event.INITIALIZED )
-        }
-        
-        if ( ! this._isCached ) {
-            this._loadEvent()
-        }
-        
-        if ( this._isCached ) {
-            this._placeEvent()
-        }
-        
-        // Assign events for the timeline
-        $(document).on(
-            Event.CLICK_EVENT,
-            `${this._selector} ${Selector.EVENT_NODE}`,
-            ( event ) => this.openEvent( event )
-        )
-        $(_elem).on(
-            Event.FOCUSIN_EVENT,
-            Selector.TIMELINE_EVENT_NODE,
-            ( event ) => this._activeEvent( event )
-        )
-        $(_elem).on(
-            Event.FOCUSOUT_EVENT,
-            Selector.TIMELINE_EVENT_NODE,
-            ( event ) => this._activeEvent( event )
-        )
-        if ( /^point(|er)$/i.test( this._config.type ) ) {
-            $(_elem).on(
-                Event.MOUSEENTER_POINTER,
-                Selector.VIEWER_EVENT_TYPE_POINTER,
-                ( event ) => this._hoverPointer( event )
+            // Assign events for the timeline
+            $(document).on(
+                Event.CLICK_EVENT,
+                `${this._selector} ${Selector.EVENT_NODE}`,
+                ( event ) => this.openEvent( event )
             )
             $(_elem).on(
-                Event.MOUSELEAVE_POINTER,
-                Selector.VIEWER_EVENT_TYPE_POINTER,
-                ( event ) => this._hoverPointer( event )
+                Event.FOCUSIN_EVENT,
+                Selector.TIMELINE_EVENT_NODE,
+                ( event ) => this._activeEvent( event )
             )
-        }
-        if ( this._config.zoom ) {
             $(_elem).on(
-                Event.ZOOMIN_SCALE,
-                Selector.TIMELINE_RULER_ITEM,
-                ( event ) => this.zoomScale( event )
+                Event.FOCUSOUT_EVENT,
+                Selector.TIMELINE_EVENT_NODE,
+                ( event ) => this._activeEvent( event )
             )
+            if ( /^point(|er)$/i.test( this._config.type ) ) {
+                $(_elem).on(
+                    Event.MOUSEENTER_POINTER,
+                    Selector.VIEWER_EVENT_TYPE_POINTER,
+                    ( event ) => this._hoverPointer( event )
+                )
+                $(_elem).on(
+                    Event.MOUSELEAVE_POINTER,
+                    Selector.VIEWER_EVENT_TYPE_POINTER,
+                    ( event ) => this._hoverPointer( event )
+                )
+            }
+            if ( this._config.zoom ) {
+                $(_elem).on(
+                    Event.ZOOMIN_SCALE,
+                    Selector.TIMELINE_RULER_ITEM,
+                    ( event ) => this.zoomScale( event )
+                )
+                
+            }
             
-        }
-        
-        this._isCompleted = true
-        
-        this.alignment()
-//    }) // /sleep
+            this._isCompleted = true
+            
+            this.alignment()
+            
+        })
     }
     
     /*
@@ -452,7 +414,7 @@ class Timeline {
     }
     
     /*
-     * @private: Retrieve the pluggable datetime as milliseconds from specified keyword (:> 指定キーから作成されたプラガブルな日時をミリ秒単位で取得する
+     * @private: Retrieve the pluggable datetime as milliseconds from specified keyword
      */
     _getPluggableDatetime( key, round_type = '' ) {
         let _opts        = this._config,
@@ -514,25 +476,7 @@ class Timeline {
                         break
                 }
                 return new Date( _tmpDate.getTime() - 1 )
-            },/*
-            parseDatetime = ( datetime_str ) => {
-//console.log( '!!!:', datetime_str, /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))(| \d{1,2}(|:\d{1,2}(|:\d{1,2})))$/i.test( datetime_str ) )
-                if ( /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))(| \d{1,2}(|:\d{1,2}(|:\d{1,2})))$/i.test( datetime_str ) ) {
-                    let [ _ymd, _his ] = datetime_str.split(' '),
-                        _parts         = _ymd.split('/')
-                    
-                    if ( _parts[1] ) {
-                        _parts[1] = parseInt( _parts[1], 10 ) - 1
-                    }
-                    if ( _his ) {
-                        _parts.push( ..._his.split(':') )
-                    }
-//console.log( '!_getPluggableDatetime::parseDatetime:', datetime_str, _ymd, _his, _parts, _date )
-                    return new Date( new Date( ..._parts ).setFullYear( parseInt( _parts[0], 10 ) ) )
-                } else {
-                    return new Date( datetime_str.toString() )
-                }
-            },*/
+            },
             is_remapping = /^\d{1,2}(|(-|\/).+)$/.test( key.toString() )
 //console.log( '!_getPluggableDatetime:', key, round_type, is_remapping )
         
@@ -583,12 +527,6 @@ class Timeline {
                 break
         }
         
-        /*
-        if ( isNaN( _date ) || this.is_empty( _date ) ) {
-console.log( '!_getPluggableDatetime::NaN:', key )
-            _date = parseDatetime( key )
-        } else
-        */
         if ( ! is_remapping ) {
             is_remapping = _date.getFullYear() < 100
         }
@@ -615,7 +553,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     }
     
     /*
-     * @private: Retrieve the pluggable parameter as an object (:> プラガブルなパラメータオブジェクトを取得する
+     * @private: Retrieve the pluggable parameter as an object
      */
     _getPluggableParams( str_like_params ) {
         let params = {}
@@ -1440,9 +1378,8 @@ console.log( '!_getPluggableDatetime::NaN:', key )
         
     }
     
-    /**
-     * @desc Register one event data as object (:> イベントデータをオブジェクトとして登録する
-     * @private
+    /*
+     * @private: Register one event data as object (:> イベントデータをオブジェクトとして登録する
      */
     _registerEventData( event_element, params ) {
         let _opts     = this._config,
@@ -1531,7 +1468,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     }
     
     /*
-     * @private: Get the coordinate X on the timeline of any date (:> 任意の日付のタイムライン上のX座標（横軸座標）を取得する
+     * @private: Get the coordinate X on the timeline of any date
      */
     _getCoordinateX( date ) {
         //let _opts  = this._config,
@@ -1555,7 +1492,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     }
     
     /*
-     * @private: Cache the event data to the web storage (:> イベントデータをWEBストレージへキャッシュ
+     * @private: Cache the event data to the web storage
      */
     _saveToCache( data ) {
         let strageEngine = /^local(|Storage)$/i.test( this._config.storage ) ? 'localStorage' : 'sessionStorage',
@@ -1574,7 +1511,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     }
     
     /*
-     * @private: Load the cached event data from the web storage (:> キャッシュされたイベントデータをWEBストレージから読み込む
+     * @private: Load the cached event data from the web storage
      */
     _loadToCache() {
         let strageEngine = /^local(|Storage)$/i.test( this._config.storage ) ? 'localStorage' : 'sessionStorage',
@@ -1594,7 +1531,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     }
     
     /*
-     * @private: Remove the cache data on the web storage (:> WEBストレージ上のキャッシュデータを削除する
+     * @private: Remove the cache data on the web storage
      */
     _removeCache() {
         let strageEngine = /^local(|Storage)$/i.test( this._config.storage ) ? 'localStorage' : 'sessionStorage',
@@ -1625,7 +1562,8 @@ console.log( '!_getPluggableDatetime::NaN:', key )
             _opts           = this._config,
             _evt_container  = $(_elem).find( Selector.TIMELINE_EVENTS ),
             _relation_lines = $(_elem).find( Selector.TIMELINE_RELATION_LINES ),
-            events          = this._loadToCache()
+            events          = this._loadToCache(),
+            _sleep          = _opts.debug ? DEBUG_SLEEP : 1
         
         if ( events.length > 0 ) {
             _evt_container.empty()
@@ -1799,7 +1737,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     }
     
     /*
-     * @private: Draw the relation lines (:> 連結線を描画する
+     * @private: Draw the relational lines
      */
     _drawRelationLine( events ) {
         let _opts         = this._config,
@@ -2145,9 +2083,8 @@ console.log( '!_getPluggableDatetime::NaN:', key )
     
     // Public
     
-    /**
-     * @desc This method is able to call only once after completed an initializing of the plugin
-     * @public
+    /*
+     * @public: This method is able to call only once after completed an initializing of the plugin
      */
     initialized( ...args ) {
         let _message = this._isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized'
@@ -2627,7 +2564,7 @@ console.log( '!_getPluggableDatetime::NaN:', key )
         
         if ( $viewer.length > 0 ) {
             $viewer.each(function() {
-                let _cacheEvents = this._loadToCache(),
+                let _cacheEvents = _that._loadToCache(),
                     _eventData   = _cacheEvents.find( ( event ) => event.uid === uid ),
                     _label       = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
                     _content     = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),

@@ -38,7 +38,7 @@
 
 Several quick start options are available:
 
-- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a2.zip)
+- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a3.zip)
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
 
 

@@ -1,5 +1,5 @@
 {
-  "source": "./essrc",
+  "source": "./esdoc_src",
   "destination": "./esdocs",
   "plugins": [
     {"name": "esdoc-standard-plugin"},
