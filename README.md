@@ -31,6 +31,7 @@
 - [Supported browsers](#supported-browsers)
 - [Documentation](#documentation)
 - [Example as demonstration](#example-as-demonstration)
+- [Contributions](#contributions)
 - [Creators](#creators)
 - [Copyright and license](#copyright-and-license)
 
@@ -132,6 +133,14 @@ jQuery.Timeline's documentation, included in this repository in the root directo
 ## Example as demonstration
 
 (WIP)
+
+
+## Contributions
+
+Your donations for plugin development will help us.
+
+Donate URL: <https://ka215.github.io/jquery.timeline/donation.html>
+
 
 ## Creators
 
