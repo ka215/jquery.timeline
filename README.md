@@ -29,6 +29,7 @@
 - [What's included](#whats-included)
 - [Usage](#usage)
 - [Supported browsers](#supported-browsers)
+- [Tutorials](#tutorials)
 - [Documentation](#documentation)
 - [Example as demonstration](#example-as-demonstration)
 - [Contributions](#contributions)
@@ -119,14 +120,19 @@ jQuery.Timeline version 2.x supports the following browsers:
 Unfortunately as for the Internet Explorer etc., several methods of this plugin does not work because JavaScript implementation of browser is too immature. Please note that we are not go to support for these legacy browsers in the future.
 
 
+## Tutorials
+
+The tutorial as a detailed usage of jQuery.Timeline is released [here](https://ka2.org/) (work in progress yet).
+
+
 ## Documentation
 
-jQuery.Timeline's documentation, included in this repository in the root directory, is built with [ESDoc](https://esdoc.org/) and publicly hosted on GitHub Pages at <https://ka2.org/>. The docs may also be run locally.
+jQuery.Timeline's documentation, included in this repository in the root directory, is built with [ESDoc](https://esdoc.org/) and publicly hosted on GitHub Pages at <https://ka215.github.io/jquery.timeline/>. The docs may also be run locally.
 
 
 ### Documentation for previous releases
 
-- For v2.0.x: (WIP)
+- For v2.0.x: <https://ka215.github.io/jquery.timeline/>
 - For v1.0.x: <https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md>
 - For v1.0.x (Japanese): <https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/>
 
