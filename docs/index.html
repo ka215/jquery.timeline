@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl">
+  <title data-ice="title">Home | jQuery.Timeline</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<meta name="description" content="You can easily create the horizontal timeline with two types by using this jQuery plugin."><meta property="twitter:card" content="summary"><meta property="twitter:title" content="jQuery.Timeline"><meta property="twitter:description" content="You can easily create the horizontal timeline with two types by using this jQuery plugin."></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/ka215/jquery.timeline"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/timeline.esdoc.js~Timeline.html">Timeline</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Default">Default</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventMeta">EventMeta</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventParams">EventParams</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Footer">Footer</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Headline">Headline</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-LimitScaleGrids">LimitScaleGrids</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-LocaleOptions">LocaleOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-RelationOption">RelationOption</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Ruler">Ruler</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-RulerOptions">RulerOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Sidebar">Sidebar</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><div data-ice="index" class="github-markdown"><p></p><p>
+  </p><h3>jQuery.Timeline V2</h3>
+
+  <table border="0">
+    <tr>
+    <td width="50%" align="center"><img src="imgs/jquery.timeline_v2a1_bar.png" width="99%"></td>
+    <td width="50%" align="center"><img src="imgs/jquery.timeline_v2a1_point.png" width="99%"></td>
+    </tr>
+  </table>
+
+  <p>
+    You are able to easily create two types of horizontal timeline with this jQuery plugin.
+    <br>
+    <br>
+    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug_report.md">Report bug</a>
+    &#xB7;
+    <a href="https://github.com/ka215/jquery.timeline/issues/new?template=feature_request.md">Request feature</a>
+  </p>
+<p></p>
+
+<p></p>
+<p><br></p>
+<h2 id="table-of-contents">Table of Contents</h2><ul>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#status">Status</a></li>
+<li><a href="#whats-included">What&apos;s included</a></li>
+<li><a href="#usage">Usage</a></li>
+<li><a href="#supported-browsers">Supported browsers</a></li>
+<li><a href="#documentation">Documentation</a></li>
+<li><a href="#example-as-demonstration">Example as demonstration</a></li>
+<li><a href="#contributions">Contributions</a></li>
+<li><a href="#creators">Creators</a></li>
+<li><a href="#copyright-and-license">Copyright and license</a></li>
+</ul>
+<h2 id="quick-start">Quick start</h2><p>Several quick start options are available:</p>
+<ul>
+<li><a href="https://github.com/ka215/jquery.timeline/archive/v2.0.0a3.zip">Download the latest release.</a></li>
+<li>Clone the repository: <code>git clone https://github.com/ka215/jquery.timeline.git</code></li>
+</ul>
+<h2 id="status">Status</h2><p><a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE"><img src="https://img.shields.io/packagist/l/doctrine/orm.svg" alt="Packagist"></a></p>
+<h2 id="what--39-s-included">What&apos;s included</h2><p>Within the download you&apos;ll find the following directories and files, logically grouping common assets and providing compiled and minified variations. You&apos;ll see something like this:</p>
+<pre><code><code class="source-code prettyprint">jquery.timeline/
+&#x2514;&#x2500;&#x2500; dist/
+    &#x251C;&#x2500;&#x2500; jquery.timeline.min.css
+    &#x251C;&#x2500;&#x2500; jquery.timeline.min.css.map
+    &#x251C;&#x2500;&#x2500; jquery.timeline.min.js
+    &#x2514;&#x2500;&#x2500; jquery.timeline.min.js.map</code>
+</code></pre><p>We provide compiled and minified CSS and JS (<code>jquery.timeline.min.*</code>). source maps (<code>jquery.timeline.*.map</code>) are available for use with certain browsers&apos; developer tools.</p>
+<h2 id="usage">Usage</h2><p>Include the installed files into your html:</p>
+<pre><code class="lang-HTML"><code class="source-code prettyprint"><link rel="stylesheet" src="./jquery.timeline/dist/jquery.timeline.min.css">
+
+<script src="./jquery.timeline/dist/jquery.timeline.min.js"></script></code>
+</code></pre>
+<p>Bind this plugin in the scope had imported the jQuery:</p>
+<pre><code class="lang-JavaScript"><code class="source-code prettyprint">$(&apos;#myTimeline&apos;).Timeline()</code>
+</code></pre>
+<h2 id="supported-browsers">Supported browsers</h2><p>jQuery.Timeline version 2.x supports the following browsers:</p>
+<p><table>
+<thead>
+<tr>
+<th colspan="6">PC</th>
+<th colspan="2">Mobile</th>
+</tr>
+<tr>
+<th width="12.5%" align="center"><img src="imgs/chrome-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/firefox-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/safari-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/internet-explorer-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/edge-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/opera-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/android-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="imgs/safari-brands.svg" width="32"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Safari" align="center"><b style="color:#CCC">?</b></td>
+<td name="PC:IE" align="center"><b style="color:red">NG</b></td>
+<td name="PC:Edge" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Opera" align="center"><b style="color:#CCC">?</b></td>
+<td name="MP:Android" align="center"><b style="color:#CCC">?</b></td>
+<td name="MP:iOS Safari" align="center"><b style="color:#CCC">?</b></td>
+</tr>
+</tbody>
+</table>
+
+</p>
+<p>Unfortunately as for the Internet Explorer etc., several methods of this plugin does not work because JavaScript implementation of browser is too immature. Please note that we are not go to support for these legacy browsers in the future.</p>
+
+<h2 id="tutorials">Tutorials</h2><p>The tutorial as a detailed usage of jQuery.Timeline is released <a href="https://ka2.org/">here</a> (work in progress yet).</p>
+<h2 id="documentation">Documentation</h2><p>jQuery.Timeline&apos;s documentation, included in this repository in the root directory, is built with <a href="https://esdoc.org/">ESDoc</a> and publicly hosted on GitHub Pages at <a href="https://ka215.github.io/jquery.timeline/">https://ka215.github.io/jquery.timeline/</a>. The docs may also be run locally.</p>
+<h3 id="documentation-for-previous-releases">Documentation for previous releases</h3><ul>
+<li>For v2.0.x: <a href="https://ka215.github.io/jquery.timeline/">https://ka215.github.io/jquery.timeline/</a></li>
+<li>For v1.0.x: <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md">https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md</a></li>
+<li>For v1.0.x (Japanese): <a href="https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/">https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/</a></li>
+</ul>
+<h2 id="example-as-demonstration">Example as demonstration</h2><p>(WIP)</p>
+<h2 id="contributions">Contributions</h2><p>Your donations for plugin development will help us.</p>
+<p>Donate URL: <a href="https://ka215.github.io/jquery.timeline/donation.html">https://ka215.github.io/jquery.timeline/donation.html</a></p>
+<h2 id="creators">Creators</h2><p><strong>ka2 (Katsuhiko Maeno)</strong></p>
+<ul>
+<li><a href="https://ka2.org/">https://ka2.org/</a></li>
+</ul>
+<h2 id="copyright-and-license">Copyright and license</h2><p>Code and documentation copyright 2011-2018 the <a href="https://ka2.org/">ka2</a>. Code released under the <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE">MIT License</a>.</p>
+</div>
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.1.0)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

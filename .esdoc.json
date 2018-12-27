@@ -1,8 +1,31 @@
 {
-  "source": "./esdoc_src",
-  "destination": "./esdocs",
+  "source": "./src",
+  "destination": "./docs",
+  "includes": ["\\.js$"],
+  "excludes": ["timeline(|-spec)\\.js$"],
   "plugins": [
-    {"name": "esdoc-standard-plugin"},
-    {"name": "esdoc-ecmascript-proposal-plugin", "option": {"all": true}}
-  ]
+  {
+    "name": "esdoc-standard-plugin",
+    "option": {
+      "lint": {"enable": false},
+      "coverage": {"enable": true},
+      "accessor": {"access": ["public", "protected", "private"], "autoPrivate": true},
+      "undocumentIdentifier": {"enable": false},
+      "unexportedIdentifier": {"enable": false},
+      "typeInference": {"enable": true},
+      "brand": {
+        "logo": "",
+        "title": "jQuery.Timeline",
+        "description": "You can easily create the horizontal timeline with two types by using this jQuery plugin.",
+        "repository": "https://github.com/ka215/jquery.timeline",
+        "site": "https://ka2.org/",
+        "author": "ka2@ka2.org",
+        "image": ""
+      }
+    }
+  },
+  {
+    "name": "esdoc-ecmascript-proposal-plugin",
+    "option": {"all": true}
+  }]
 }
