@@ -119,7 +119,7 @@ $("#myTimeline").timeline({
 | destroy | Destroy the timeline object created by the plugin. | - | `$.timeline('destroy');` |
 | show | Display hidden timeline objects. | - | `$.timeline('show');` |
 | hide | Hide the displayed timeline object. | - | `$.timeline('hide');` |
-| render | Re-render the timeline block. At this time, the event operated by the method is discarded and only the initial event is placed. | - |  |
+| render | Re-render the timeline block. At this time, the event operated by the method is discarded and only the initial event is placed. | (object) | `$.timeline('render', {minGridPer:ab});` |
 | dateback | Put the timeline back to the past. It is the same as clicking on the left navigation icon. | - | `$.timeline('dateback');` |
 | dateforth | Go forth the timeline to the future. It is the same as clicking the right navigation icon. | - | `$.timeline('dateforth');` |
 | alignment | Adjust the center position of the timeline. | - | `$.timeline('alignment', 'center');` |
