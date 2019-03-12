@@ -107,12 +107,12 @@ jQuery.Timeline version 2.x supports the following browsers:
 <tr>
 <td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
 <td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Safari" align="center"><b style="color:#CCC">?</b></td>
+<td name="PC:Safari" align="center"><b style="color:#CCC">Ok</b></td>
 <td name="PC:IE" align="center"><b style="color:red">NG</b></td>
 <td name="PC:Edge" align="center"><b style="color:green">Ok</b></td>
 <td name="PC:Opera" align="center"><b style="color:#CCC">?</b></td>
-<td name="MP:Android" align="center"><b style="color:#CCC">?</b></td>
-<td name="MP:iOS Safari" align="center"><b style="color:#CCC">?</b></td>
+<td name="MP:Android" align="center"><b style="color:#CCC">Ok</b></td>
+<td name="MP:iOS Safari" align="center"><b style="color:#CCC">Ok</b></td>
 </tr>
 </tbody>
 </table>
@@ -139,7 +139,7 @@ jQuery.Timeline's documentation, included in this repository in the root directo
 
 ## Example as demonstration
 
-(WIP)
+[jQuery.Timeline Tester](https://ka2.org/jqtl-v2/)
 
 
 ## Contributions
