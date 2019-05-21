@@ -38,6 +38,30 @@ export const scripts = () => browserify({
     .pipe(dest('dist'))
 
 
+export const deploy_scripts = () => browserify({
+        entries: [ 'src/timeline.js' ],
+        debug: false
+    })
+    .transform( 'babelify', {
+        presets: [ '@babel/preset-env' ],
+        sourceMaps: false
+    })
+    .bundle().on('error', (err) => {
+        console.error(err)
+        this.emit('end')
+    })
+    .pipe(source('bundle.js'))
+    .pipe(buffer())
+    .pipe(uglify({
+        output: {comments: '/^!/'}
+    })).on('error', (err) => {
+        console.error(err)
+        this.emit('end')
+    })
+    .pipe(rename('jquery.timeline.min.js'))
+    .pipe(dest('dist'))
+
+
 export const check = () => src('src/timeline.js')
     .pipe(eslint({useEslintrc: true}))
     .pipe(eslint.format())
@@ -54,6 +78,14 @@ export const styles = () => src('src/timeline.scss')
     .pipe(autoprefixer())
     .pipe(rename('jquery.timeline.min.css'))
     .pipe(sourcemaps.write('.'))
+    .pipe(dest('dist'))
+
+
+export const deploy_styles = () => src('src/timeline.scss')
+    .pipe(sass().on('error', sass.logError))
+    .pipe(cleanCSS({compatibility: 'ie8'}))
+    .pipe(autoprefixer())
+    .pipe(rename('jquery.timeline.min.css'))
     .pipe(dest('dist'))
 
 
@@ -74,6 +106,7 @@ export const docsCSS = () => src([
 //export default series( scripts, styles, docsJS, docsCSS )
 export default series( parallel( series( check, scripts ), styles ), docsJS, docsCSS )
 
+export const prod = parallel( deploy_scripts, deploy_styles )
 
 export const dev = () => {
     watch( 'src/timeline.js', series( check, scripts, docsJS ) )

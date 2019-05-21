@@ -46,12 +46,12 @@
 </nav>
 
 <div class="content" data-ice="content"><div data-ice="index" class="github-markdown"><p></p><p>
-  </p><h3>jQuery.Timeline V2</h3>
+  </p><h1>jQuery.Timeline V2</h1>
 
   <table border="0">
     <tr>
-    <td width="50%" align="center"><img src="imgs/jquery.timeline_v2a1_bar.png" width="99%"></td>
-    <td width="50%" align="center"><img src="imgs/jquery.timeline_v2a1_point.png" width="99%"></td>
+    <td width="50%" align="center"><img src="./imgs/jquery.timeline_v2a1_bar.png" width="99%"></td>
+    <td width="50%" align="center"><img src="./imgs/jquery.timeline_v2a1_point.png" width="99%"></td>
     </tr>
   </table>
 
@@ -62,17 +62,19 @@
     <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug_report.md">Report bug</a>
     &#xB7;
     <a href="https://github.com/ka215/jquery.timeline/issues/new?template=feature_request.md">Request feature</a>
+    &#xB7;
+    <a href="https://ka2.org/">Blog</a>
   </p>
 <p></p>
-
+<p><a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE"><img src="https://img.shields.io/packagist/l/doctrine/orm.svg" alt="Packagist"></a></p>
 <p></p>
 <p><br></p>
 <h2 id="table-of-contents">Table of Contents</h2><ul>
 <li><a href="#quick-start">Quick start</a></li>
-<li><a href="#status">Status</a></li>
 <li><a href="#whats-included">What&apos;s included</a></li>
 <li><a href="#usage">Usage</a></li>
 <li><a href="#supported-browsers">Supported browsers</a></li>
+<li><a href="#tutorials">Tutorials</a></li>
 <li><a href="#documentation">Documentation</a></li>
 <li><a href="#example-as-demonstration">Example as demonstration</a></li>
 <li><a href="#contributions">Contributions</a></li>
@@ -81,25 +83,26 @@
 </ul>
 <h2 id="quick-start">Quick start</h2><p>Several quick start options are available:</p>
 <ul>
-<li><a href="https://github.com/ka215/jquery.timeline/archive/v2.0.0a3.zip">Download the latest release.</a></li>
+<li>npm: <code>npm i jquery-timeline</code></li>
+<li>bower: <code>bower install jquery-timeline</code></li>
+<li><a href="https://github.com/ka215/jquery.timeline/archive/v2.0.0.zip">Download the latest release.</a></li>
 <li>Clone the repository: <code>git clone https://github.com/ka215/jquery.timeline.git</code></li>
 </ul>
-<h2 id="status">Status</h2><p><a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE"><img src="https://img.shields.io/packagist/l/doctrine/orm.svg" alt="Packagist"></a></p>
 <h2 id="what--39-s-included">What&apos;s included</h2><p>Within the download you&apos;ll find the following directories and files, logically grouping common assets and providing compiled and minified variations. You&apos;ll see something like this:</p>
 <pre><code><code class="source-code prettyprint">jquery.timeline/
 &#x2514;&#x2500;&#x2500; dist/
     &#x251C;&#x2500;&#x2500; jquery.timeline.min.css
-    &#x251C;&#x2500;&#x2500; jquery.timeline.min.css.map
-    &#x251C;&#x2500;&#x2500; jquery.timeline.min.js
-    &#x2514;&#x2500;&#x2500; jquery.timeline.min.js.map</code>
-</code></pre><p>We provide compiled and minified CSS and JS (<code>jquery.timeline.min.*</code>). source maps (<code>jquery.timeline.*.map</code>) are available for use with certain browsers&apos; developer tools.</p>
+    &#x2514;&#x2500;&#x2500; jquery.timeline.min.js</code>
+</code></pre><p>We provide compiled and minified CSS and JS (<code>jquery.timeline.min.*</code>).<br>
+When deployed by using task for develop, generated source maps (<code>jquery.timeline.*.map</code>) are available for use with certain browsers&apos; developer tools.</p>
 <h2 id="usage">Usage</h2><p>Include the installed files into your html:</p>
-<pre><code class="lang-HTML"><code class="source-code prettyprint"><link rel="stylesheet" src="./jquery.timeline/dist/jquery.timeline.min.css">
+<pre><code class="lang-HTML"><code class="source-code prettyprint">&lt;link rel="stylesheet" src="/path/to/jquery.timeline.min.css">
 
-<script src="./jquery.timeline/dist/jquery.timeline.min.js"></script></code>
+&lt;script src="/path/to/jquery.timeline.min.js">&lt;/script></code>
 </code></pre>
+<p>Note: You should include the jquery core script before including this plugin javascript file. Also we recommend that would like to add <code>defer</code> attribute into script tag.</p>
 <p>Bind this plugin in the scope had imported the jQuery:</p>
-<pre><code class="lang-JavaScript"><code class="source-code prettyprint">$(&apos;#myTimeline&apos;).Timeline()</code>
+<pre><code class="lang-JavaScript"><code class="source-code prettyprint">$("#myTimeline").Timeline()</code>
 </code></pre>
 <h2 id="supported-browsers">Supported browsers</h2><p>jQuery.Timeline version 2.x supports the following browsers:</p>
 <p><table>
@@ -109,48 +112,52 @@
 <th colspan="2">Mobile</th>
 </tr>
 <tr>
-<th width="12.5%" align="center"><img src="imgs/chrome-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/firefox-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/safari-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/internet-explorer-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/edge-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/opera-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/android-brands.svg" width="32"></th>
-<th width="12.5%" align="center"><img src="imgs/safari-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/chrome-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/firefox-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/safari-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/internet-explorer-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/edge-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/opera-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/android-brands.svg" width="32"></th>
+<th width="12.5%" align="center"><img src="./imgs/safari-brands.svg" width="32"></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
 <td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Safari" align="center"><b style="color:#CCC">?</b></td>
-<td name="PC:IE" align="center"><b style="color:red">NG</b></td>
+<td name="PC:Safari" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:IE" align="center"><b style="color:brown">Non-compliant</b></td>
 <td name="PC:Edge" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Opera" align="center"><b style="color:#CCC">?</b></td>
-<td name="MP:Android" align="center"><b style="color:#CCC">?</b></td>
-<td name="MP:iOS Safari" align="center"><b style="color:#CCC">?</b></td>
+<td name="PC:Opera" align="center"><b style="color:green">Ok</b></td>
+<td name="MP:Android" align="center"><b style="color:green">Ok</b></td>
+<td name="MP:iOS Safari" align="center"><b style="color:green">Ok</b></td>
 </tr>
 </tbody>
 </table>
 
 </p>
 <p>Unfortunately as for the Internet Explorer etc., several methods of this plugin does not work because JavaScript implementation of browser is too immature. Please note that we are not go to support for these legacy browsers in the future.</p>
-
-<h2 id="tutorials">Tutorials</h2><p>The tutorial as a detailed usage of jQuery.Timeline is released <a href="https://ka2.org/">here</a> (work in progress yet).</p>
+<h2 id="tutorials">Tutorials</h2><p>The tutorial as a detailed usage of jQuery.Timeline is released <a href="https://ka2.org/jquery-timeline/">here</a>.</p>
 <h2 id="documentation">Documentation</h2><p>jQuery.Timeline&apos;s documentation, included in this repository in the root directory, is built with <a href="https://esdoc.org/">ESDoc</a> and publicly hosted on GitHub Pages at <a href="https://ka215.github.io/jquery.timeline/">https://ka215.github.io/jquery.timeline/</a>. The docs may also be run locally.</p>
 <h3 id="documentation-for-previous-releases">Documentation for previous releases</h3><ul>
-<li>For v2.0.x: <a href="https://ka215.github.io/jquery.timeline/">https://ka215.github.io/jquery.timeline/</a></li>
+<li>For v2.0.x: <a href="https://ka2.org/jquery-timeline/">https://ka2.org/jquery-timeline/</a></li>
+<li>For v2.0.x(ESDoc): <a href="https://ka215.github.io/jquery.timeline/">https://ka215.github.io/jquery.timeline/</a></li>
 <li>For v1.0.x: <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md">https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md</a></li>
-<li>For v1.0.x (Japanese): <a href="https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/">https://ka2.org/released-jquery-timeline-for-easily-generating-two-type-horizontal-timeline/</a></li>
+<li>For v1.0.x (Japanese): <a href="https://ka2.org/jquery-timeline-v1/">https://ka2.org/jquery-timeline-v1/</a></li>
 </ul>
-<h2 id="example-as-demonstration">Example as demonstration</h2><p>(WIP)</p>
+<h2 id="example-as-demonstration">Example as demonstration</h2>
+<ul>
+<li><a href="https://ka2.org/jqtl-v2/">jQuery.Timeline Tester</a></li>
+<li><a href="https://ka2.org/jqtl-v1/">Version 1.x demo</a></li>
+</ul>
 <h2 id="contributions">Contributions</h2><p>Your donations for plugin development will help us.</p>
 <p>Donate URL: <a href="https://ka215.github.io/jquery.timeline/donation.html">https://ka215.github.io/jquery.timeline/donation.html</a></p>
-<h2 id="creators">Creators</h2><p><strong>ka2 (Katsuhiko Maeno)</strong></p>
-<ul>
-<li><a href="https://ka2.org/">https://ka2.org/</a></li>
-</ul>
-<h2 id="copyright-and-license">Copyright and license</h2><p>Code and documentation copyright 2011-2018 the <a href="https://ka2.org/">ka2</a>. Code released under the <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE">MIT License</a>.</p>
+<h2 id="creators">Creators</h2><dl>
+<dt><b>ka2</b> (Katsuhiko Maeno)</dt>
+<dd style="margin-left:1em;"><a href="https://ka2.org/">https://ka2.org/</a></dd>
+</dl>
+<h2 id="copyright-and-license">Copyright and license</h2><p>Code and documentation copyright 2011-2019 the <a href="https://ka2.org/">ka2</a>. Code released under the <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE">MIT License</a>.</p>
 </div>
 </div>
 

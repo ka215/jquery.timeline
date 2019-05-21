@@ -48,7 +48,7 @@
 <div class="content" data-ice="content"><h1 data-ice="title">src/timeline.esdoc.js</h1>
 <pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/*!
  * Typedef for jQuery Timeline&apos;s ESDoc
- * @version: 2.0.0a3
+ * @version: 2.0.0
  */
 
 /** @type {string} [NAME=&quot;Timeline&quot;] */
@@ -2386,21 +2386,101 @@ class Timeline {
     }
     
     /**
-     * 
+     * Move shift or expand the range of timeline container as to past direction (to left)
      * @public
+     * @param {?Object} options - Options for moving as dateback on the timeline container
+     * @param {?Function()} callback - Custom callback fired after calling this method
+     * @param {?Object} userdata - Data as object of referable in that callback
      */
-    dateback() {
+    dateback( ...args ) {
         this._debug( &apos;dateback&apos; )
         
+        let _args    = args[0],
+            _opts    = this._config,
+            moveOpts = this.supplement( null, _args[0], this.validateObject ),
+            callback = _args.length &gt; 1 &amp;&amp; typeof _args[1] === &apos;function&apos; ? _args[1] : null,
+            userdata = _args.length &gt; 2 ? _args.slice(2) : null,
+            newOpts  = {},
+            begin_date, end_date, _tmpDate
+        
+        if ( this.is_empty( moveOpts ) ) {
+            moveOpts = { scale: _opts.scale, range: _opts.range, shift: true }
+        } else {
+            if ( ! moveOpts.hasOwnProperty(&apos;shift&apos;) || moveOpts.shift !== false ) {
+                moveOpts.shift = true
+            }
+            if ( ! moveOpts.hasOwnProperty(&apos;scale&apos;) || ! this._verifyScale( moveOpts.scale ) ) {
+                moveOpts.scale = _opts.scale
+            }
+            if ( ! moveOpts.hasOwnProperty(&apos;range&apos;) || parseInt( moveOpts.range, 10 ) &gt; LimitScaleGrids[moveOpts.scale] ) {
+                moveOpts.range = _opts.range
+            }
+        }
+        _tmpDate   = new Date( _opts.startDatetime )
+        begin_date = new Date( _tmpDate.getTime() - ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+        newOpts.startDatetime = begin_date.toString()
+        if ( moveOpts.shift ) {
+            _tmpDate   = new Date( _opts.endDatetime )
+            end_date   = new Date( _tmpDate.getTime() - ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+            newOpts.endDatetime = end_date.toString()
+        }
+        
+        this.reload( [newOpts] )
+        
+        if ( callback ) {
+            this._debug( &apos;Fired your callback function after datebacking.&apos; )
+            
+            callback( this._element, _opts, userdata )
+        }
     }
     
     /**
-     *
+     * Move shift or expand the range of timeline container as to futrue direction (to right)
      * @public
+     * @param {?Object} options - Options for moving as dateforth on the timeline container
+     * @param {?Function()} callback - Custom callback fired after calling this method
+     * @param {?Object} userdata - Data as object of referable in that callback
      */
-    dateforth() {
+    dateforth( ...args ) {
         this._debug( &apos;dateforth&apos; )
         
+        let _args        = args[0],
+            _opts    = this._config,
+            moveOpts = this.supplement( null, _args[0], this.validateObject ),
+            callback = _args.length &gt; 1 &amp;&amp; typeof _args[1] === &apos;function&apos; ? _args[1] : null,
+            userdata = _args.length &gt; 2 ? _args.slice(2) : null,
+            newOpts  = {},
+            begin_date, end_date, _tmpDate
+        
+        if ( this.is_empty( moveOpts ) ) {
+            moveOpts = { scale: _opts.scale, range: _opts.range, shift: true }
+        } else {
+            if ( ! moveOpts.hasOwnProperty(&apos;shift&apos;) || moveOpts.shift !== false ) {
+                moveOpts.shift = true
+            }
+            if ( ! moveOpts.hasOwnProperty(&apos;scale&apos;) || ! this._verifyScale( moveOpts.scale ) ) {
+                moveOpts.scale = _opts.scale
+            }
+            if ( ! moveOpts.hasOwnProperty(&apos;range&apos;) || parseInt( moveOpts.range, 10 ) &gt; LimitScaleGrids[moveOpts.scale] ) {
+                moveOpts.range = _opts.range
+            }
+        }
+        _tmpDate   = new Date( _opts.endDatetime )
+        end_date   = new Date( _tmpDate.getTime() + ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+        newOpts.endDatetime = end_date.toString()
+        if ( moveOpts.shift ) {
+            _tmpDate   = new Date( _opts.startDatetime )
+            begin_date = new Date( _tmpDate.getTime() + ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+            newOpts.startDatetime = begin_date.toString()
+        }
+        
+        this.reload( [newOpts] )
+        
+        if ( callback ) {
+            this._debug( &apos;Fired your callback function after dateforthing.&apos; )
+            
+            callback( this._element, this._config, userdata )
+        }
     }
     
     /**
@@ -2578,6 +2658,7 @@ class Timeline {
             userdata     = _args.length &gt; 2 ? _args.slice(2) : null,
             _cacheEvents = this._loadToCache(),
             condition    = {},
+            remainEvents = [],
             remove_done  = false
         
         if ( this.is_empty( targets ) || ! this._isCompleted || this.is_empty( _cacheEvents ) ) {
@@ -2608,42 +2689,42 @@ class Timeline {
                     break
             }
             _cacheEvents.forEach( ( evt, _idx ) =&gt; {
+                let is_remove = false
+                
                 switch ( condition.type ) {
-                    case &apos;eventId&apos;:
+                    case &apos;eventId&apos;: {
                         if ( parseInt( evt.eventId, 10 ) == condition.value ) {
-//console.log( `!removeEvent::${condition.type}:${condition.value}:`, _cacheEvents[_idx] )
-                            _cacheEvents.splice( _idx, 1 )
-                            remove_done = true
+                            is_remove = true
                         }
                         break
+                    }
                     case &apos;daterange&apos;: {
-//console.log( condition.value )
                         let _fromX = condition.value.from ? Math.ceil( this._getCoordinateX( condition.value.from.toString() ) ) : 0,
                             _toX   = condition.value.to   ? Math.floor( this._getCoordinateX( condition.value.to.toString() ) ) : _fromX
                         
                         if ( _fromX &lt;= evt.x &amp;&amp; evt.x &lt;= _toX ) {
-//console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, _fromX, _toX, evt.x )
-                            _cacheEvents.splice( _idx, 1 )
-                            remove_done = true
+                            is_remove = true
                         }
                         break
                     }
-                    case &apos;regex&apos;:
-//console.log( `!removeEvent::${condition.type}:${condition.value}:`, JSON.stringify( evt ) )
+                    case &apos;regex&apos;: {
                         if ( condition.value.test( JSON.stringify( evt ) ) ) {
-                            _cacheEvents.splice( _idx, 1 )
-                            remove_done = true
+                            is_remove = true
                         }
                         break
+                    }
+                }
+                if ( ! is_remove ) {
+                    remainEvents.push( evt )
                 }
             })
         })
-//console.log( `!removeEvent::after:`, _cacheEvents )
+        remove_done = remainEvents.length !== _cacheEvents.length
         if ( ! remove_done ) {
             return
         }
         
-        this._saveToCache( _cacheEvents )
+        this._saveToCache( remainEvents )
         
         this._placeEvent()
         

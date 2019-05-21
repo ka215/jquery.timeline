@@ -3,7 +3,7 @@ import '@babel/polyfill'
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0a3
+ * Version: 2.0.0b1
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline/tree/develop
  * Lisenced: MIT
@@ -14,13 +14,13 @@ import '@babel/polyfill'
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0a3"
+const VERSION            = "2.0.0b1"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
 const LOADING_MESSAGE    = "Loading..."
 const MIN_POINTER_SIZE   = 12
-const DEBUG_SLEEP        = 2400
+const DEBUG_SLEEP        = 1200
 const JQUERY_NO_CONFLICT = $.fn[NAME]
 
 const Default = {
@@ -71,6 +71,10 @@ const Default = {
         locale      : "en-US",
         format      : { hour12: false },
         content     : ""
+    },
+    effects         : {
+        presentTime : true,
+        hoverEvent  : true,
     },
     rangeAlign      : "latest",
     loader          : "default",
@@ -275,7 +279,7 @@ class Timeline {
         this._selector = _selector.toLowerCase()
         
         if ( this._isInitialized || this._isCompleted ) {
-            return
+            return this
         }
         
         this.showLoader()
@@ -286,18 +290,9 @@ class Timeline {
             throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
         }
         
-        this.sleep( _sleep ).then(() => {
+        //return this.sleep( _sleep ).then(() => {
             
-            if ( ! this._isInitialized ) {
-                
-                this._renderView()
-                
-                const afterInitEvent = $.Event( Event.INITIALIZED, { _elem } )
-                
-                $(_elem).trigger( afterInitEvent )
-                
-                $(_elem).off( Event.INITIALIZED )
-            }
+            this._renderView()
             
             if ( ! this._isCached ) {
                 this._loadEvent()
@@ -348,7 +343,20 @@ class Timeline {
             
             this.alignment()
             
-        })
+        // }).then(() => {
+            if ( ! this._isInitialized ) {
+                const afterInitEvent = $.Event( Event.INITIALIZED, _elem )
+                
+                $(_elem).trigger( afterInitEvent )
+                
+                $(_elem).off( Event.INITIALIZED )
+                
+            }
+            // Binding bs.popover
+            if ( $.fn['popover'] ) {
+                $('[data-toggle="popover"]').popover()
+            }
+        // })
     }
     
     /*
@@ -561,7 +569,7 @@ class Timeline {
         if ( typeof str_like_params === 'string' && str_like_params ) {
             try {
                 params = JSON.parse( JSON.stringify( ( new Function( `return ${str_like_params}` ) )() ) )
-                if ( params.hasOwnProperty( 'extend' ) ) {
+                if ( params.hasOwnProperty( 'extend' ) && typeof params.extend === 'string' ) {
                     params.extend = JSON.parse( JSON.stringify( ( new Function( `return ${params.extend}` ) )() ) )
                 }
             } catch( e ) {
@@ -678,9 +686,9 @@ class Timeline {
     /*
      * @private: Verify the display period of the timeline does not exceed the maximum renderable range (:> タイムラインの表示期間が最大描画可能範囲を超過していないか検証する
      */
-    _verifyMaxRenderableRange() {
-// console.log( this._instanceProps.grids, '/', LimitScaleGrids[this._filterScaleKeyName( this._config.scale )] )
-        return this._instanceProps.grids <= LimitScaleGrids[this._filterScaleKeyName( this._config.scale )]
+    _verifyMaxRenderableRange( scale = this._config.scale ) {
+        this._debug( `Verify max renderable range::${scale}: ${this._instanceProps.grids} / ${LimitScaleGrids[this._filterScaleKeyName( scale )]}` )
+        return this._instanceProps.grids <= LimitScaleGrids[this._filterScaleKeyName( scale )]
     }
     
     /*
@@ -700,9 +708,7 @@ class Timeline {
             throw new TypeError( 'Does not exist the element to render a timeline container.' )
         }
         
-        if ( _opts.debug ) {
-            console.info( `Timeline:{ fullWidth: ${_props.fullwidth}px,`, `fullHeight: ${_props.fullheight}px,`, `viewWidth: ${_props.visibleWidth}`, `viewHeight: ${_props.visibleHeight} }` )
-        }
+        this._debug( `Timeline:{ fullWidth: ${_props.fullwidth}px, fullHeight: ${_props.fullheight}px, viewWidth: ${_props.visibleWidth}, viewHeight: ${_props.visibleHeight} }` )
         
         $(_elem).css( 'position', 'relative' ) // initialize; not .empty()
         if ( _opts.hideScrollbar ) {
@@ -1445,10 +1451,11 @@ class Timeline {
                         // For drawing the relation line
                         if ( /^point(|er)$/i.test( _opts.type ) ) {
                             //let _pointSize  = this._getPointerSize( new_event.size, new_event.margin )
-                            _relation.x = this.numRound( new_event.x, 2 )
-                            _relation.y = this.numRound( ( _props.rowSize * ( ( params.row || 1 ) - 1 ) ) + ( _props.rowSize / 2 ), 2 )
                             
-//console.log( '!_registerEventData:', params, new_event.x, new_event.y, _pointSize, _relation )
+                            _relation.x = this.numRound( new_event.x, 2 )
+                            _relation.y = this.numRound( ( _props.rowSize * ( ( params.row || 1 ) - 1 ) ) + ( _props.rowSize / 2 ), 2 ) + ( ( ( params.row || 1 ) - 1 ) * 0.5 )
+                            
+//console.log( '!_registerEventData:', params, _props, new_event.x, new_event.y, _pointSize, _relation )
                             new_event[_prop] = {
                                 ...params[_prop],
                                 ..._relation
@@ -1581,7 +1588,7 @@ class Timeline {
         }
         
 // console.log( '!_placeEvent:', _opts )
-        this.sleep( 1 ).then(() => {
+        this.sleep( _sleep ).then(() => {
             this.hideLoader()
             _evt_container.fadeIn( 'fast', () => {
                 _relation_lines.fadeIn( 'fast' )
@@ -1932,6 +1939,7 @@ class Timeline {
         ctx_relations.clearRect( 0, 0, _canvas[0].width, _canvas[0].height )
 //console.log( '!_drawRelationLine:', _props, events, _canvas )
         events.forEach( ( evt ) => {
+//console.log( '!_drawRelationLine:', evt )
             let _rel = evt.relation,
                 _sx, _sy, _ex, _ey, 
                 _targetId, _targetEvent
@@ -2033,6 +2041,9 @@ class Timeline {
      * @private: Event when hover on the pointer type event
      */
     _hoverPointer( event ) {
+        if ( ! this._config.effects.hoverEvent ) {
+            return
+        }
         let _props = this._instanceProps,
             _elem  = event.target,
             _base  = {
@@ -2045,9 +2056,9 @@ class Timeline {
             _w     = _base.width,
             _z     = 5
         
-//console.log( '!_hoverPointer:', _props )
+//this._getPointerSize( new_event.size, new_event.margin )
         if ( 'mouseenter' === event.type ) {
-            _w = Math.max( this.numRound( _w * 1.2, 'ceil' ), Math.min( _props.rowSize, _props.scaleSize ) )
+            _w = Math.min( this.numRound( _w * 1.25, 'ceil' ), Math.min( _props.rowSize, _props.scaleSize ) )
             _x = this.numRound( _x - ( ( _w - _base.width ) / 2 ), 2 )
             _y = this.numRound( _y - ( ( _w - _base.width ) / 2 ), 2 )
             _z = 9
@@ -2089,6 +2100,10 @@ class Timeline {
     initialized( ...args ) {
         let _message = this._isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized'
         this._debug( _message )
+//console.log('!this._isInitialized:', this._isInitialized, 'this._isCompleted:', this._isCompleted )
+        if ( this._isInitialized ) {
+            return
+        }
         
         let _elem    = this._element,
             _opts    = this._config,
@@ -2105,6 +2120,7 @@ class Timeline {
         
         this._isInitialized = true
         
+        return this
     }
     
     /*
@@ -2165,19 +2181,142 @@ class Timeline {
     }
     
     /*
-     * @public: 
+     * @public: Move shift or expand the range of timeline container as to past direction (to left)
      */
-    dateback() {
+    dateback( ...args ) {
         this._debug( 'dateback' )
         
+        let _args    = args[0],
+            _opts    = this._config,
+            moveOpts = this.supplement( null, _args[0], this.validateObject ),
+            callback = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata = _args.length > 2 ? _args.slice(2) : null,
+            newOpts  = {},
+            begin_date, end_date, _tmpDate
+        
+        if ( this.is_empty( moveOpts ) ) {
+            moveOpts = { scale: _opts.scale, range: _opts.range, shift: true }
+        } else {
+            if ( ! moveOpts.hasOwnProperty('shift') || moveOpts.shift !== false ) {
+                moveOpts.shift = true
+            }
+            if ( ! moveOpts.hasOwnProperty('scale') || ! this._verifyScale( moveOpts.scale ) ) {
+                moveOpts.scale = _opts.scale
+            }
+            if ( ! moveOpts.hasOwnProperty('range') || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
+                moveOpts.range = _opts.range
+            }
+        }
+        _tmpDate   = new Date( _opts.startDatetime )
+        switch ( true ) {
+            case /^years?$/i.test( moveOpts.scale ):
+                begin_date = new Date( _tmpDate.setFullYear( _tmpDate.getFullYear() - parseInt( moveOpts.range, 10 ) ) )
+                break
+            case /^months?$/i.test( moveOpts.scale ):
+                begin_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() - parseInt( moveOpts.range, 10 ) ) )
+                break
+            default:
+                begin_date = new Date( _tmpDate.getTime() - ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                break
+        }
+        newOpts.startDatetime = begin_date.toString()
+        if ( moveOpts.shift ) {
+            _tmpDate = new Date( _opts.endDatetime )
+            switch ( true ) {
+                case /^years?$/i.test( moveOpts.scale ):
+                    end_date = new Date( _tmpDate.setFullYear( _tmpDate.getFullYear() - parseInt( moveOpts.range, 10 ) ) )
+                    break
+                case /^months?$/i.test( moveOpts.scale ):
+                    end_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() - parseInt( moveOpts.range, 10 ) ) )
+                    break
+                default:
+                    end_date = new Date( _tmpDate.getTime() - ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                    break
+            }
+            newOpts.endDatetime = end_date.toString()
+        }
+        if ( moveOpts.scale !== _opts.scale ) {
+            newOpts.moveScale = moveOpts.scale
+        }
+//console.log( '!dateback::', moveOpts, _opts.startDatetime, _opts.endDatetime, newOpts )
+        
+        this.reload( [newOpts] )
+        
+        if ( callback ) {
+            this._debug( 'Fired your callback function after datebacking.' )
+            
+            callback( this._element, _opts, userdata )
+        }
     }
     
     /*
-     * @public: 
+     * @public: Move shift or expand the range of timeline container as to futrue direction (to right)
      */
-    dateforth() {
+    dateforth( ...args ) {
         this._debug( 'dateforth' )
         
+        let _args    = args[0],
+            _opts    = this._config,
+            moveOpts = this.supplement( null, _args[0], this.validateObject ),
+            callback = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata = _args.length > 2 ? _args.slice(2) : null,
+            newOpts  = {},
+            begin_date, end_date, _tmpDate
+        
+        if ( this.is_empty( moveOpts ) ) {
+            moveOpts = { scale: _opts.scale, range: _opts.range, shift: true }
+        } else {
+            if ( ! moveOpts.hasOwnProperty('shift') || moveOpts.shift !== false ) {
+                moveOpts.shift = true
+            }
+            if ( ! moveOpts.hasOwnProperty('scale') || ! this._verifyScale( moveOpts.scale ) ) {
+                moveOpts.scale = _opts.scale
+            }
+            if ( ! moveOpts.hasOwnProperty('range') || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
+                moveOpts.range = _opts.range
+            }
+        }
+        _tmpDate = new Date( _opts.endDatetime )
+        switch ( true ) {
+            case /^years?$/i.test( moveOpts.scale ):
+//console.log(_tmpDate, _tmpDate.getTime(), _tmpDate.getFullYear(), _tmpDate.setFullYear(_tmpDate.getFullYear() + parseInt( moveOpts.range, 10 ) ) )
+                end_date = new Date( _tmpDate.setFullYear( _tmpDate.getFullYear() + parseInt( moveOpts.range, 10 ) ) )
+                break
+            case /^months?$/i.test( moveOpts.scale ):
+                end_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() + parseInt( moveOpts.range, 10 ) ) )
+                break
+            default:
+                end_date = new Date( _tmpDate.getTime() + ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                break
+        }
+        newOpts.endDatetime = end_date.toString()
+        if ( moveOpts.shift ) {
+            _tmpDate = new Date( _opts.startDatetime )
+            switch ( true ) {
+                case /^years?$/i.test( moveOpts.scale ):
+                    begin_date = new Date( _tmpDate.setFullYear( _tmpDate.getFullYear() + parseInt( moveOpts.range, 10 ) ) )
+                    break
+                case /^months?$/i.test( moveOpts.scale ):
+                    begin_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() + parseInt( moveOpts.range, 10 ) ) )
+                    break
+                default:
+                    begin_date = new Date( _tmpDate.getTime() + ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                    break
+            }
+            newOpts.startDatetime = begin_date.toString()
+        }
+        if ( moveOpts.scale !== _opts.scale ) {
+            newOpts.moveScale = moveOpts.scale
+        }
+//console.log( '!dateforth::', moveOpts, _opts.startDatetime, _opts.endDatetime, newOpts )
+        
+        this.reload( [newOpts] )
+        
+        if ( callback ) {
+            this._debug( 'Fired your callback function after dateforthing.' )
+            
+            callback( this._element, this._config, userdata )
+        }
     }
     
     /*
@@ -2346,6 +2485,7 @@ class Timeline {
             userdata     = _args.length > 2 ? _args.slice(2) : null,
             _cacheEvents = this._loadToCache(),
             condition    = {},
+            remainEvents = [],
             remove_done  = false
         
         if ( this.is_empty( targets ) || ! this._isCompleted || this.is_empty( _cacheEvents ) ) {
@@ -2376,42 +2516,50 @@ class Timeline {
                     break
             }
             _cacheEvents.forEach( ( evt, _idx ) => {
+                let is_remove = false
+                
                 switch ( condition.type ) {
-                    case 'eventId':
+                    case 'eventId': {
                         if ( parseInt( evt.eventId, 10 ) == condition.value ) {
 //console.log( `!removeEvent::${condition.type}:${condition.value}:`, _cacheEvents[_idx] )
-                            _cacheEvents.splice( _idx, 1 )
-                            remove_done = true
+                            is_remove = true
                         }
                         break
+                    }
                     case 'daterange': {
 //console.log( condition.value )
                         let _fromX = condition.value.from ? Math.ceil( this._getCoordinateX( condition.value.from.toString() ) ) : 0,
                             _toX   = condition.value.to   ? Math.floor( this._getCoordinateX( condition.value.to.toString() ) ) : _fromX
                         
+//console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, `${evt.eventId}: ${_fromX} <= ${evt.x} <= ${_toX} ?`, _fromX <= evt.x && evt.x <= _toX )
                         if ( _fromX <= evt.x && evt.x <= _toX ) {
-//console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, _fromX, _toX, evt.x )
-                            _cacheEvents.splice( _idx, 1 )
-                            remove_done = true
+//console.log( `!matchEvent::`, evt )
+                            is_remove = true
                         }
                         break
                     }
-                    case 'regex':
+                    case 'regex': {
 //console.log( `!removeEvent::${condition.type}:${condition.value}:`, JSON.stringify( evt ) )
                         if ( condition.value.test( JSON.stringify( evt ) ) ) {
-                            _cacheEvents.splice( _idx, 1 )
-                            remove_done = true
+                            is_remove = true
                         }
                         break
+                    }
+                }
+                if ( ! is_remove ) {
+                    remainEvents.push( evt )
                 }
             })
         })
+//console.log( remainEvents.length !== _cacheEvents.length )
+        remove_done = remainEvents.length !== _cacheEvents.length
 //console.log( `!removeEvent::after:`, _cacheEvents )
         if ( ! remove_done ) {
             return
         }
         
-        this._saveToCache( _cacheEvents )
+        //this._saveToCache( _cacheEvents )
+        this._saveToCache( remainEvents )
         
         this._placeEvent()
         
@@ -2487,7 +2635,8 @@ class Timeline {
             _elem        = this._element,
             $default_evt = $(_elem).find( Selector.DEFAULT_EVENTS ),
             _old_options = this._config,
-            _new_options = {}
+            _new_options = {},
+            _chk_scale
         
         if ( ! this.is_empty( _upc_options ) ) {
             // _new_options = Object.assign( _new_options, _old_options, _upc_options )
@@ -2504,7 +2653,13 @@ class Timeline {
         
         this._calcVars()
         
-        if ( ! this._verifyMaxRenderableRange() ) {
+        if ( this._config.hasOwnProperty( 'moveScale' ) ) {
+            _chk_scale = this._config.moveScale
+            delete this._config.moveScale
+        } else {
+            _chk_scale = this._config.scale
+        }
+        if ( ! this._verifyMaxRenderableRange( _chk_scale ) ) {
             throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
         }
         
@@ -3157,6 +3312,7 @@ class Timeline {
             _options = {},
             getOrdinal = ( n ) => {
                 let s = [ 'th', 'st', 'nd', 'rd' ], v = n % 100
+                
                 return n + ( s[(v - 20)%10] || s[v] || s[0] )
             },
             getZerofill = ( num, digit = 4 ) => {
@@ -3424,7 +3580,7 @@ class Timeline {
                 // Call public method
                 data[config]( args )
             } else {
-                if ( ! data._isInitialized ) {
+                if ( ! data._isInitialized || ! data._isCompleted ) {
                     data._init()
                 }
             }

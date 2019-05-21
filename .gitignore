@@ -3,7 +3,10 @@ _gh_pages
 _site
 site/docs/4.1/dist/
 docs/*.php
-docs/imgs/thumb_*.png
+docs/imgs/*thumb*.png
+docs/css/*.map
+docs/js/*.map
+dist/*.map
 
 # Numerous always-ignore extensions
 *.diff
@@ -16,6 +19,7 @@ docs/imgs/thumb_*.png
 *.vi
 *.zip
 *~
+*.lock
 
 # OS or Editor folders
 ._*

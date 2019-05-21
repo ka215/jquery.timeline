@@ -1,5 +1,5 @@
 <p align="center">
-  <h3 align="center">jQuery.Timeline V2</h3>
+  <h1 align="center">jQuery.Timeline V2</h3>
 
   <table border="0">
     <tr>
@@ -20,12 +20,13 @@
   </p>
 </p>
 
+[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE)
+
 <br>
 
 ## Table of Contents
 
 - [Quick start](#quick-start)
-- [Status](#status)
 - [What's included](#whats-included)
 - [Usage](#usage)
 - [Supported browsers](#supported-browsers)
@@ -40,13 +41,11 @@
 
 Several quick start options are available:
 
-- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0a3.zip)
+<!-- - npm: `npm i jquery-timeline` -->
+<!-- - bower: `bower install jquery-timeline` -->
+
+- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0b1.zip)
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
-
-
-## Status
-
-[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE)
 
 
 ## What's included
@@ -57,12 +56,11 @@ Within the download you'll find the following directories and files, logically g
 jquery.timeline/
 └── dist/
     ├── jquery.timeline.min.css
-    ├── jquery.timeline.min.css.map
-    ├── jquery.timeline.min.js
-    └── jquery.timeline.min.js.map
+    └── jquery.timeline.min.js
 ```
 
-We provide compiled and minified CSS and JS (`jquery.timeline.min.*`). source maps (`jquery.timeline.*.map`) are available for use with certain browsers' developer tools.
+We provide compiled and minified CSS and JS (`jquery.timeline.min.*`).
+When deployed by using task for develop, generated source maps (`jquery.timeline.*.map`) are available for use with certain browsers' developer tools.
 
 
 ## Usage
@@ -70,10 +68,12 @@ We provide compiled and minified CSS and JS (`jquery.timeline.min.*`). source ma
 Include the installed files into your html:
 
 ```HTML
-<link rel="stylesheet" src="./jquery.timeline/dist/jquery.timeline.min.css">
+<link rel="stylesheet" src="/path/to/jquery.timeline.min.css">
 
-<script src="./jquery.timeline/dist/jquery.timeline.min.js"></script>
+<script src="/path/to/jquery.timeline.min.js"></script>
 ```
+
+Note: You should include the jquery core script before including this plugin javascript file. Also we recommend that would like to add `defer` attribute into script tag.
 
 Bind this plugin in the scope had imported the jQuery:
 
@@ -107,12 +107,12 @@ jQuery.Timeline version 2.x supports the following browsers:
 <tr>
 <td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
 <td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Safari" align="center"><b style="color:#CCC">Ok</b></td>
-<td name="PC:IE" align="center"><b style="color:red">NG</b></td>
+<td name="PC:Safari" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:IE" align="center"><b style="color:brown">Non-compliant</b></td>
 <td name="PC:Edge" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Opera" align="center"><b style="color:#CCC">?</b></td>
-<td name="MP:Android" align="center"><b style="color:#CCC">Ok</b></td>
-<td name="MP:iOS Safari" align="center"><b style="color:#CCC">Ok</b></td>
+<td name="PC:Opera" align="center"><b style="color:green">Ok</b></td>
+<td name="MP:Android" align="center"><b style="color:green">Ok</b></td>
+<td name="MP:iOS Safari" align="center"><b style="color:green">Ok</b></td>
 </tr>
 </tbody>
 </table>
@@ -139,8 +139,8 @@ jQuery.Timeline's documentation, included in this repository in the root directo
 
 ## Example as demonstration
 
-[jQuery.Timeline Tester](https://ka2.org/jqtl-v2/)
-
+- [jQuery.Timeline Tester](https://ka2.org/jqtl-v2/)
+- [Version 1.x demo](https://ka2.org/jqtl-v1/)
 
 ## Contributions
 
@@ -157,5 +157,5 @@ Donate URL: <https://ka215.github.io/jquery.timeline/donation.html>
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2018 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).
+Code and documentation copyright 2011-2019 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).
 
