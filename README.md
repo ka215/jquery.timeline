@@ -3,8 +3,8 @@
 
   <table border="0">
     <tr>
-    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_bar.png" width="99%" /></td>
-    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2a1_point.png" width="99%" /></td>
+    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_bar.png" width="99%" alt="Bar Type" /></td>
+    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_point.png" width="99%" alt="Point Type" /></td>
     </tr>
   </table>
 
@@ -44,7 +44,7 @@ Several quick start options are available:
 <!-- - npm: `npm i jquery-timeline` -->
 <!-- - bower: `bower install jquery-timeline` -->
 
-- [Download the latest release.](https://github.com/ka215/jquery.timeline/archive/v2.0.0b1.zip)
+- [Download the latest release](https://github.com/ka215/jquery.timeline/releases/download/v2.0.0b1/jquery.timeline.v2.0.0b1.zip).
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
 
 

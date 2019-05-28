@@ -3,9 +3,9 @@ import '@babel/polyfill'
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0b1
+ * Version: 2.0.0b2
  * Author: Ka2 (https://ka2.org/)
- * Repository: https://github.com/ka215/jquery.timeline/tree/develop
+ * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
  */
 
@@ -14,7 +14,7 @@ import '@babel/polyfill'
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0b1"
+const VERSION            = "2.0.0b2"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -373,23 +373,61 @@ class Timeline {
         _props.rowSize    = this.supplement( null, _opts.rowHeight, this.validateNumeric )
         _props.width      = this.supplement( null, _opts.width, this.validateNumeric )
         _props.height     = this.supplement( null, _opts.height, this.validateNumeric )
+        _props.isVLS      = false // Whether is the variable length scale, defaults to false (:> 設定スケールが可変長スケールかどうか
+        // _props.scale         // An average millisecond of one base grid on the setting scale (:> 設定スケールにおける起点グリッド1目盛の平均ミリ秒
+        // _props.grids         // Number of base grids on the setting scale (= number of grids displayed) (:> 設定スケールにおける起点グリッド数（=表示されるグリッド数）
+        // _props.variableScale // An object that referable as the width of the base grid on the setting scale (:> 設定スケールにおける起点グリッド幅の幅員基準値となるオブジェクト
+        // _props.fullwidth     // The total width of the timeline container (:> タイムラインコンテナの横幅の全長
+        // _props.fullheight    // The total height of the timeline container (:> タイムラインコンテナの縦幅の全長
+        // _props.visibleWidth  // The width of the timeline that will display (:> 表示されるタイムラインの横幅
+        // _props.visibleHeight // The height of the timeline that will display (:> 表示されるタイムラインの縦幅
+        
+        switch ( true ) {
+            //case /^dec(ade|ennium)$/i.test( _opts.scale ):
+            //case /^lustrum$/i.test( _opts.scale ):
+            case /^years?$/i.test( _opts.scale ):
+            case /^months?$/i.test( _opts.scale ):
+            case /^weeks?$/i.test( _opts.scale ):
+            case /^(|week)days?$/i.test( _opts.scale ):
+                _props.isVLS = true
+                break
+            default:
+                break
+        }
         
         this._instanceProps = _props // pre-cache
         
-        if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+        if ( _props.isVLS ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
-            let _temp            = this._verifyScale( _opts.scale ),
-                _values          = Object.values( _temp ),
-                _averageDays     = this.numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average days within the range
-                _baseDaysOfScale = /^years?$/i.test( _opts.scale ) ? 365 : 30,
-                _totalWidth      = 0
+            let _temp       = this._verifyScale( _opts.scale ),
+                _values     = Object.values( _temp ),
+                _averageVar = this.numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average value within the range
+                _totalWidth = 0,
+                _baseVar
             
+            switch ( true ) {
+                case /^years?$/i.test( _opts.scale ):
+                    _baseVar = 365
+                    _props.scale = _averageVar * ( 24 * 60 * 60 * 1000 )
+                    break
+                case /^months?$/i.test( _opts.scale ):
+                    _baseVar = 30
+                    _props.scale = _averageVar * ( 24 * 60 * 60 * 1000 )
+                    break
+                case /^weeks?$/i.test( _opts.scale ):
+                    _baseVar = 24 * 7
+                    _props.scale = _averageVar * ( 60 * 60 * 1000 )
+                    break
+                case /^(|week)days?$/i.test( _opts.scale ):
+                    _baseVar = 24
+                    _props.scale = _averageVar * ( 60 * 60 * 1000 )
+                    break
+            }
 //console.log( '!', _opts.scale, _temp, _vals )
-            _values.forEach( ( days ) => {
-                _totalWidth += this.numRound( ( days * _props.scaleSize ) / _baseDaysOfScale, 2 )
+            _values.forEach( ( val ) => {
+                _totalWidth += this.numRound( ( val * _props.scaleSize ) / _baseVar, 2 )
             })
             
-            _props.scale         = _averageDays * ( 24 * 60 * 60 * 1000 )
             _props.grids         = _values.length
             _props.variableScale = _temp
             _props.fullwidth     = _totalWidth
@@ -418,6 +456,7 @@ class Timeline {
             throw new TypeError( `The range of the timeline to be rendered is incorrect.` )
         }
         
+console.log( '!_calcVars::return:', _props )
         this._instanceProps = _props
     }
     
@@ -596,9 +635,9 @@ class Timeline {
      * @private: Verify the allowed scale, then retrieve that scale's millisecond if allowed (:> 許容スケールかを確認し、許可時はそのスケールのミリ秒を取得する
      */
     _verifyScale( scale ) {
-        let _opts  = this._config,
-            _props = this._instanceProps,
-            _ms    = -1
+        let _opts   = this._config,
+            _props  = this._instanceProps,
+            _ms     = -1
         
         if ( typeof scale === 'undefined' || typeof scale !== 'string' ) {
             return false
@@ -629,17 +668,31 @@ class Timeline {
                 _ms = 60 * 60 * 1000
                 break
             case /^days?$/i.test( scale ):
-                // Day (:> 日
-                _ms = 24 * 60 * 60 * 1000
+                // Day (is the variable length scale by DST) (:> 日 (サマータイムによる可変長スケール)
+console.log( `!_verifyScale::${_opts.scale}:`, _props )
+                if ( _props.isVLS ) {
+console.log( `!!_verifyScale::${scale}:`, this._diffDate( _props.begin, _props.end, scale ) )
+                    return this._diffDate( _props.begin, _props.end, scale )
+                } else {
+console.log( `!!_verifyScale::${scale}:`, 24 * 60 * 60 * 1000 )
+                    _ms = 24 * 60 * 60 * 1000
+                }
                 break
             case /^weeks?$/i.test( scale ):
-                // Week (:> 週
-                _ms = 7 * 24 * 60 * 60 * 1000
+                // Week (is the variable length scale by DST) (:> 週 (サマータイムによる可変長スケール)
+console.log( `!_verifyScale::${_opts.scale}:`, _props )
+                if ( _props.isVLS ) {
+console.log( `!!_verifyScale::${scale}:`, this._diffDate( _props.begin, _props.end, scale ) )
+                    return this._diffDate( _props.begin, _props.end, scale )
+                } else {
+console.log( `!!_verifyScale::${scale}:`, 7 * 24 * 60 * 60 * 1000 )
+                    _ms = 7 * 24 * 60 * 60 * 1000
+                }
                 break
             case /^months?$/i.test( scale ):
                 // Month (is the variable length scale) (:> 月（可変長スケール）
 //console.log( '!_verifyScale::month:', this._instanceProps, _opts.scale )
-                if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+                if ( _props.isVLS ) {
                     return this._diffDate( _props.begin, _props.end, scale )
                 } else {
                     _ms = 30.44 * 24 * 60 * 60 * 1000
@@ -647,7 +700,7 @@ class Timeline {
                 }
             case /^years?$/i.test( scale ):
                 // Year (is the variable length scale) (:> 年（可変長スケール）
-                if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+                if ( _props.isVLS ) {
                     return this._diffDate( _props.begin, _props.end, scale )
                 } else {
                     _ms = 365.25 * 24 * 60 * 60 * 1000
@@ -850,13 +903,46 @@ class Timeline {
             let _pos_y = ( i * _props.rowSize ) + _cy
             drawHorizontalLine( _pos_y, true )
         }
-        if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+        if ( _props.isVLS ) { // /^(year|month)s?$/i.test( _opts.scale ) ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
-            let _bc = /^years?$/i.test( _opts.scale ) ? 365 : 30,
-                _sy = 0
+            let _sy = 0,
+                _baseVar
+            
+            switch (true) {
+                case /^millenniums?|millennia$/i.test( _opts.scale ):
+                    _baseVar = 1000 // years
+                    break
+                case /^century$/i.test( _opts.scale ):
+                    _baseVar = 100 // years
+                    break
+                case /^dec(ade|ennium)$/i.test( _opts.scale ):
+                    _baseVar = 10 // years
+                    break
+                case /^lustrum$/i.test( _opts.scale ):
+                    _baseVar = 5 // years
+                    break
+                case /^years?$/i.test( _opts.scale ):
+                    _baseVar = 365 // days
+                    break
+                case /^months?$/i.test( _opts.scale ):
+                    _baseVar = 30 // days
+                    break
+                case /^weeks?$/i.test( _opts.scale ):
+                    _baseVar = 7 // days
+                    break
+                case /^weekdays?$/i.test( _opts.scale ):
+                case /^days?$/i.test( _opts.scale ):
+                    _baseVar = 24 // hours
+                    break
+                case /^hours?$/i.test( _opts.scale ):
+                case /^minutes?$/i.test( _opts.scale ):
+                case /^seconds?$/i.test( _opts.scale ):
+                    _baseVar = 1 // seconds
+                    break
+            }
             
             for ( let _key of Object.keys( _props.variableScale ) ) {
-                _sy += this.numRound( ( _props.variableScale[_key] * _props.scaleSize ) / _bc, 2 )
+                _sy += this.numRound( ( _props.variableScale[_key] * _props.scaleSize ) / _baseVar, 2 )
                 drawVerticalLine( _sy, false )
             }
         } else {
@@ -919,7 +1005,7 @@ class Timeline {
                 _grid_x     = 0,
                 _correction = -1.5
             
-            if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
+            //if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
                 // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
                 _line_grids = this._filterVariableScale( line_scale )
 //console.log( '!_createRuler:', line_scale, _line_grids )
@@ -930,7 +1016,19 @@ class Timeline {
                     ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
                     ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
                 }
-            } else {
+            //} else
+            //if ( /^(week|day)s?$/i.test( _opts.scale ) ) {
+                // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
+                _line_grids = this._filterVariableScale( line_scale )
+console.log( '!_createRuler:', line_scale, _line_grids )
+                
+                for ( let _key of Object.keys( _line_grids ) ) {
+                    _grid_x += this.numRound( _line_grids[_key], 2 )
+                    
+                    ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
+                    ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
+                }
+            /*} else {
                 // In case of fixed length scale (:> 固定長スケールの場合
                 _line_grids = this._getGridsPerScale( line_scale )
                 
@@ -947,7 +1045,7 @@ class Timeline {
                     ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
                     ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
                 }
-            }
+            }*/
             ctx_ruler.closePath()
             ctx_ruler.stroke()
             _ruler_body.append( this._createRulerContent( _line_grids, line_scale, ruler_opts ) )
@@ -963,99 +1061,127 @@ class Timeline {
     
     /*
      * @private: Filter to aggregate the grid width of the variable length scale (:> 可変長スケールのグリッド幅を集約するフィルタ
+     *
+     * @param: target_scale = a scale of one line on the ruler (:> 目盛1行分のスケール
+     * @return: An object of actual grid widths for each individual scale on the set scale of the timeline container (:> タイムラインコンテナの指定スケール上における各個別スケールの実際のグリッド幅のオブジェクト
      */
     _filterVariableScale( target_scale ) {
         let _opts  = this._config,
             _props = this._instanceProps,
-            _bc    = /^years?$/i.test( _opts.scale ) ? 365 : 30,
+            // _opts.scale が day の場合は時間/日、それ以外の場合は日/年となる
             scales = _props.variableScale,
-            retObj = {}
+            retObj = {},
+            _baseVar
         
+        switch (true) {
+            case /^millenniums?|millennia$/i.test( _opts.scale ):
+                _baseVar = 1000 // years
+                break
+            case /^century$/i.test( _opts.scale ):
+                _baseVar = 100 // years
+                break
+            case /^dec(ade|ennium)$/i.test( _opts.scale ):
+                _baseVar = 10 // years
+                break
+            case /^lustrum$/i.test( _opts.scale ):
+                _baseVar = 5 // years
+                break
+            case /^years?$/i.test( _opts.scale ):
+                _baseVar = 365 // days
+                break
+            case /^months?$/i.test( _opts.scale ):
+                _baseVar = 30 // days
+                break
+            case /^weeks?$/i.test( _opts.scale ):
+                _baseVar = 7 // days
+                break
+            case /^weekdays?$/i.test( _opts.scale ):
+            case /^days?$/i.test( _opts.scale ):
+                _baseVar = 24 // hours
+                break
+            case /^hours?$/i.test( _opts.scale ):
+            case /^minutes?$/i.test( _opts.scale ):
+            case /^seconds?$/i.test( _opts.scale ):
+                _baseVar = 1 // seconds
+                break
+        }
+        
+        // グリッド幅の起点となるスケールは _opts.scale なので、それに合わせてサイズを計算する
+console.log( '!_filterVariableScale:', _opts.scale, target_scale, scales )
         for ( let _dt of Object.keys( scales ) ) {
-            let _days     = scales[_dt],
-                grid_size = this.numRound( ( _days * _props.scaleSize ) / _bc, 2 ),
+            let grid_size = this.numRound( ( scales[_dt] * _props.scaleSize ) / _baseVar, 2 ),
                 _newKey   = null,
-                _arr, _temp
-//console.log( '!_filterVariableScale:', _dt, this.getCorrectDatetime( _dt ).getFullYear(), _days )
+                _arr      = _dt.split(','),
+                _tmpDt    = this.getCorrectDatetime( _arr[0] ),
+                _temp
+//console.log( '!!_filterVariableScale:', _dt, this.getCorrectDatetime( _dt ), _props.scaleSize, scales[_dt], grid_size )
             
             switch ( true ) {
                 case /^millenniums?|millennia$/i.test( target_scale ):
-                    _newKey = Math.ceil( this.getCorrectDatetime( _dt ).getFullYear() / 1000 )
-                    
-                    if ( retObj.hasOwnProperty( _newKey ) ) {
-                        retObj[_newKey] += grid_size
-                    } else {
-                        retObj[_newKey] = grid_size
-                    }
+                    //_years = 1000
+                    _newKey   = Math.ceil( _tmpDt.getFullYear() / 1000 )
+                    //grid_size = this.numRound( ( _years * _props.scaleSize ) / _baseVar, 2 )
                     break
                 case /^century$/i.test( target_scale ):
-                    _newKey = Math.ceil( this.getCorrectDatetime( _dt ).getFullYear() / 100 )
-                    
-                    if ( retObj.hasOwnProperty( _newKey ) ) {
-                        retObj[_newKey] += grid_size
-                    } else {
-                        retObj[_newKey] = grid_size
-                    }
+                    //_years = 100
+                    _newKey   = Math.ceil( _tmpDt.getFullYear() / 100 )
+                    //grid_size = this.numRound( ( _years * _props.scaleSize ) / _baseVar, 2 )
                     break
                 case /^dec(ade|ennium)$/i.test( target_scale ):
-                    _newKey = Math.ceil( this.getCorrectDatetime( _dt ).getFullYear() / 10 )
-                    
-                    if ( retObj.hasOwnProperty( _newKey ) ) {
-                        retObj[_newKey] += grid_size
-                    } else {
-                        retObj[_newKey] = grid_size
-                    }
+                    //_years = 10
+                    _newKey   = Math.ceil( _tmpDt.getFullYear() / 10 )
+                    //grid_size = this.numRound( ( _years * _props.scaleSize ) / _baseVar, 2 )
                     break
                 case /^lustrum$/i.test( target_scale ):
-                    _newKey = Math.ceil( this.getCorrectDatetime( _dt ).getFullYear() / 5 )
-                    
-                    if ( retObj.hasOwnProperty( _newKey ) ) {
-                        retObj[_newKey] += grid_size
-                    } else {
-                        retObj[_newKey] = grid_size
-                    }
+                    //_years = 5
+                    _newKey   = Math.ceil( _tmpDt.getFullYear() / 5 )
+                    //grid_size = this.numRound( ( _years * _props.scaleSize ) / _baseVar, 2 )
                     break
                 case /^years?$/i.test( target_scale ):
-                    _newKey = `${this.getCorrectDatetime( _dt ).getFullYear()}`
-                    
-                    if ( retObj.hasOwnProperty( _newKey ) ) {
-                        retObj[_newKey] += grid_size
-                    } else {
-                        retObj[_newKey] = grid_size
-                    }
+                    //_days = scales[_dt]
+                    _newKey = `${_tmpDt.getFullYear()}`
+                    //grid_size = this.numRound( ( _days * _props.scaleSize ) / _baseVar, 2 )
                     break
                 case /^months?$/i.test( target_scale ):
-                    retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}`] = grid_size
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}`
                     break
                 case /^weeks?$/i.test( target_scale ):
-                    _arr  = _dt.split(',')
                     _temp = this.getWeek( _arr[0] )
-//console.log( '!_filterVariableScale::week:', _dt, _arr[0], _temp )
-                    retObj[`${this.getCorrectDatetime( _arr[0] ).getFullYear()},${_temp}`] = grid_size
+                    _newKey = `${_tmpDt.getFullYear()},${_temp}`
                     break
                 case /^weekdays?$/i.test( target_scale ):
-                    _arr  = _dt.split(',')
-                    _temp = this.getCorrectDatetime( _arr[0] ).getDay()
-                    retObj[`${this.getCorrectDatetime( _arr[0] ).getFullYear()}/${this.getCorrectDatetime( _arr[0] ).getMonth() + 1}/1,${_temp}`] = grid_size
+                    _temp = _tmpDt.getDay()
+                    _newKey = `${_dt},${_temp}`
                     break
                 case /^days?$/i.test( target_scale ):
-                    retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1`] = grid_size
+                    _newKey = `${_dt}`
                     break
                 case /^hours?$/i.test( target_scale ):
-                    retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0`] = grid_size
+                    _newKey = `${_dt} ${_tmpDt.getHours()}`
+                    //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0`] = grid_size
                     break
                 case /^minutes?$/i.test( target_scale ):
-                    retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0:00`] = grid_size
+                    _newKey = `${_dt} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}`
+                    //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0:00`] = grid_size
                     break
                 case /^seconds?$/i.test( target_scale ):
-                    retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0:00:00`] = grid_size
+                    _newKey = `${_dt} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}:${_tmpDt.getSeconds()}`
+                    //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0:00:00`] = grid_size
                     break
                 default:
-                    retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}`] = grid_size
+                    _newKey = `${_dt} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}:${_tmpDt.getSeconds()}.${_tmpDt.getMilliseconds()}`
+                    //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}`] = grid_size
                     break
+            }
+//console.log( `!!!_filterVariableScale::${target_scale}:`, _dt, _newKey, grid_size )
+            if ( retObj.hasOwnProperty( _newKey ) ) {
+                retObj[_newKey] += grid_size
+            } else {
+                retObj[_newKey] = grid_size
             }
         }
         
+console.log( '!!!_filterVariableScale::return:', retObj )
         return retObj
     }
     
@@ -1129,7 +1255,8 @@ class Timeline {
             _ruler_lines = $('<div></div>', { class: ClassName.TIMELINE_RULER_LINES, style: `width:100%;height:${line_height}px;` })
         
         for ( let _key of Object.keys( _line_grids ) ) {
-            let _item_width      = /^(year|month)s?$/i.test( _opts.scale ) ? _line_grids[_key] : _line_grids[_key] * _props.scaleSize,
+            //let _item_width      = /^(year|month)s?$/i.test( _opts.scale ) ? _line_grids[_key] : _line_grids[_key] * _props.scaleSize,
+            let _item_width      = _line_grids[_key],
                 _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
                 _ruler_string    = this.getLocaleString( _key, line_scale, locale, format ),
                 _data_ruler_item = ''
@@ -1306,12 +1433,56 @@ class Timeline {
                 }
                 retval = _m
                 break
-            case /^weeks?$/i.test( scale ):
-                retval = Math.ceil( diffMS / ( 7 * 24 * 60 * 60 * 1000 ) )
+            case /^weeks?$/i.test( scale ): {
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
+                    _cw = this.getWeek( _cd ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _newKey = `${_cd.getFullYear()},${_cw}`
+                
+                _nd.setDate( _nd.getDate() + 1 )
+                _pd.setDate( _pd.getDate() - 1 )
+                _m[_newKey] = ( _cd - _pd ) / ( 60 * 60 * 1000 )
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setDate( _nd.getDate() + 1 )
+                    _cd.setDate( _cd.getDate() + 1 )
+                    _cw = this.getWeek( _cd )
+                    let _newKey = `${_cd.getFullYear()},${_cw}`
+                    
+                    if ( _m.hasOwnProperty( _newKey ) ) {
+                        _m[_newKey] += ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    } else {
+                        _m[_newKey] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    }
+                }
+console.log( `_diffDate::${scale}:`, diffMS, _m )
+                retval = _m
+                //retval = Math.ceil( diffMS / ( 7 * 24 * 60 * 60 * 1000 ) )
                 break
-            case /^(|week)days?$/i.test( scale ):
-                retval = Math.ceil( diffMS / ( 24 * 60 * 60 * 1000 ) )
+            }
+            case /^(|week)days?$/i.test( scale ): {
+//console.log( '_diffDate::', diffMS, _bd, _ed, _dy )
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _id = 0
+                
+                _nd.setDate( _nd.getDate() + 1 )
+                _pd.setDate( _pd.getDate() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _cd - _pd ) / ( 60 * 60 * 1000 )
+//console.log( '!_diffDate::_prev:', _pd, '_current:', _cd, '_next:', _nd )
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setDate( _nd.getDate() + 1 )
+                    _cd.setDate( _cd.getDate() + 1 )
+//console.log( '!!_diffDate::', _nd, _cd, _diffDateMS )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    _id++
+                }
+//console.log( '!!!_diffDate::', _m )
+                retval = _m
+                //retval = Math.ceil( diffMS / ( 24 * 60 * 60 * 1000 ) )
                 break
+            }
             case /^hours?$/i.test( scale ):
                 retval = Math.ceil( diffMS / ( 60 * 60 * 1000 ) )
                 break

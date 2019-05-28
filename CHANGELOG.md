@@ -1,6 +1,10 @@
 Change Log
 ---
 
+### v2.0.0b2 (May 28, 2019 GMT)
+
+* [WIP] Supported to summer time (Daylight Savings Time) and timezone offset.
+
 ### v2.0.0b1 (May 21, 2019 GMT)
 
 * Added tasks into gulp for deploying on production.
