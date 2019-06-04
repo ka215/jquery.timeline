@@ -26,9 +26,9 @@
     "esdoc": "./node_modules/.bin/esdoc; open ./docs/index.html",
     "test": "mocha ./test/timeline-spec.js"
   },
-  "style": "dist/timeline.min.css",
+  "style": "dist/jquery.timeline.min.css",
   "sass": "src/timeline.scss",
-  "main": "dist/timeline.min.js",
+  "main": "src/timeline.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ka215/jquery.timeline.git"
@@ -84,6 +84,7 @@
     "node": ">=6"
   },
   "files": [
-    "lib"
+    "dist/",
+    "src/"
   ]
 }
