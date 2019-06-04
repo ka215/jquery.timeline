@@ -208,6 +208,56 @@ const Selector = {
     DEFAULT_EVENTS            : ".timeline-events"
 }
 
+const mapData = (() => {
+    const storeData = {}
+    let id = 1
+    return {
+        set( element, key, data ) {
+            if ( typeof element.key === 'undefined' ) {
+                element.key = { key, id }
+                id++
+            }
+            
+            storeData[element.key.id] = data
+        },
+        get( element, key ) {
+            if ( ! element || typeof element.key === 'undefined' ) {
+                return null
+            }
+            
+            const keyProperties = element.key
+            if ( keyProperties.key === key ) {
+                return storeData[keyProperties.id]
+            }
+            
+            return null
+        },
+        delete( element, key ) {
+            if ( typeof element.key === 'undefined' ) {
+                return
+            }
+            
+            const keyProperties = element.key
+            if ( keyProperties.key === key ) {
+                delete storeData[keyProperties.id]
+                delete element.key
+            }
+        }
+    }
+})()
+
+const Data = {
+    setData( instance, key, data ) {
+        mapData.set( instance, key, data )
+    },
+    getData( instance, key ) {
+        return mapData.get( instance, key )
+    },
+    removeData( instance, key ) {
+        mapData.delete( instance, key )
+    }
+}
+
 /* ----------------------------------------------------------------------------------------------------------------
  * Plugin Core Class
  * ----------------------------------------------------------------------------------------------------------------
@@ -222,6 +272,7 @@ class Timeline {
         this._isCompleted   = false
         this._isShown       = false
         this._instanceProps = {}
+        Data.setData( element, DATA_KEY, this )
     }
     
     // Getters
@@ -383,12 +434,13 @@ class Timeline {
         // _props.visibleHeight // The height of the timeline that will display (:> 表示されるタイムラインの縦幅
         
         switch ( true ) {
-            //case /^dec(ade|ennium)$/i.test( _opts.scale ):
-            //case /^lustrum$/i.test( _opts.scale ):
+            case /^dec(ade|ennium)$/i.test( _opts.scale ):
+            case /^lustrum$/i.test( _opts.scale ):
             case /^years?$/i.test( _opts.scale ):
             case /^months?$/i.test( _opts.scale ):
             case /^weeks?$/i.test( _opts.scale ):
             case /^(|week)days?$/i.test( _opts.scale ):
+            //case /^hours?$/i.test( _opts.scale ):
                 _props.isVLS = true
                 break
             default:
@@ -399,7 +451,7 @@ class Timeline {
         
         if ( _props.isVLS ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
-            let _temp       = this._verifyScale( _opts.scale ),
+            let _temp       = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS ),
                 _values     = Object.values( _temp ),
                 _averageVar = this.numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average value within the range
                 _totalWidth = 0,
@@ -433,7 +485,7 @@ class Timeline {
             _props.fullwidth     = _totalWidth
         } else {
             // In case of fixed length scale (:> 固定長スケールの場合
-            _props.scale         = this._verifyScale( _opts.scale )
+            _props.scale         = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS )
             _props.grids         = Math.ceil( ( _props.end - _props.begin ) / _props.scale )
             _props.variableScale = null
             _props.fullwidth     = _props.grids * _props.scaleSize
@@ -465,6 +517,7 @@ console.log( '!_calcVars::return:', _props )
      */
     _getPluggableDatetime( key, round_type = '' ) {
         let _opts        = this._config,
+            _props       = this._instanceProps,
             _date        = null,
             getFirstDate = ( dateObj, scale ) => {
                 let _tmpDate
@@ -552,7 +605,7 @@ console.log( '!_calcVars::return:', _props )
                     if ( /^months?$/i.test( _higherScale ) ) {
                         _ms = 30.44 * 24 * 60 * 60 * 1000
                     } else {
-                        _ms = this._verifyScale( _higherScale )
+                        _ms = this.verifyScale( _higherScale, _date.getTime(), _date.getTime(), false )
                     }
                     _date.setTime( _date.getTime() + ( _ms * _opts.range ) )
                 } else {
@@ -562,7 +615,7 @@ console.log( '!_calcVars::return:', _props )
                     if ( /^months?$/i.test( _opts.scale ) ) {
                         _ms = 30.44 * 24 * 60 * 60 * 1000
                     } else {
-                        _ms = this._verifyScale( _opts.scale )
+                        _ms = this.verifyScale( _opts.scale, _date.getTime(), _date.getTime(), false )
                     }
                     _date.setTime( _date.getTime() + ( _ms * LimitScaleGrids[this._filterScaleKeyName( _opts.scale )] ) )
                 }
@@ -629,111 +682,6 @@ console.log( '!_calcVars::return:', _props )
             fixed_rows = _opts.sidebar.list.length
         }
         return fixed_rows > 0 ? fixed_rows : 1
-    }
-    
-    /*
-     * @private: Verify the allowed scale, then retrieve that scale's millisecond if allowed (:> 許容スケールかを確認し、許可時はそのスケールのミリ秒を取得する
-     */
-    _verifyScale( scale ) {
-        let _opts   = this._config,
-            _props  = this._instanceProps,
-            _ms     = -1
-        
-        if ( typeof scale === 'undefined' || typeof scale !== 'string' ) {
-            return false
-        }
-        switch ( true ) {
-            case /^millisec(|ond)s?$/i.test( scale ):
-                // Millisecond (:> ミリ秒
-                _ms = 1
-                break
-            case /^seconds?$/i.test( scale ):
-                // Second (:> 秒
-                _ms = 1000
-                break
-            case /^minutes?$/i.test( scale ):
-                // Minute (:> 分
-                _ms = 60 * 1000
-                break
-            case /^quarter-?(|hour)$/i.test( scale ):
-                // Quarter of an hour (:> 15分
-                _ms = 15 * 60 * 1000
-                break
-            case /^half-?(|hour)$/i.test( scale ):
-                // Half an hour (:> 30分
-                _ms = 30 * 60 * 1000
-                break
-            case /^hours?$/i.test( scale ):
-                // Hour (:> 時（時間）
-                _ms = 60 * 60 * 1000
-                break
-            case /^days?$/i.test( scale ):
-                // Day (is the variable length scale by DST) (:> 日 (サマータイムによる可変長スケール)
-console.log( `!_verifyScale::${_opts.scale}:`, _props )
-                if ( _props.isVLS ) {
-console.log( `!!_verifyScale::${scale}:`, this._diffDate( _props.begin, _props.end, scale ) )
-                    return this._diffDate( _props.begin, _props.end, scale )
-                } else {
-console.log( `!!_verifyScale::${scale}:`, 24 * 60 * 60 * 1000 )
-                    _ms = 24 * 60 * 60 * 1000
-                }
-                break
-            case /^weeks?$/i.test( scale ):
-                // Week (is the variable length scale by DST) (:> 週 (サマータイムによる可変長スケール)
-console.log( `!_verifyScale::${_opts.scale}:`, _props )
-                if ( _props.isVLS ) {
-console.log( `!!_verifyScale::${scale}:`, this._diffDate( _props.begin, _props.end, scale ) )
-                    return this._diffDate( _props.begin, _props.end, scale )
-                } else {
-console.log( `!!_verifyScale::${scale}:`, 7 * 24 * 60 * 60 * 1000 )
-                    _ms = 7 * 24 * 60 * 60 * 1000
-                }
-                break
-            case /^months?$/i.test( scale ):
-                // Month (is the variable length scale) (:> 月（可変長スケール）
-//console.log( '!_verifyScale::month:', this._instanceProps, _opts.scale )
-                if ( _props.isVLS ) {
-                    return this._diffDate( _props.begin, _props.end, scale )
-                } else {
-                    _ms = 30.44 * 24 * 60 * 60 * 1000
-                    break
-                }
-            case /^years?$/i.test( scale ):
-                // Year (is the variable length scale) (:> 年（可変長スケール）
-                if ( _props.isVLS ) {
-                    return this._diffDate( _props.begin, _props.end, scale )
-                } else {
-                    _ms = 365.25 * 24 * 60 * 60 * 1000
-                    break
-                }
-            case /^lustrum$/i.test( scale ):
-                // Lustrum (is the variable length scale, but currently does not support) (:> 五年紀 (可変長スケールだが現在サポートしてない)
-                // 5y = 1826 or 1827; 1826 * 24 * 60 * 60 = 15766400, 1827 * 24 * 60 * 60 = 157852800 | avg.= 157788000
-                //_ms = ( ( 3.1536 * Math.pow( 10, 8 ) ) / 2 ) * 1000 // <--- Useless by info of wikipedia
-                _ms = 157788000 * 1000
-                break
-            case /^dec(ade|ennium)$/i.test( scale ):
-                // Decade (is the variable length scale, but currently does not support) (:> 十年紀 (可変長スケールだが現在サポートしてない)
-                // 10y = 3652 or 3653; 3652 * 24 * 60 * 60 = 315532800, 3653 * 24 * 60 * 60 = 157852800 | avg. = 315576000
-                // _ms = ( 3.1536 * Math.pow( 10, 8 ) ) * 1000 // <--- Useless by info of wikipedia
-                _ms = 315576000 * 1000
-                break
-            case /^century$/i.test( scale ):
-                // Century (:> 世紀（百年紀）
-                // 100y = 36525; 36525 * 24 * 60 * 60 = 3155760000
-                _ms = 3155760000 * 1000
-                break
-            case /^millenniums?|millennia$/i.test( scale ):
-                // Millennium (:> 千年紀
-                // 100y = 365250
-                //_ms = ( 3.1536 * Math.pow( 10, 10 ) ) * 1000
-                _ms = 3155760000 * 10 * 1000
-                break
-            default:
-                console.warn( 'Specified an invalid scale.' )
-                _ms = -1
-        }
-        return _ms > 0 ? _ms : false
     }
     
     /*
@@ -1106,8 +1054,8 @@ console.log( '!_createRuler:', line_scale, _line_grids )
                 break
         }
         
-        // グリッド幅の起点となるスケールは _opts.scale なので、それに合わせてサイズを計算する
-console.log( '!_filterVariableScale:', _opts.scale, target_scale, scales )
+        // グリッド幅の起点となるスケールは _opts.scale で、表示用にフィルタされるスケールは target_scale なので、それに合わせてサイズを計算する
+console.log( `!_filterVariableScale::${_opts.scale} -> ${target_scale}:`, scales )
         for ( let _dt of Object.keys( scales ) ) {
             let grid_size = this.numRound( ( scales[_dt] * _props.scaleSize ) / _baseVar, 2 ),
                 _newKey   = null,
@@ -1148,28 +1096,29 @@ console.log( '!_filterVariableScale:', _opts.scale, target_scale, scales )
                 case /^weeks?$/i.test( target_scale ):
                     _temp = this.getWeek( _arr[0] )
                     _newKey = `${_tmpDt.getFullYear()},${_temp}`
+//console.log( `!!_filterVariableScale::${target_scale}:`, _arr, _tmpDt, _newKey )
                     break
                 case /^weekdays?$/i.test( target_scale ):
                     _temp = _tmpDt.getDay()
-                    _newKey = `${_dt},${_temp}`
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()},${_temp}`
                     break
                 case /^days?$/i.test( target_scale ):
-                    _newKey = `${_dt}`
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()}`
                     break
                 case /^hours?$/i.test( target_scale ):
-                    _newKey = `${_dt} ${_tmpDt.getHours()}`
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()} ${_tmpDt.getHours()}`
                     //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0`] = grid_size
                     break
                 case /^minutes?$/i.test( target_scale ):
-                    _newKey = `${_dt} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}`
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}`
                     //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0:00`] = grid_size
                     break
                 case /^seconds?$/i.test( target_scale ):
-                    _newKey = `${_dt} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}:${_tmpDt.getSeconds()}`
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}:${_tmpDt.getSeconds()}`
                     //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}/1 0:00:00`] = grid_size
                     break
                 default:
-                    _newKey = `${_dt} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}:${_tmpDt.getSeconds()}.${_tmpDt.getMilliseconds()}`
+                    _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()} ${_tmpDt.getHours()}:${_tmpDt.getMinutes()}:${_tmpDt.getSeconds()}.${_tmpDt.getMilliseconds()}`
                     //retObj[`${this.getCorrectDatetime( _dt ).getFullYear()}/${this.getCorrectDatetime( _dt ).getMonth() + 1}`] = grid_size
                     break
             }
@@ -1255,12 +1204,30 @@ console.log( '!!!_filterVariableScale::return:', retObj )
             _ruler_lines = $('<div></div>', { class: ClassName.TIMELINE_RULER_LINES, style: `width:100%;height:${line_height}px;` })
         
         for ( let _key of Object.keys( _line_grids ) ) {
-            //let _item_width      = /^(year|month)s?$/i.test( _opts.scale ) ? _line_grids[_key] : _line_grids[_key] * _props.scaleSize,
             let _item_width      = _line_grids[_key],
                 _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
-                _ruler_string    = this.getLocaleString( _key, line_scale, locale, format ),
-                _data_ruler_item = ''
-//console.log( '!_createRulerContent:', _key, _line_grids[_key], line_scale, locale, format, _item_width, _ruler_string )
+                _ruler_string    = '',
+                _data_ruler_item = '',
+                _temp
+            
+            switch ( true ) {
+                case /^(year|month)s?$/i.test( _opts.scale ):
+                    _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
+                    break
+/*
+                case /^weeks?$/i.test( _opts.scale ):
+                    _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
+                    break
+                case /^days?$/i.test( _opts.scale ):
+                    _temp = _key.split(',')
+                    _ruler_string = this.getLocaleString( _temp[0], line_scale, locale, format )
+                    break
+*/
+                default:
+                    _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
+                    break
+            }
+console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _line_grids[_key], locale, format, _item_width, _ruler_string )
             
             _data_ruler_item = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
             _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string )
@@ -1352,153 +1319,6 @@ console.log( '!!!_filterVariableScale::return:', retObj )
         }
         
         return _tl_footer
-    }
-    
-    /*
-     * @private: Acquire the difference between two dates with the specified scale value (:> 2つの日付の差分を指定したスケール値で取得する
-     */
-    _diffDate( date1, date2, scale = 'millisecond', absval = false ) {
-        //let _opts  = this._config,
-        let _dt1   = this.supplement( null, date1 ),
-            _dt2   = this.supplement( null, date2 ),
-            diffMS = 0,
-            retval = false,
-            lastDayOfMonth = ( dateObj ) => {
-                let _tmp = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
-                _tmp.setTime( _tmp.getTime() - 1 )
-                return _tmp.getDate()
-            },
-            isLeapYear = ( dateObj ) => {
-                let _tmp = new Date( dateObj.getFullYear(), 0, 1 ),
-                    sum  = 0
-                
-                for ( let i = 0; i < 12; i++ ) {
-                    _tmp.setMonth(i)
-                    sum += lastDayOfMonth( _tmp )
-                }
-                return sum == 365 ? false : true
-            }
-        
-        if ( ! _dt1 || ! _dt2 ) {
-            console.warn( 'Cannot parse date because invalid format or undefined.' )
-            return false
-        }
-        
-        diffMS = _dt2 - _dt1
-        
-        if ( absval ) {
-            diffMS = Math.abs( diffMS )
-        }
-        
-        let _bd = new Date( _dt1 ),
-            _ed = new Date( _dt2 ),
-            _dy = _ed.getFullYear() - _bd.getFullYear(),
-            _m  = {}
-        
-        switch ( true ) {
-            case /^years?$/i.test( scale ):
-                if ( _dy > 0 ) {
-                    for ( let i = 0; i <= _dy; i++ ) {
-                        let _cd = new Date( _bd.getFullYear() + i, 0, 1 )
-                        _m[`${_bd.getFullYear() + i}`] = isLeapYear( _cd ) ? 366 : 365
-                    }
-                } else {
-                    _m[`${_bd.getFullYear()}`] = isLeapYear( _bd ) ? 366 : 365
-                }
-                retval = _m
-                break
-            case /^months?$/i.test( scale ):
-                if ( _dy > 0 ) {
-                    for ( let i = _bd.getMonth(); i < 12; i++ ) {
-                        let _cd = new Date( _bd.getFullYear(), i, 1 )
-                        _m[`${_bd.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
-                    }
-                    if ( _dy > 1 ) {
-                        for ( let y = 1; y < _dy; y++ ) {
-                            for ( let i = 0; i < 12; i++ ) {
-                                let _cd = new Date( _bd.getFullYear() + y, i, 1 )
-                                _m[`${_bd.getFullYear() + y}/${i + 1}`] = lastDayOfMonth( _cd )
-                            }
-                        }
-                    }
-                    for ( let i = 0; i <= _ed.getMonth(); i++ ) {
-                        let _cd = new Date( _ed.getFullYear(), i, 1 )
-                        _m[`${_ed.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
-                    }
-                } else {
-                    for ( let i = _bd.getMonth(); i <= _ed.getMonth(); i++ ) {
-                        let _cd = new Date( _bd.getFullYear(), i, 1 )
-                        _m[`${_bd.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
-                    }
-                }
-                retval = _m
-                break
-            case /^weeks?$/i.test( scale ): {
-                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
-                    _cw = this.getWeek( _cd ),
-                    _nd = new Date( _cd ),
-                    _pd = new Date( _cd ),
-                    _newKey = `${_cd.getFullYear()},${_cw}`
-                
-                _nd.setDate( _nd.getDate() + 1 )
-                _pd.setDate( _pd.getDate() - 1 )
-                _m[_newKey] = ( _cd - _pd ) / ( 60 * 60 * 1000 )
-                while ( _nd.getTime() <= _ed.getTime() ) {
-                    _nd.setDate( _nd.getDate() + 1 )
-                    _cd.setDate( _cd.getDate() + 1 )
-                    _cw = this.getWeek( _cd )
-                    let _newKey = `${_cd.getFullYear()},${_cw}`
-                    
-                    if ( _m.hasOwnProperty( _newKey ) ) {
-                        _m[_newKey] += ( _nd - _cd ) / ( 60 * 60 * 1000 )
-                    } else {
-                        _m[_newKey] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
-                    }
-                }
-console.log( `_diffDate::${scale}:`, diffMS, _m )
-                retval = _m
-                //retval = Math.ceil( diffMS / ( 7 * 24 * 60 * 60 * 1000 ) )
-                break
-            }
-            case /^(|week)days?$/i.test( scale ): {
-//console.log( '_diffDate::', diffMS, _bd, _ed, _dy )
-                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
-                    _nd = new Date( _cd ),
-                    _pd = new Date( _cd ),
-                    _id = 0
-                
-                _nd.setDate( _nd.getDate() + 1 )
-                _pd.setDate( _pd.getDate() - 1 )
-                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _cd - _pd ) / ( 60 * 60 * 1000 )
-//console.log( '!_diffDate::_prev:', _pd, '_current:', _cd, '_next:', _nd )
-                while ( _nd.getTime() <= _ed.getTime() ) {
-                    _nd.setDate( _nd.getDate() + 1 )
-                    _cd.setDate( _cd.getDate() + 1 )
-//console.log( '!!_diffDate::', _nd, _cd, _diffDateMS )
-                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
-                    _id++
-                }
-//console.log( '!!!_diffDate::', _m )
-                retval = _m
-                //retval = Math.ceil( diffMS / ( 24 * 60 * 60 * 1000 ) )
-                break
-            }
-            case /^hours?$/i.test( scale ):
-                retval = Math.ceil( diffMS / ( 60 * 60 * 1000 ) )
-                break
-            case /^minutes?$/i.test( scale ):
-                retval = Math.ceil( diffMS / ( 60 * 1000 ) )
-                break
-            case /^seconds?$/i.test( scale ):
-                retval = Math.ceil( diffMS / 1000 )
-                break
-            default:
-                retval = diffMS
-                break
-        }
-//console.log( '!_diffDate:', retval )
-        
-        return retval
     }
     
     /*
@@ -2371,7 +2191,7 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
             if ( ! moveOpts.hasOwnProperty('shift') || moveOpts.shift !== false ) {
                 moveOpts.shift = true
             }
-            if ( ! moveOpts.hasOwnProperty('scale') || ! this._verifyScale( moveOpts.scale ) ) {
+            if ( ! moveOpts.hasOwnProperty('scale') || ! this.verifyScale( moveOpts.scale ) ) {
                 moveOpts.scale = _opts.scale
             }
             if ( ! moveOpts.hasOwnProperty('range') || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
@@ -2387,7 +2207,7 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
                 begin_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() - parseInt( moveOpts.range, 10 ) ) )
                 break
             default:
-                begin_date = new Date( _tmpDate.getTime() - ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                begin_date = new Date( _tmpDate.getTime() - ( this.verifyScale( moveOpts.scale, _tmpDate.getTime(), _tmpDate.getTime(), false ) * parseInt( moveOpts.range, 10 ) ) )
                 break
         }
         newOpts.startDatetime = begin_date.toString()
@@ -2401,7 +2221,7 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
                     end_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() - parseInt( moveOpts.range, 10 ) ) )
                     break
                 default:
-                    end_date = new Date( _tmpDate.getTime() - ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                    end_date = new Date( _tmpDate.getTime() - ( this.verifyScale( moveOpts.scale, _tmpDate.getTime(), _tmpDate.getTime(), false ) * parseInt( moveOpts.range, 10 ) ) )
                     break
             }
             newOpts.endDatetime = end_date.toString()
@@ -2440,7 +2260,7 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
             if ( ! moveOpts.hasOwnProperty('shift') || moveOpts.shift !== false ) {
                 moveOpts.shift = true
             }
-            if ( ! moveOpts.hasOwnProperty('scale') || ! this._verifyScale( moveOpts.scale ) ) {
+            if ( ! moveOpts.hasOwnProperty('scale') || ! this.verifyScale( moveOpts.scale ) ) {
                 moveOpts.scale = _opts.scale
             }
             if ( ! moveOpts.hasOwnProperty('range') || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
@@ -2457,7 +2277,7 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
                 end_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() + parseInt( moveOpts.range, 10 ) ) )
                 break
             default:
-                end_date = new Date( _tmpDate.getTime() + ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                end_date = new Date( _tmpDate.getTime() + ( this.verifyScale( moveOpts.scale, _tmpDate.getTime(), _tmpDate.getTime(), false ) * parseInt( moveOpts.range, 10 ) ) )
                 break
         }
         newOpts.endDatetime = end_date.toString()
@@ -2471,7 +2291,7 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
                     begin_date = new Date( _tmpDate.setMonth( _tmpDate.getMonth() + parseInt( moveOpts.range, 10 ) ) )
                     break
                 default:
-                    begin_date = new Date( _tmpDate.getTime() + ( this._verifyScale( moveOpts.scale ) * parseInt( moveOpts.range, 10 ) ) )
+                    begin_date = new Date( _tmpDate.getTime() + ( this.verifyScale( moveOpts.scale, _tmpDate.getTime(), _tmpDate.getTime(), false ) * parseInt( moveOpts.range, 10 ) ) )
                     break
             }
             newOpts.startDatetime = begin_date.toString()
@@ -3321,36 +3141,46 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
     }
     
     /*
-     * Get the correct datetime with remapping to that if the year is 0 - 99
+     * This method is able to get the correct datetime instead of built in "new Date" on javascript. (:> JavaScriptビルトインメソッドのnew Dateに代わって正確な日時を取得する
+     * That is remapping to correct year if the year is 0 - 99, and supporting years BCE. (:> 0 - 99年の場合に年をリマッピングし、紀元前の年にも対応する
      *
-     * @param string datetime_str (required)
+     * @param mixed datetime_str (required)
      *
      * @return Date Object, or null if failed
      */
     getCorrectDatetime( datetime_str ) {
         let normalizeDate = ( dateString ) => {
+                let isMinus = /^-/.test( dateString ),
+                    _m = isMinus ? '-' : '',
+                    _d
+                
+                if ( isMinus ) {
+                    dateString = dateString.replace(/^-/, '')
+                }
                 // For Safari, IE
-                let _d = dateString.replace(/-/g, '/')
-                return /^\d{1,4}\/\d{1,2}$/.test( _d ) ? `${_d}/1` : _d
+                _d = dateString.replace(/-/g, '/')
+                return /^\d{1,4}\/\d{1,2}$/.test( _d ) ? `${_m}${_d}/1` : `${_m}${_d}`
             },
             getDateObject = ( datetime_str ) => {
                 let _chk_str = normalizeDate( datetime_str ),
+                    _raise   = 0,
                     _ymd, _his, _parts, _date
                 
                 switch ( true ) {
-                    case /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))(| \d{1,2}(|:\d{1,2}(|:\d{1,2})))$/i.test( _chk_str ): {
+                    case /^-?\d{1,}\/\d{1,2}(|\/\d{1,2})(| \d{1,2}(|:\d{1,2}(|:\d{1,2})))$/i.test( _chk_str ): {
                         [ _ymd, _his ] = _chk_str.split(' ')
                         _parts = _ymd.split('/')
                         if ( _parts[1] ) {
+                            _raise = Math.floor( _parts[1] / 13 )
                             _parts[1] = parseInt( _parts[1], 10 ) - 1 // to month index
                         }
                         if ( _his ) {
                             _parts.push( ..._his.split(':') )
                         }
-                        _date = new Date( new Date( ..._parts ).setFullYear( parseInt( _parts[0], 10 ) ) )
+                        _date = new Date( new Date( ..._parts ).setFullYear( parseInt( _parts[0], 10 ) + _raise ) )
                         break
                     }
-                    case /^\d+$/.test( _chk_str ):
+                    case /^-?\d+$/.test( _chk_str ):
                         _date = new Date( 1, 0, 1 ).setFullYear( parseInt( _chk_str, 10 ) )
                         break
                     default:
@@ -3359,27 +3189,30 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
                 } 
                 return _date
             },
-            _checkDate = getDateObject( datetime_str )
+            _checkDate
         
-        if ( isNaN( _checkDate ) || this.is_empty( _checkDate ) ) {
+        switch ( typeof datetime_str ) {
+            case 'number':
+                _checkDate = new Date( datetime_str )
+                break
+            case 'string':
+                _checkDate = getDateObject( datetime_str )
+                break
+            case 'object':
+                if ( datetime_str instanceof Date ) {
+                    _checkDate = datetime_str
+                }
+                break
+        }
+        
+        if ( isNaN( _checkDate ) || ! _checkDate ) {
             console.warn( `"${datetime_str}" Cannot parse date because invalid format.` )
             return null
         }
-        /*
-        let _tempDate = new Date( normalizeDate( datetime_str ) ),
-            _chk_date = datetime_str.split( /-|\// )
         
-        if ( parseInt( _chk_date[0], 10 ) < 100 ) {
-            // Remapping if year is 0-99
-            _tempDate.setFullYear( parseInt( _chk_date[0], 10 ) )
-        }
-        
-        return _tempDate
-        */
-        if ( typeof _checkDate !== 'object' ) {
+        if ( _checkDate instanceof Date === false ) {
             _checkDate = new Date( _checkDate )
         }
-//console.log( '!getCorrectDatetime::input:', datetime_str, '::output:', _checkDate, typeof _checkDate )
         return _checkDate
     }
     
@@ -3409,54 +3242,415 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
     }
     
     /*
+     * Acquire the difference between two dates with the specified scale value (:> 2つの日付の差分を指定したスケール値で取得する
+     *
+     * @param mixed date1 (required; integer as milliseconds or object instanceof Date)
+     * @param mixed date2 (required; integer as milliseconds or object instanceof Date)
+     * @param string scale (optional; defaults to 'millisecond')
+     * @param bool absval (optional; defaults to false)
+     *
+     * @return mixed
+     */
+    diffDate( date1, date2, scale = 'millisecond', absval = false ) {
+        let _dt1   = date1 === undefined ? null : date1,
+            _dt2   = date2 === undefined ? null : date2,
+            diffMS = 0,
+            retval = false,
+            lastDayOfMonth = ( dateObj ) => {
+                let _tmp = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                _tmp.setTime( _tmp.getTime() - 1 )
+                return _tmp.getDate()
+            },
+            isLeapYear = ( dateObj ) => {
+                let _tmp = new Date( dateObj.getFullYear(), 0, 1 ),
+                    sum  = 0
+                
+                for ( let i = 0; i < 12; i++ ) {
+                    _tmp.setMonth(i)
+                    sum += lastDayOfMonth( _tmp )
+                }
+                return sum == 365 ? false : true
+            }
+        
+        if ( ! _dt1 || ! _dt2 ) {
+            console.warn( 'Cannot parse date to get difference because undefined.' )
+            return false
+        }
+        
+        diffMS = _dt2 - _dt1
+        
+        if ( isNaN( diffMS ) ) {
+            console.warn( 'Cannot parse date to get difference because invalid format.' )
+            return false
+        }
+        if ( absval ) {
+            diffMS = Math.abs( diffMS )
+        }
+        
+        let _bd = _dt1 instanceof Date ? _dt1 : new Date( _dt1 ),
+            _ed = _dt2 instanceof Date ? _dt2 : new Date( _dt2 ),
+            _dy = _ed.getFullYear() - _bd.getFullYear(),
+            _m  = {}
+        
+        switch ( true ) {
+            case /^millenniums?|millennia$/i.test( scale ): {
+                // return { "millennium-number": years,... }
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _bm = Math.ceil( (_by == 0 ? 1 : _by) / 1000 ), // millennium of first ordinal
+                    _em = Math.ceil( (_ey == 0 ? 1 : _ey) / 1000 ),
+                    _cm = _bm
+                
+                _m[_bm] = _em - _bm > 0 ? (_bm * 1000) - _by : _ey - _by
+                _cm++
+                while ( _cm <= _em ) {
+                    _m[_cm] = _em - _cm > 0 ? 1000 : _ey - ((_cm - 1) * 1000)
+                    _cm++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^century$/i.test( scale ): {
+                // return { "century-number": years,... }
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _bc = Math.ceil( (_by == 0 ? 1 : _by) / 100 ), // century of first ordinal
+                    _ec = Math.ceil( (_ey == 0 ? 1 : _ey) / 100 ),
+                    _cc = _bc
+                
+                _m[_bc] = _ec - _bc > 0 ? (_bc * 100) - _by : _ey - _by
+                _cc++
+                while ( _cc <= _ec ) {
+                    _m[_cc] = _ec - _cc > 0 ? 100 : _ey - ((_cc - 1) * 100)
+                    _cc++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^dec(ade|ennium)$/i.test( scale ): {
+                // return { "decade-number": years,... } << current
+                // return { "decade-number": days,... }
+                let _by  = _bd.getFullYear(),
+                    _ey  = _ed.getFullYear(),
+                    _bdc = Math.ceil( (_by == 0 ? 1 : _by) / 10 ), // decade of first ordinal
+                    _edc = Math.ceil( (_ey == 0 ? 1 : _ey) / 10 ),
+                    _cdc = _bdc
+                
+                _m[_bdc] = _edc - _bdc > 0 ? (_bdc * 10) - _by : _ey - _by
+                _cdc++
+                while ( _cdc <= _edc ) {
+                    _m[_cdc] = _edc - _cdc > 0 ? 10 : _ey - ((_cdc - 1) * 10)
+                    _cdc++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^lustrum$/i.test( scale ): {
+                // return { "lustrum-number": years,... } << current
+                // return { "lustrum-number": days,... }
+                let _by  = _bd.getFullYear(),
+                    _ey  = _ed.getFullYear(),
+                    _bl = Math.ceil( (_by == 0 ? 1 : _by) / 5 ), // decade of first ordinal
+                    _el = Math.ceil( (_ey == 0 ? 1 : _ey) / 5 ),
+                    _cl = _bl
+                
+                _m[_bl] = _el - _bl > 0 ? (_bl * 5) - _by : _ey - _by
+                _cl++
+                while ( _cl <= _el ) {
+                    _m[_cl] = _el - _cl > 0 ? 5 : _ey - ((_cl - 1) * 5)
+                    _cl++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^years?$/i.test( scale ):
+                // return { "year": days,... }
+                if ( _dy > 0 ) {
+                    for ( let i = 0; i <= _dy; i++ ) {
+                        let _cd = new Date( _bd.getFullYear() + i, 0, 1 )
+                        _m[`${_bd.getFullYear() + i}`] = isLeapYear( _cd ) ? 366 : 365
+                    }
+                } else {
+                    _m[`${_bd.getFullYear()}`] = isLeapYear( _bd ) ? 366 : 365
+                }
+                retval = _m
+                break
+            case /^months?$/i.test( scale ):
+                // return { "year/month": days,... }
+                if ( _dy > 0 ) {
+                    for ( let i = _bd.getMonth(); i < 12; i++ ) {
+                        let _cd = new Date( _bd.getFullYear(), i, 1 )
+                        _m[`${_bd.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
+                    }
+                    if ( _dy > 1 ) {
+                        for ( let y = 1; y < _dy; y++ ) {
+                            for ( let i = 0; i < 12; i++ ) {
+                                let _cd = new Date( _bd.getFullYear() + y, i, 1 )
+                                _m[`${_bd.getFullYear() + y}/${i + 1}`] = lastDayOfMonth( _cd )
+                            }
+                        }
+                    }
+                    for ( let i = 0; i <= _ed.getMonth(); i++ ) {
+                        let _cd = new Date( _ed.getFullYear(), i, 1 )
+                        _m[`${_ed.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
+                    }
+                } else {
+                    for ( let i = _bd.getMonth(); i <= _ed.getMonth(); i++ ) {
+                        let _cd = new Date( _bd.getFullYear(), i, 1 )
+                        _m[`${_bd.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
+                    }
+                }
+                retval = _m
+                break
+            case /^weeks?$/i.test( scale ): {
+                // return { "year,week": hours,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
+                    _cw = this.getWeek( _cd ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _newWeek = `${_cd.getFullYear()},${_cw}`
+                
+                _nd.setDate( _nd.getDate() + 1 )
+                _pd.setDate( _pd.getDate() - 1 )
+                _m[_newWeek] = ( _cd - _pd ) / ( 60 * 60 * 1000 ) // hours of first day
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setDate( _nd.getDate() + 1 )
+                    _cd.setDate( _cd.getDate() + 1 )
+                    _cw = this.getWeek( _cd )
+                    let _newWeekKey = `${_cd.getFullYear()},${_cw}`
+                    
+                    if ( _m.hasOwnProperty( _newWeekKey ) ) {
+                        _m[_newWeekKey] += ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    } else {
+                        _m[_newWeekKey] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    }
+                }
+                retval = _m
+                break
+            }
+            case /^(|week)days?$/i.test( scale ): {
+                // return { "year/month/day": hours,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _id = 0
+                
+                _nd.setDate( _nd.getDate() + 1 )
+                _pd.setDate( _pd.getDate() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _cd - _pd ) / ( 60 * 60 * 1000 )
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setDate( _nd.getDate() + 1 )
+                    _cd.setDate( _cd.getDate() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    _id++
+                }
+                retval = _m
+                break
+            }
+            case /^hours?$/i.test( scale ): {
+                // return { "year/month/day hour": minutes,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _total = 0
+                
+                _nd.setHours( _nd.getHours() + 1 )
+                _pd.setHours( _pd.getHours() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}`] = ( _cd - _pd ) / ( 60 * 1000 )
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setHours( _nd.getHours() + 1 )
+                    _cd.setHours( _cd.getHours() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}`] = ( _nd - _cd ) / ( 60 * 1000 )
+                    _total += _nd - _cd // nearly equal diffMS
+                }
+                retval = _m
+                // return number of hours
+                // retval = Math.ceil( diffMS / ( 60 * 60 * 1000 ) )
+                break
+            }
+            case /^minutes?$/i.test( scale ): {
+                // return { "year/month/day hour:minute": seconds,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours(), _bd.getMinutes() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _total = 0
+                
+                _nd.setMinutes( _nd.getMinutes() + 1 )
+                _pd.setMinutes( _pd.getMinutes() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}`] = ( _cd - _pd ) / 1000
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setMinutes( _nd.getMinutes() + 1 )
+                    _cd.setMinutes( _cd.getMinutes() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}`] = ( _nd - _cd ) / 1000
+                    _total += _nd - _cd // nearly equal diffMS
+                }
+                retval = _m
+                // return number of minutes
+                // retval = Math.ceil( diffMS / ( 60 * 1000 ) )
+                break
+            }
+            case /^seconds?$/i.test( scale ): {
+                // return { "year/month/day hour:minute:second": milliseconds,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours(), _bd.getMinutes(), _bd.getSeconds() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _total = 0
+                
+                _nd.setSeconds( _nd.getSeconds() + 1 )
+                _pd.setSeconds( _pd.getSeconds() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}:${_cd.getSeconds()}`] = _cd - _pd
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setSeconds( _nd.getSeconds() + 1 )
+                    _cd.setSeconds( _cd.getSeconds() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}:${_cd.getSeconds()}`] = _nd - _cd
+                    _total += _nd - _cd // nearly equal diffMS
+                }
+                retval = _m
+                // return number of seconds
+                //retval = Math.ceil( diffMS / 1000 )
+                break
+            }
+            default:
+                // return number of milliseconds
+                retval = diffMS
+                break
+        }
+        
+        return retval
+    }
+    
+    /*
+     * Verify whether is allowed scale in the plugin. (:> 許容スケールかを確認します。
+     * Then retrieves that values of intervals on the scale if the scale is available and given arguments of date range. (:> 有効スケールかつ日付範囲引数が与えられた場合、対象スケールの間隔値を取得します
+     *
+     * @param string scale (required)
+     * @param int begin (optional; begin of range as unit millisecs that got by `Date.getTime()`)
+     * @param int end (optional; end of range as unit millisecs that got by `Date.getTime()`)
+     * @param bool isVLS (optional; whether is variable length scale, defaults to false)
+     *
+     * @return mixed (boolean if no arguments are given after the first argument)
+     */
+    verifyScale( scale, begin = null, end = null, isVLS = false ) {
+        //let _opts   = this._config,
+        //    _props  = this._instanceProps,
+        let _ms    = -1,
+            isBool = this.is_empty( begin ) || this.is_empty( end ),
+            retval = isVLS ? this.diffDate( begin, end, scale ) : false
+        
+        if ( typeof scale === 'undefined' || typeof scale !== 'string' ) {
+            return false
+        }
+        switch ( true ) {
+            case /^millisec(|ond)s?$/i.test( scale ):
+                // Millisecond (:> ミリ秒
+                _ms = 1
+                break
+            case /^seconds?$/i.test( scale ):
+                // Second (:> 秒
+                _ms = 1000
+                break
+            case /^minutes?$/i.test( scale ):
+                // Minute (:> 分
+                _ms = 60 * 1000
+                break
+            case /^quarter-?(|hour)$/i.test( scale ):
+                // Quarter of an hour (:> 15分
+                _ms = 15 * 60 * 1000
+                break
+            case /^half-?(|hour)$/i.test( scale ):
+                // Half an hour (:> 30分
+                _ms = 30 * 60 * 1000
+                break
+            case /^hours?$/i.test( scale ):
+                // Hour (:> 時（時間）
+                _ms = 60 * 60 * 1000
+                break
+            case /^days?$/i.test( scale ):
+                // Day (is the variable length scale by DST) (:> 日 (サマータイムによる可変長スケール)
+                _ms = 24 * 60 * 60 * 1000
+                break
+            case /^weeks?$/i.test( scale ):
+                // Week (is the variable length scale by DST) (:> 週 (サマータイムによる可変長スケール)
+                _ms = 7 * 24 * 60 * 60 * 1000
+                break
+            case /^months?$/i.test( scale ):
+                // Month (is the variable length scale) (:> 月（可変長スケール）
+                _ms = 30.44 * 24 * 60 * 60 * 1000
+                break
+            case /^years?$/i.test( scale ):
+                // Year (is the variable length scale) (:> 年（可変長スケール）
+                _ms = 365.25 * 24 * 60 * 60 * 1000
+                break
+            case /^lustrum$/i.test( scale ):
+                // Lustrum (is the variable length scale, but currently does not support) (:> 五年紀 (可変長スケールだが現在サポートしてない)
+                // 5y = 1826 or 1827; 1826 * 24 * 60 * 60 = 15766400, 1827 * 24 * 60 * 60 = 157852800 | avg.= 157788000
+                //_ms = ( ( 3.1536 * Math.pow( 10, 8 ) ) / 2 ) * 1000 // <--- Useless by info of wikipedia
+                _ms = 157788000 * 1000
+                break
+            case /^dec(ade|ennium)$/i.test( scale ):
+                // Decade (is the variable length scale, but currently does not support) (:> 十年紀 (可変長スケールだが現在サポートしてない)
+                // 10y = 3652 or 3653; 3652 * 24 * 60 * 60 = 315532800, 3653 * 24 * 60 * 60 = 157852800 | avg. = 315576000
+                // _ms = ( 3.1536 * Math.pow( 10, 8 ) ) * 1000 // <--- Useless by info of wikipedia
+                _ms = 315576000 * 1000
+                break
+            case /^century$/i.test( scale ):
+                // Century (:> 世紀（百年紀）
+                // 100y = 36525; 36525 * 24 * 60 * 60 = 3155760000
+                _ms = 3155760000 * 1000
+                break
+            case /^millenniums?|millennia$/i.test( scale ):
+                // Millennium (:> 千年紀
+                // 100y = 365250
+                //_ms = ( 3.1536 * Math.pow( 10, 10 ) ) * 1000
+                _ms = 3155760000 * 10 * 1000
+                break
+            default:
+                console.warn( 'Specified an invalid scale.' )
+                _ms = -1
+        }
+        if ( isBool ) {
+            return _ms > 0
+        } else {
+            return isVLS ? retval : _ms
+        }
+    }
+    
+    /*
      * Retrieve one higher scale
      *
      * @param string scale (required)
      *
-     * @return string higher_scale
+     * @return string as higher scale
      */
     getHigherScale( scale ) {
-        let higher_scale = scale
+        // let higher_scale = scale
+        let scalePatternMap = [
+                [ 'millisecond', '^millisec(|ond)s?$' ],
+                [ 'second', '^seconds?$' ],
+                [ 'minute', '^minutes?$' ],
+                [ 'hour', '^(|half|quarter)-?(|hour)s?$' ],
+                [ 'day', '^(|week)days?$' ],
+                [ 'week', '^weeks?$' ],
+                [ 'month', '^months?$' ],
+                [ 'year', '^years?$' ],
+                [ 'lustrum', '^lustrum$' ],
+                [ 'decade', '^dec(ade|ennium)$' ],
+                [ 'century', '^century$' ],
+                [ 'millennium', '^millenniums?|millennia$' ],
+            ],
+            _idx = scalePatternMap.findIndex( ( elm ) => new RegExp( `${elm[1]}`, 'i' ).test( scale ) )
         
-        switch ( true ) {
-            case /^millisec(|ond)s?$/i.test( scale ):
-                higher_scale = 'second'
-                break
-            case /^seconds?$/i.test( scale ):
-                higher_scale = 'minute'
-                break
-            case /^minutes?$/i.test( scale ):
-                higher_scale = 'hour'
-                break
-            case /^quarter-?(|hour)$/i.test( scale ):
-            case /^half-?(|hour)$/i.test( scale ):
-            case /^hours?$/i.test( scale ):
-                higher_scale = 'day'
-                break
-            case /^days?$/i.test( scale ):
-            case /^weeks?$/i.test( scale ):
-                higher_scale = 'month'
-                break
-            case /^months?$/i.test( scale ):
-                higher_scale = 'year'
-                break
-            case /^years?$/i.test( scale ):
-                higher_scale = 'lustrum'
-                break
-            case /^lustrum$/i.test( scale ):
-                higher_scale = 'decade'
-                break
-            case /^dec(ade|ennium)$/i.test( scale ):
-                higher_scale = 'century'
-                break
-            case /^century$/i.test( scale ):
-                higher_scale = 'millennium'
-                break
-            case /^millenniums?|millennia$/i.test( scale ):
-            default:
-                break
-        }
-        return higher_scale
+        _idx = scalePatternMap[(_idx + 1)] ? _idx + 1 : _idx
+        
+        return scalePatternMap[_idx][0]
     }
     
     /*
@@ -3756,6 +3950,10 @@ console.log( `_diffDate::${scale}:`, diffMS, _m )
                 }
             }
         })
+    }
+    
+    static _getInstance( element ) {
+        return Data.getData( element, DATA_KEY )
     }
     
 } // class end

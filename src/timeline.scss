@@ -164,8 +164,7 @@
 .jqtl-ruler-line-item {
     position: relative;
     margin: 0;
-    padding-left: 2px;
-    padding-right: 2px;
+    padding: 0;
     min-width: 0;
     text-align: center;
     align-self: center;
@@ -174,6 +173,8 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    border: 0;
+    outline: 0;
 }
 .jqtl-rli-left {
     padding-left: 2rem;

@@ -21,10 +21,10 @@
   "contributors": [],
   "scripts": {
     "gulp": "node ./node_modules/gulp/bin/gulp.js",
-    "test": "$(npm bin)/mocha src/tests/*.js",
     "build": "browserify ./src/timeline.js -t babelify -o ./lib/timeline.js",
     "watch": "node ./node_modules/gulp/bin/gulp.js dev",
-    "esdoc": "./node_modules/.bin/esdoc; open ./docs/index.html"
+    "esdoc": "./node_modules/.bin/esdoc; open ./docs/index.html",
+    "test": "mocha ./test/timeline-spec.js"
   },
   "style": "dist/timeline.min.css",
   "sass": "src/timeline.scss",
@@ -61,6 +61,7 @@
     "@babel/register": "^7.0.0",
     "babelify": "^10.0.0",
     "browserify": "^16.2.3",
+    "chai": "^4.2.0",
     "esdoc": "^1.1.0",
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
     "esdoc-standard-plugin": "^1.0.0",
@@ -75,6 +76,7 @@
     "gulp-sourcemaps": "^2.6.4",
     "gulp-uglify": "^3.0.1",
     "mocha": "^5.2.0",
+    "sinon": "^7.3.2",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
   },

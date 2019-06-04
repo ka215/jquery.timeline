@@ -3,7 +3,8 @@
   "env": {
     "browser": true,
     "jquery": true,
-    "es6": true
+    "es6": true,
+    "mocha": true
   },
   "rules": {
     "no-unused-vars": ["warn", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }],
