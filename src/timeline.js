@@ -3144,11 +3144,11 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
      * This method is able to get the correct datetime instead of built in "new Date" on javascript. (:> JavaScriptビルトインメソッドのnew Dateに代わって正確な日時を取得する
      * That is remapping to correct year if the year is 0 - 99, and supporting years BCE. (:> 0 - 99年の場合に年をリマッピングし、紀元前の年にも対応する
      *
-     * @param mixed datetime_str (required)
+     * @param mixed datetime (required; allowed an integer as milliseconds, a string as like datetime or an object instance of Date)
      *
      * @return Date Object, or null if failed
      */
-    getCorrectDatetime( datetime_str ) {
+    getCorrectDatetime( datetime ) {
         let normalizeDate = ( dateString ) => {
                 let isMinus = /^-/.test( dateString ),
                     _m = isMinus ? '-' : '',
@@ -3161,8 +3161,8 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
                 _d = dateString.replace(/-/g, '/')
                 return /^\d{1,4}\/\d{1,2}$/.test( _d ) ? `${_m}${_d}/1` : `${_m}${_d}`
             },
-            getDateObject = ( datetime_str ) => {
-                let _chk_str = normalizeDate( datetime_str ),
+            getDateObject = ( datetime ) => {
+                let _chk_str = normalizeDate( datetime ),
                     _raise   = 0,
                     _ymd, _his, _parts, _date
                 
@@ -3191,22 +3191,22 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
             },
             _checkDate
         
-        switch ( typeof datetime_str ) {
+        switch ( typeof datetime ) {
             case 'number':
-                _checkDate = new Date( datetime_str )
+                _checkDate = new Date( datetime )
                 break
             case 'string':
-                _checkDate = getDateObject( datetime_str )
+                _checkDate = getDateObject( datetime )
                 break
             case 'object':
-                if ( datetime_str instanceof Date ) {
-                    _checkDate = datetime_str
+                if ( datetime instanceof Date ) {
+                    _checkDate = datetime
                 }
                 break
         }
         
         if ( isNaN( _checkDate ) || ! _checkDate ) {
-            console.warn( `"${datetime_str}" Cannot parse date because invalid format.` )
+            console.warn( `"${datetime}" Cannot parse date because invalid format.` )
             return null
         }
         
@@ -3219,26 +3219,32 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
     /*
      * Method to get week number as extension of Date object
      *
-     * @param string date_str (required)
+     * @param mixed datetime (required; to be date object filtered by getCorrectDatetime method)
      *
-     * @return int
+     * @return mixed (return integer as week number when given valid argument, or false if failed)
      */
-    getWeek( date_str ) {
-        let targetDate, _str, _onejan,
-            _millisecInDay = 24 * 60 * 60 * 1000
-        
-        if ( /^\d{1,4}(|\/\d{1,2}(|\/\d{1,2}))$/.test( date_str ) ) {
-            _str = date_str.split('/')
-            if ( ! this.is_empty( _str[1] ) ) {
-                _str[1] = parseInt( _str[1], 10 ) - 1 // To month index
-            }
-//console.log( '!getWeek:', _str )
-            targetDate = new Date( ..._str )
-        } else {
-            targetDate = new Date( date_str )
+    getWeek( datetime ) {
+        if ( this.is_empty( datetime ) ) {
+            return false
         }
-        _onejan = new Date( targetDate.getFullYear(), 0, 1 )
+        let targetDate = this.getCorrectDatetime( datetime ),
+            _millisecInDay = 24 * 60 * 60 * 1000,
+            _onejan = this.getCorrectDatetime( `${targetDate.getFullYear()}/1/1` )
+        
         return Math.ceil( ( ( ( targetDate - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 )
+    }
+    
+    /*
+     * Get the datetime shifted from the specified datetime by any fluctuation value
+     *
+     * @param mixed datetime (required; to be date object filtered by getCorrectDatetime method)
+     * @param int fluctuation (required; an interval value to shift from given base datetime)
+     * @param string scale (required; the scale of an interval value)
+     *
+     * @return mixed (return modified new Date object when given valid argument, or false if failed)
+     */
+    modifyDatetime( datetime, fluctuation, scale ) {
+        // This work in progress yet
     }
     
     /*
@@ -3332,19 +3338,21 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
                 break
             }
             case /^dec(ade|ennium)$/i.test( scale ): {
-                // return { "decade-number": years,... } << current
                 // return { "decade-number": days,... }
-                let _by  = _bd.getFullYear(),
-                    _ey  = _ed.getFullYear(),
-                    _bdc = Math.ceil( (_by == 0 ? 1 : _by) / 10 ), // decade of first ordinal
-                    _edc = Math.ceil( (_ey == 0 ? 1 : _ey) / 10 ),
-                    _cdc = _bdc
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _cy = _by == 0 ? 1 : _by,
+                    _cd, _days
                 
-                _m[_bdc] = _edc - _bdc > 0 ? (_bdc * 10) - _by : _ey - _by
-                _cdc++
-                while ( _cdc <= _edc ) {
-                    _m[_cdc] = _edc - _cdc > 0 ? 10 : _ey - ((_cdc - 1) * 10)
-                    _cdc++
+                while ( _cy <= _ey ) {
+                    _days = isLeapYear( new Date( _cy, 0, 1 ) ) ? 366 : 365
+                    _cd = Math.ceil( _cy / 10 ) // decade of first ordinal
+                    if ( _m.hasOwnProperty( _cd ) ) {
+                        _m[_cd] += _days
+                    } else {
+                        _m[_cd] = _days
+                    }
+                    _cy++
                 }
                 retval = _m
                 // return number of milliseconds
@@ -3352,19 +3360,21 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
                 break
             }
             case /^lustrum$/i.test( scale ): {
-                // return { "lustrum-number": years,... } << current
                 // return { "lustrum-number": days,... }
-                let _by  = _bd.getFullYear(),
-                    _ey  = _ed.getFullYear(),
-                    _bl = Math.ceil( (_by == 0 ? 1 : _by) / 5 ), // decade of first ordinal
-                    _el = Math.ceil( (_ey == 0 ? 1 : _ey) / 5 ),
-                    _cl = _bl
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _cy = _by == 0 ? 1 : _by,
+                    _cl, _days
                 
-                _m[_bl] = _el - _bl > 0 ? (_bl * 5) - _by : _ey - _by
-                _cl++
-                while ( _cl <= _el ) {
-                    _m[_cl] = _el - _cl > 0 ? 5 : _ey - ((_cl - 1) * 5)
-                    _cl++
+                while ( _cy <= _ey ) {
+                    _days = isLeapYear( new Date( _cy, 0, 1 ) ) ? 366 : 365
+                    _cl = Math.ceil( _cy / 5 ) // lustrum of first ordinal
+                    if ( _m.hasOwnProperty( _cl ) ) {
+                        _m[_cl] += _days
+                    } else {
+                        _m[_cl] = _days
+                    }
+                    _cy++
                 }
                 retval = _m
                 // return number of milliseconds

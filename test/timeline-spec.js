@@ -32,7 +32,7 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( LimitScaleKeys ).to.include( filterScaleKeyName('day') )
     })
     
-    it ( 'getCorrectDatetime: ', () => {
+    it ( 'getCorrectDatetime: This method is able to get the correct datetime instead of built in "new Date" on javascript', () => {
         let getCorrectDatetime = timelineMethods.getCorrectDatetime
         
         // numeric argument
@@ -76,22 +76,30 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( getCorrectDatetime('Donnerstag, 20. Dezember 2012') ).to.be.null
     })
     
-    it ( 'diffDate: ', () => {
+    it ( 'getWeek: get week number as extension of Date object', () => {
+
+console.log( timelineMethods.getWeek('-7') )
+console.log( timelineMethods.getWeek('-1') )
+console.log( timelineMethods.getWeek('0') )
+console.log( timelineMethods.getWeek('1') )
+console.log( timelineMethods.getWeek('') )
+        
+        expect( timelineMethods.getWeek() ).to.be.false
+        expect( timelineMethods.getWeek('') ).to.be.false
+        expect( timelineMethods.getWeek('-1') ).to.be.equal(1)
+        expect( timelineMethods.getWeek('0') ).to.be.equal(1)
+        expect( timelineMethods.getWeek('1') ).to.be.equal(1)
+        
+    })
+    
+    it ( 'diffDate: Acquire the difference between two dates with the specified scale value', () => {
         let diffDate = timelineMethods.diffDate,
             gCD = timelineMethods.getCorrectDatetime
         
-/*
-console.log( diffDate(gCD('0'), gCD('50'),'lustrum') )
-console.log( diffDate(gCD('9/1'), gCD('106/1'),'lustrum') )
-console.log( diffDate(gCD('64/1'), gCD('194/4'),'lustrum') )
-console.log( diffDate(gCD('325-6-30'), gCD('415-7-1'),'lustrum') )
-console.log( diffDate(gCD('2745/12/1 0:00'), gCD('2998/3/4 23:00'),'lustrum') )
-console.log( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'lustrum') )
-*/
         expect( diffDate() ).to.be.false
         expect( diffDate('2019/1/1') ).to.be.false
         expect( diffDate('2019/1/1', '2019/12/31') ).to.be.false
-        expect( diffDate(new Date('2019/1/1'), new Date('2019/12/31')) ).to.be.a('number')
+        expect( diffDate(gCD('2019/1/1'), gCD('2019/12/31')) ).to.be.a('number')
         // when case "millennium"
         expect( diffDate(gCD('0'), gCD('1000'),'millennium') ).to.be.an('object').that.to.eql({1: 1000})
         expect( diffDate(gCD('9/1'), gCD('2006/1'),'millennium') ).to.be.an('object').that.to.eql({1: 991, 2: 1000, 3: 6})
@@ -109,72 +117,76 @@ console.log( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'lustrum') )
         expect( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'century') ).to.be.an('object').that.to.eql({20: 2, 21: 19})
         // when case "decade"
         expect( Object.keys( diffDate(gCD('0'), gCD('100'),'decade') ) ).to.have.lengthOf( 10 )
-        expect( diffDate(gCD('9/1'), gCD('206/1'),'decade') ).to.be.an('object').that.to.include({1: 1, 11: 10, 21: 6})
-        expect( diffDate(gCD('64/1'), gCD('397/4'),'decade') ).to.be.an('object').that.to.include({7: 6, 40: 7})
-        expect( diffDate(gCD('325-6-30'), gCD('515-7-1'),'decade') ).to.be.an('object').that.to.include({33: 5, 52: 5})
-        expect( diffDate(gCD('2545/12/1 0:00'), gCD('2998/3/4 23:00'),'decade') ).to.be.an('object').that.to.include({255: 5, 300: 8})
-        expect( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'decade') ).to.be.an('object').that.to.eql({200: 2, 201: 10, 202: 9})
+        expect( diffDate(gCD('9/1'), gCD('206/1'),'decade') ).to.be.an('object').that.to.include({1: 730, 2: 3653, 3: 3652, 21: 2191})
+        expect( diffDate(gCD('64/1'), gCD('397/4'),'decade') ).to.be.an('object').that.to.include({7: 2557, 40: 2557})
+        expect( diffDate(gCD('325-6-30'), gCD('515-7-1'),'decade') ).to.be.an('object').that.to.include({33: 2191, 52: 1826})
+        expect( diffDate(gCD('2545/12/1 0:00'), gCD('2998/3/4 23:00'),'decade') ).to.be.an('object').that.to.include({255: 2191, 300: 2922})
+        expect( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'decade') ).to.be.an('object').that.to.eql({200: 1096, 201: 3652, 202: 3287})
         // when case "lustrum"
         expect( Object.keys( diffDate(gCD('0'), gCD('50'),'lustrum') ) ).to.have.lengthOf( 10 )
-        expect( diffDate(gCD('9/1'), gCD('106/1'),'lustrum') ).to.be.an('object').that.to.include({2: 1, 11: 5, 22: 1})
-        expect( diffDate(gCD('64/1'), gCD('194/4'),'lustrum') ).to.be.an('object').that.to.include({13: 1, 39: 4})
-        expect( diffDate(gCD('325-6-30'), gCD('415-7-1'),'lustrum') ).to.be.an('object').that.to.include({65: 0, 83: 5})
-        expect( diffDate(gCD('2745/12/1 0:00'), gCD('2998/3/4 23:00'),'lustrum') ).to.be.an('object').that.to.include({549: 0, 600: 3})
-        expect( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'lustrum') ).to.be.an('object').that.to.eql({400: 2, 401: 5, 402: 5, 403: 5, 404: 4})
+        expect( diffDate(gCD('0'), gCD('120'),'lustrum') ).to.be.an('object').that.to.include({1: 1826, 4: 1827, 8: 1827, 20: 1826, 24: 1827})
+        expect( diffDate(gCD('9/1'), gCD('106/1'),'lustrum') ).to.be.an('object').that.to.include({2: 730, 3: 1826, 4: 1827, 22: 365})
+        expect( diffDate(gCD('64/1'), gCD('194/4'),'lustrum') ).to.be.an('object').that.to.include({13: 731, 39: 1461})
+        expect( diffDate(gCD('325-6-30'), gCD('415-7-1'),'lustrum') ).to.be.an('object').that.to.include({65: 365, 83: 1826})
+        expect( diffDate(gCD('2745/12/1 0:00'), gCD('2998/3/4 23:00'),'lustrum') ).to.be.an('object').that.to.include({549: 365, 600: 1096})
+        expect( diffDate(gCD('1998-2-1 0:00'), gCD('2019-3-4 23:00'),'lustrum') ).to.be.an('object').that.to.eql({400: 1096, 401: 1826, 402: 1826, 403: 1826, 404: 1461})
         // when case "year"
-        expect( diffDate(new Date('2019/1/1'), new Date('2019/12/31'),'year') ).to.be.an('object').that.to.eql({2019: 365})
-        expect( diffDate(new Date('2020-1-1'), new Date('2020-12-31'),'year') ).to.be.an('object').that.to.eql({2020: 366})
-        expect( diffDate(new Date('169/3/14'), new Date('172/11/3'),'year') ).to.be.an('object').that.to.eql({169: 365, 170: 365, 171: 365, 172: 366})
+        expect( diffDate(gCD('2019/1/1'), gCD('2019/12/31'),'year') ).to.be.an('object').that.to.eql({2019: 365})
+        expect( diffDate(gCD('2020-1-1'), gCD('2020-12-31'),'year') ).to.be.an('object').that.to.eql({2020: 366})
+        expect( diffDate(gCD('169/3/14'), gCD('172/11/3'),'year') ).to.be.an('object').that.to.eql({169: 365, 170: 365, 171: 365, 172: 366})
         // when case "month"
-        expect( diffDate(new Date('169/5/14'), new Date('170/3/3'),'month') ).to.be.an('object').that.to.eql({'169/5': 31, '169/6': 30, '169/7': 31, '169/8': 31, '169/9': 30, '169/10': 31, '169/11': 30, '169/12': 31, '170/1': 31, '170/2': 28, '170/3': 31})
-        expect( diffDate(new Date('2020/1/1'), new Date('2020/2/31'),'month') ).to.be.an('object').that.to.eql({'2020/1': 31, '2020/2': 29, '2020/3': 31})
-        expect( diffDate(new Date('2019-2'), new Date('2019-2'),'month') ).to.be.an('object').that.to.eql({'2019/2': 28})
+        expect( diffDate(gCD('169/5/14'), gCD('170/3/3'),'month') ).to.be.an('object').that.to.eql({'169/5': 31, '169/6': 30, '169/7': 31, '169/8': 31, '169/9': 30, '169/10': 31, '169/11': 30, '169/12': 31, '170/1': 31, '170/2': 28, '170/3': 31})
+        expect( diffDate(gCD('2020/1/1'), gCD('2020/2/31'),'month') ).to.be.an('object').that.to.eql({'2020/1': 31, '2020/2': 29, '2020/3': 31})
+        expect( diffDate(gCD('2019-2'), gCD('2019-2'),'month') ).to.be.an('object').that.to.eql({'2019/2': 28})
         // when case "week"
-        expect( timelineMethods.diffDate(new Date('2020/1/1'), new Date('2020/2/31'),'week') ).to.be.an('object').that.to.eql({'2020,1': 96,'2020,2': 168,'2020,3': 168,'2020,4': 168,'2020,5': 168,'2020,6': 168,'2020,7': 168,'2020,8': 168,'2020,9': 168,'2020,10': 48})
-        expect( timelineMethods.diffDate(new Date('2019-2'), new Date('2019-2'),'week') ).to.be.an('object').that.to.eql({'2019,5': 24})
+        expect( timelineMethods.diffDate(gCD('2020/1/1'), gCD('2020/2/31'),'week') ).to.be.an('object').that.to.eql({'2020,1': 96,'2020,2': 168,'2020,3': 168,'2020,4': 168,'2020,5': 168,'2020,6': 168,'2020,7': 168,'2020,8': 168,'2020,9': 168,'2020,10': 48})
+        expect( timelineMethods.diffDate(gCD('2019-2'), gCD('2019-2'),'week') ).to.be.an('object').that.to.eql({'2019,5': 24})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( timelineMethods.diffDate(new Date('2019/3/24'), new Date('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 167, '2019,44': 169})
+        expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 167, '2019,44': 169})
         // when case "day"
-        expect( diffDate(new Date('169/12/30'), new Date('170/1/3'),'day') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
-        expect( Object.keys( diffDate(new Date('2020-1-29'), new Date('2020-2-31'),'day') ) ).to.have.lengthOf( 34 )
+        expect( diffDate(gCD('169/12/30'), gCD('170/1/3'),'day') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
+        expect( Object.keys( diffDate(gCD('2020-1-29'), gCD('2020-2-31'),'day') ) ).to.have.lengthOf( 34 )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(new Date('2019/3/24'), new Date('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+        expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
         // when case "weekday"
-        expect( diffDate(new Date('169/12/30'), new Date('170/1/3'),'weekday') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
-        expect( Object.keys( diffDate(new Date('2020-1-29'), new Date('2020-2-31'),'weekday') ) ).to.have.lengthOf( 34 )
+        expect( diffDate(gCD('169/12/30'), gCD('170/1/3'),'weekday') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
+        expect( Object.keys( diffDate(gCD('2020-1-29'), gCD('2020-2-31'),'weekday') ) ).to.have.lengthOf( 34 )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(new Date('2019/3/24'), new Date('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+        expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
         // when case "hour"
-        expect( diffDate(new Date('169/12/31'), new Date('170/1/1'),'hour') ).to.be.an('object').that.to.include({'169/12/31 0': 60, '170/1/1 0': 60})
+        expect( diffDate(gCD('169/12/31'), gCD('170/1/1'),'hour') ).to.be.an('object').that.to.include({'169/12/31 0': 60, '170/1/1 0': 60})
         expect( diffDate(new Date('2020-1-29 0'), new Date('2020-1-29 12'),'hour') ).to.be.false
-        expect( Object.keys( diffDate(new Date('1970/1/1 0:00'), new Date('1970/1/1 23:00'),'hour') ) ).to.have.lengthOf( 24 )
-        expect( Object.keys( diffDate(new Date('1970/1/1 0:00'), new Date('1970/1/1 24:00'),'hour') ) ).to.have.lengthOf( 25 )
+        expect( diffDate(gCD('2020-1-29 0'), gCD('2020-1-29 12'),'hour') ).to.be.an('object').that.to.include({'2020/1/29 0': 60, '2020/1/29 12': 60})
+        expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 23:00'),'hour') ) ).to.have.lengthOf( 24 )
+        expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 24:00'),'hour') ) ).to.have.lengthOf( 25 )
         expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'hour') ).to.be.false
-        expect( diffDate(new Date('1998-1-29 5:22'), new Date('1998-1-29 14:08'),'hour') ).to.be.an('object').that.to.eql({'1998/1/29 5': 60, '1998/1/29 6': 60, '1998/1/29 7': 60, '1998/1/29 8': 60, '1998/1/29 9': 60, '1998/1/29 10': 60, '1998/1/29 11': 60, '1998/1/29 12': 60, '1998/1/29 13': 60, '1998/1/29 14': 60})
+        expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:01'),'hour') ).to.be.an('object').that.to.include({'1970/1/2 0': 60})
+        expect( diffDate(gCD('1998-1-29 5:22'), gCD('1998-1-29 14:08'),'hour') ).to.be.an('object').that.to.eql({'1998/1/29 5': 60, '1998/1/29 6': 60, '1998/1/29 7': 60, '1998/1/29 8': 60, '1998/1/29 9': 60, '1998/1/29 10': 60, '1998/1/29 11': 60, '1998/1/29 12': 60, '1998/1/29 13': 60, '1998/1/29 14': 60})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(new Date('2019/3/31 0:00'), new Date('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
-        expect( diffDate(new Date('2019/10/27 0:00'), new Date('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
+        expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
+        expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
         // when case "minute"
-        expect( diffDate(new Date('169/12/31 23:50'), new Date('170/1/1 0:10'),'minute') ).to.be.an('object').that.to.include({'169/12/31 23:50': 60, '170/1/1 0:0': 60})
+        expect( diffDate(gCD('169/12/31 23:50'), gCD('170/1/1 0:10'),'minute') ).to.be.an('object').that.to.include({'169/12/31 23:50': 60, '170/1/1 0:0': 60})
         expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'minute') ).to.be.false
-        expect( Object.keys( diffDate(new Date('1970/1/1 0:00'), new Date('1970/1/1 9:59'),'minute') ) ).to.have.lengthOf( 600 )
-        expect( Object.keys( diffDate(new Date('1998/1/29 5:22'), new Date('1998/1/29 7:08'),'minute') ) ).to.have.lengthOf( 107 )
+        expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:01'),'minute') ).to.be.an('object').that.to.include({'1970/1/1 23:59': 60, '1970/1/2 0:0': 60, '1970/1/2 0:1': 60})
+        expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 9:59'),'minute') ) ).to.have.lengthOf( 600 )
+        expect( Object.keys( diffDate(gCD('1998/1/29 5:22'), gCD('1998/1/29 7:08'),'minute') ) ).to.have.lengthOf( 107 )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(new Date('2019/3/31 0:59'), new Date('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.eql({'2019/3/31 0:59': 60, '2019/3/31 2:0': 60})
-        expect( diffDate(new Date('2019/10/27 0:59'), new Date('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 3660})
+        expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.eql({'2019/3/31 0:59': 60, '2019/3/31 2:0': 60})
+        expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 3660})
         // when case "second"
-        expect( diffDate(new Date('169/12/31 23:59:00'), new Date('170/1/1 0:01:00'),'second') ).to.be.a('object').that.to.include({'169/12/31 23:59:0': 1000, '169/12/31 23:59:59': 1000, '170/1/1 0:0:0': 1000, '170/1/1 0:1:0': 1000})
-        expect( Object.keys( diffDate(new Date('1970/1/1 0:00:01'), new Date('1970/1/1 1:00:00'),'second') ) ).to.have.lengthOf( 3600 )
+        expect( diffDate(gCD('169/12/31 23:59:00'), gCD('170/1/1 0:01:00'),'second') ).to.be.a('object').that.to.include({'169/12/31 23:59:0': 1000, '169/12/31 23:59:59': 1000, '170/1/1 0:0:0': 1000, '170/1/1 0:1:0': 1000})
+        expect( Object.keys( diffDate(gCD('1970/1/1 0:00:01'), gCD('1970/1/1 1:00:00'),'second') ) ).to.have.lengthOf( 3600 )
         // - further with supported on leap second
-        expect( diffDate(new Date('2015-6-30 23:59:59'), new Date('2015-7-1 0:00:01'),'second') ).to.be.an('object').that.to.eql({'2015/6/30 23:59:59': 1000, '2015/7/1 0:0:0': 1000, '2015/7/1 0:0:1': 1000})
-        expect( diffDate(new Date('2016/12/31 23:59:59'), new Date('2017/1/1 00:00:01'),'second') ).to.be.an('object').that.to.eql({'2016/12/31 23:59:59': 1000, '2017/1/1 0:0:0': 1000, '2017/1/1 0:0:1': 1000})
+        expect( diffDate(gCD('2015-6-30 23:59:59'), gCD('2015-7-1 0:00:01'),'second') ).to.be.an('object').that.to.eql({'2015/6/30 23:59:59': 1000, '2015/7/1 0:0:0': 1000, '2015/7/1 0:0:1': 1000})
+        expect( diffDate(gCD('2016/12/31 23:59:59'), gCD('2017/1/1 00:00:01'),'second') ).to.be.an('object').that.to.eql({'2016/12/31 23:59:59': 1000, '2017/1/1 0:0:0': 1000, '2017/1/1 0:0:1': 1000})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(new Date('2019/3/31 0:59:59'), new Date('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.eql({'2019/3/31 0:59:59': 1000, '2019/3/31 2:0:0': 1000})
-        expect( diffDate(new Date('2019/10/27 1:59:58'), new Date('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 3601000})
+        expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.eql({'2019/3/31 0:59:59': 1000, '2019/3/31 2:0:0': 1000})
+        expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 3601000})
         // when case "other"
-        expect( diffDate(new Date('1970/1/1 0:00'), new Date('1970/1/1 23:00'),'quarterHour') ).to.be.a('number').that.to.equal( 23 * 60 * 60 * 1000 )
-        expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:00'),'halfHour') ).to.be.a('number').that.to.equal( 24 * 60 * 60 * 1000 )
-        expect( diffDate(new Date('2015-6-30 23:59:59'), new Date('2015-7-1 0:00:01'),'millisecond') ).to.equal( 2 * 1000 )
+        expect( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 23:00'),'quarterHour') ).to.be.a('number').that.to.equal( 23 * 60 * 60 * 1000 )
+        expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:00'),'halfHour') ).to.be.a('number').that.to.equal( 24 * 60 * 60 * 1000 )
+        expect( diffDate(gCD('2015-6-30 23:59:59'), gCD('2015-7-1 0:00:01'),'millisecond') ).to.equal( 2 * 1000 )
     })
     
     it ( 'getHigherScale: ', () => {
