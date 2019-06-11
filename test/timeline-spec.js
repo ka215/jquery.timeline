@@ -17,21 +17,61 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         //
     })
     
-    it ( '_filterScaleKeyName: filter the scale key name for matching the LimitScaleGrids definition', () => {
-        let filterScaleKeyName = timelineMethods._filterScaleKeyName,
-            LimitScaleKeys = [ 'millennium', 'century', 'decade', 'lustrum', 'year', 'month', 'week', 'day', 'hour', 'quarterHour', 'halfHour', 'minute', 'second' ]
+    // private methods
+    it ( '_filterScaleKeyName: Filter the given scale key name to allowed for plugin', () => {
+        let filterScaleKeyName = timelineMethods._filterScaleKeyName
         
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('quarter') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('quarter-hour') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('quarterhour') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('half') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('half-hour') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('halfhour') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('year') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('month') )
-        expect( LimitScaleKeys ).to.include( filterScaleKeyName('day') )
+        expect( filterScaleKeyName() ).to.be.equal( 'millisecond' )
+        expect( filterScaleKeyName('invalid-scale') ).to.be.equal( 'millisecond' )
+        expect( filterScaleKeyName('millenniums') ).to.be.equal( 'millennium' )
+        expect( filterScaleKeyName('millennia') ).to.be.equal( 'millennium' )
+        expect( filterScaleKeyName('Millennium') ).to.be.equal( 'millennium' )
+        expect( filterScaleKeyName('Century') ).to.be.equal( 'century' )
+        expect( filterScaleKeyName('Decade') ).to.be.equal( 'decade' )
+        expect( filterScaleKeyName('decennium') ).to.be.equal( 'decade' )
+        expect( filterScaleKeyName('Lustrum') ).to.be.equal( 'lustrum' )
+        expect( filterScaleKeyName('years') ).to.be.equal( 'year' )
+        expect( filterScaleKeyName('Year') ).to.be.equal( 'year' )
+        expect( filterScaleKeyName('months') ).to.be.equal( 'month' )
+        expect( filterScaleKeyName('Month') ).to.be.equal( 'month' )
+        expect( filterScaleKeyName('weeks') ).to.be.equal( 'week' )
+        expect( filterScaleKeyName('Week') ).to.be.equal( 'week' )
+        expect( filterScaleKeyName('weekdays') ).to.be.equal( 'weekday' )
+        expect( filterScaleKeyName('Weekday') ).to.be.equal( 'weekday' )
+        expect( filterScaleKeyName('days') ).to.be.equal( 'day' )
+        expect( filterScaleKeyName('Day') ).to.be.equal( 'day' )
+        expect( filterScaleKeyName('dates') ).to.be.equal( 'day' )
+        expect( filterScaleKeyName('Date') ).to.be.equal( 'day' )
+        expect( filterScaleKeyName('hours') ).to.be.equal( 'hour' )
+        expect( filterScaleKeyName('Hour') ).to.be.equal( 'hour' )
+        expect( filterScaleKeyName('quarter') ).to.be.equal( 'quarterHour' )
+        expect( filterScaleKeyName('quarter-hour') ).to.be.equal( 'quarterHour' )
+        expect( filterScaleKeyName('quarterhour') ).to.be.equal( 'quarterHour' )
+        expect( filterScaleKeyName('half') ).to.be.equal( 'halfHour' )
+        expect( filterScaleKeyName('half-hour') ).to.be.equal( 'halfHour' )
+        expect( filterScaleKeyName('halfhour') ).to.be.equal( 'halfHour' )
+        expect( filterScaleKeyName('minutes') ).to.be.equal( 'minute' )
+        expect( filterScaleKeyName('Minute') ).to.be.equal( 'minute' )
+        expect( filterScaleKeyName('seconds') ).to.be.equal( 'second' )
+        expect( filterScaleKeyName('Second') ).to.be.equal( 'second' )
+        expect( filterScaleKeyName('milliseconds') ).to.be.equal( 'millisecond' )
+        expect( filterScaleKeyName('Millisecond') ).to.be.equal( 'millisecond' )
     })
     
+    /*
+    it ( '_getPluggableDatetime: Retrieve the pluggable datetime as milliseconds from specified keyword', () => {
+        let timelineMethods._config = {
+                scale: 'day'
+            }
+console.log( timelineMethods._getPluggableDatetime( 'currently', 'first' ) )
+console.log( timelineMethods._getPluggableDatetime( 'auto', 'last' ) )
+        
+        //expect( timelineMethods._getPluggableDatetime() )
+    })
+    */
+    
+    
+    // public methods as utility
     it ( 'getCorrectDatetime: This method is able to get the correct datetime instead of built in "new Date" on javascript', () => {
         let getCorrectDatetime = timelineMethods.getCorrectDatetime
         
@@ -77,19 +117,134 @@ describe( 'jQuery.Timeline Unit Tests', () => {
     })
     
     it ( 'getWeek: get week number as extension of Date object', () => {
-
-console.log( timelineMethods.getWeek('-7') )
-console.log( timelineMethods.getWeek('-1') )
-console.log( timelineMethods.getWeek('0') )
-console.log( timelineMethods.getWeek('1') )
-console.log( timelineMethods.getWeek('') )
         
         expect( timelineMethods.getWeek() ).to.be.false
         expect( timelineMethods.getWeek('') ).to.be.false
         expect( timelineMethods.getWeek('-1') ).to.be.equal(1)
         expect( timelineMethods.getWeek('0') ).to.be.equal(1)
         expect( timelineMethods.getWeek('1') ).to.be.equal(1)
+        expect( timelineMethods.getWeek('-7/2') ).to.be.equal(6)
+        expect( timelineMethods.getWeek('-1/1/7') ).to.be.equal(2)
+        expect( timelineMethods.getWeek('0-3-4') ).to.be.equal(10)
+        expect( timelineMethods.getWeek('1-3-4') ).to.be.equal(10)
+        expect( timelineMethods.getWeek('96/12/31') ).to.be.equal(53)
+        expect( timelineMethods.getWeek('1996/12/31') ).to.be.equal(53)
+    })
+    
+    it ( 'modifyDate: Get the datetime shifted from the specified datetime by any fluctuation value', () => {
+        let gCD = timelineMethods.getCorrectDatetime
         
+/* GMT+0001
+console.log( timelineMethods.modifyDate('1847/11/30 23:00:00',1,'hour').toString() )
+console.log( timelineMethods.modifyDate('1847/12/1 0:00:00',  1,'hour').toString() )
+console.log( timelineMethods.modifyDate('1847/12/1 0:00:00', -1,'hour').toString() )
+console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString() )
+*/
+        expect( timelineMethods.modifyDate() ).to.be.false
+        expect( timelineMethods.modifyDate(-1,0,'') ).to.be.false
+        // modify millennium
+        expect( timelineMethods.modifyDate('1',-3,'millennium') ).to.be.eql( gCD('-2999') )
+        expect( timelineMethods.modifyDate('1',-1,'millennium') ).to.be.eql( gCD('-999') )
+        expect( timelineMethods.modifyDate('1',+1,'millennium') ).to.be.eql( gCD('1001') )
+        expect( timelineMethods.modifyDate('1',2,'millennium') ).to.be.eql( gCD('2001') )
+        // modify century
+        expect( timelineMethods.modifyDate('1',-3,'century') ).to.be.eql( gCD('-299') )
+        expect( timelineMethods.modifyDate('1',-1,'century') ).to.be.eql( gCD('-99') )
+        expect( timelineMethods.modifyDate('1',+1,'century') ).to.be.eql( gCD('101') )
+        expect( timelineMethods.modifyDate('1',21,'century') ).to.be.eql( gCD('2101') )
+        // modify decade
+        expect( timelineMethods.modifyDate('1',-5,'decade') ).to.be.eql( gCD('-49') )
+        expect( timelineMethods.modifyDate('1',-1,'decade') ).to.be.eql( gCD('-9') )
+        expect( timelineMethods.modifyDate('1',+1,'decade') ).to.be.eql( gCD('11') )
+        expect( timelineMethods.modifyDate('1',8,'decade') ).to.be.eql( gCD('81') )
+        // modify lustrum
+        expect( timelineMethods.modifyDate('1',-5,'lustrum') ).to.be.eql( gCD('-24') )
+        expect( timelineMethods.modifyDate('1',-1,'lustrum') ).to.be.eql( gCD('-4') )
+        expect( timelineMethods.modifyDate('1',+1,'lustrum') ).to.be.eql( gCD('6') )
+        expect( timelineMethods.modifyDate('1',8,'lustrum') ).to.be.eql( gCD('41') )
+        expect( timelineMethods.modifyDate('89/12', 10,'lustrum') ).to.be.eql( gCD('139/12') )
+        expect( timelineMethods.modifyDate('197-3-4', -25,'lustrum') ).to.be.eql( gCD('72-3-4') )
+        expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'lustrum') ).to.be.eql( gCD('1999/6/10 1:23:45') )
+        // modify year
+        expect( timelineMethods.modifyDate('1',-25,'year') ).to.be.eql( gCD('-24') )
+        expect( timelineMethods.modifyDate('1',-1,'year') ).to.be.eql( gCD('0') )
+        expect( timelineMethods.modifyDate('1',+1,'year') ).to.be.eql( gCD('2') )
+        expect( timelineMethods.modifyDate('1',48,'year') ).to.be.eql( gCD('49') )
+        expect( timelineMethods.modifyDate('89/12', 13,'year') ).to.be.eql( gCD('102/12') )
+        expect( timelineMethods.modifyDate('197-3-4', -12,'year') ).to.be.eql( gCD('185-3-4') )
+        expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'year') ).to.be.eql( gCD('1987/6/10 1:23:45') )
+        expect( timelineMethods.modifyDate('1847/11/30',1,'year') ).to.be.eql( gCD('1848-11-30') )
+        expect( timelineMethods.modifyDate('1847/12/1',-1,'year') ).to.be.eql( gCD('1846-12-1 0:01:15') ) // notice!
+        // modify month
+        expect( timelineMethods.modifyDate('1',-25,'month') ).to.be.eql( gCD('-2/12') )
+        expect( timelineMethods.modifyDate('1',-1,'month') ).to.be.eql( gCD('0/12') )
+        expect( timelineMethods.modifyDate('1',+1,'month') ).to.be.eql( gCD('1/2') )
+        expect( timelineMethods.modifyDate('1',48,'month') ).to.be.eql( gCD('5/1') )
+        expect( timelineMethods.modifyDate('89/12', 13,'month') ).to.be.eql( gCD('91/1') )
+        expect( timelineMethods.modifyDate('197-3-4', -12,'month') ).to.be.eql( gCD('196/3/4') )
+        expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'month') ).to.be.eql( gCD('1984/9/10 1:23:45') )
+        expect( timelineMethods.modifyDate('1847/11/30',1,'month') ).to.be.eql( gCD('1847/12/30') )
+        expect( timelineMethods.modifyDate('1847/12/1',-1,'month') ).to.be.eql( gCD('1847/11/1 0:01:15') ) // notice!
+        // modify week
+        expect( timelineMethods.modifyDate('1',-53,'week') ).to.be.eql( gCD('-1/12/27') )
+        expect( timelineMethods.modifyDate('1',-1,'week') ).to.be.eql( gCD('0/12/25') )
+        expect( timelineMethods.modifyDate('1',+1,'week') ).to.be.eql( gCD('1/1/8') )
+        expect( timelineMethods.modifyDate('1',48,'week') ).to.be.eql( gCD('1/12/3') )
+        expect( timelineMethods.modifyDate('89/12/25',  1,'week') ).to.be.eql( gCD('90/1/1') )
+        expect( timelineMethods.modifyDate('197-3-4', -3,'week') ).to.be.eql( gCD('197/2/11') )
+        expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'week') ).to.be.eql( gCD('1984/7/1 1:23:45') )
+        expect( timelineMethods.modifyDate('1847/11/30',1,'week') ).to.be.eql( gCD('1847/12/7') )
+        expect( timelineMethods.modifyDate('1847/12/1',-1,'week') ).to.be.eql( gCD('1847/11/24 0:01:15') ) // notice!
+        // modify day
+        expect( timelineMethods.modifyDate('1',-367,'day') ).to.be.eql( gCD('-1/12/31') )
+        expect( timelineMethods.modifyDate('1',-1,'day') ).to.be.eql( gCD('0/12/31') )
+        expect( timelineMethods.modifyDate('1',+1,'day') ).to.be.eql( gCD('1/1/2') )
+        expect( timelineMethods.modifyDate('1',60,'day') ).to.be.eql( gCD('1/3/2') )
+        expect( timelineMethods.modifyDate('89/12/25',  7,'day') ).to.be.eql( gCD('90/1/1') )
+        expect( timelineMethods.modifyDate('197-3-4', -64,'day') ).to.be.eql( gCD('196/12/30') )
+        expect( timelineMethods.modifyDate('1984/6/10 1:23:45',365,'day') ).to.be.eql( gCD('1985/6/10 1:23:45') )
+        //expect( timelineMethods.modifyDate('1847/11/30',1,'day') ).to.be.eql( gCD('1847/12/1 0:01:15') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/12/1',-1,'day') ).to.be.eql( gCD('1847/11/30 0:01:15') ) // notice!
+        // modify hour
+        expect( timelineMethods.modifyDate('1974/2/15 0:00:00', +1,'hour') ).to.be.eql( gCD('1974/2/15 01:00:00') )
+        expect( timelineMethods.modifyDate('1974/2/15 0:00:00',+24,'hour') ).to.be.eql( gCD('1974/2/16 00:00:00') )
+        expect( timelineMethods.modifyDate('1974/2/15 0:00:00',+25,'hour') ).to.be.eql( gCD('1974/2/16 01:00:00') )
+        expect( timelineMethods.modifyDate('1192/2/9 0:00:00', -24,'hour') ).to.be.eql( gCD('1192/2/8 00:00:00') )
+        expect( timelineMethods.modifyDate('1192/2/9 0:00:00', -25,'hour') ).to.be.eql( gCD('1192/2/7 23:00:00') )
+        expect( timelineMethods.modifyDate('2019/10/27',24,'hour') ).to.be.eql( gCD('2019/10/27 23:00:00') ) // DST
+        expect( timelineMethods.modifyDate('2019-3-31', 24,'hour') ).to.be.eql( gCD('2019/4/01 01:00:00') ) // DST
+        expect( timelineMethods.modifyDate('1/1/1 00:00:00',+3,'hour') ).to.be.eql( gCD('0001/1/01 03:00:00') )
+        expect( timelineMethods.modifyDate('1-1-1 00:00:00',-2,'hour') ).to.be.eql( gCD('0000/12/31 22:00:00') )
+        expect( timelineMethods.modifyDate('645/11/11 20:12:34',+3,'hour') ).to.be.eql( gCD('0645-11-11 23:12:34') )
+        expect( timelineMethods.modifyDate('1192/2/9 6:00:00',  -2,'hour') ).to.be.eql( gCD('1192-02-09 04:00:00') )
+        //expect( timelineMethods.modifyDate('1847/11/30 23:00:00',1,'hour') ).to.be.eql( gCD('01/12/1847, 00:02:15') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/12/1 0:00:00',  1,'hour') ).to.be.eql( gCD('01/12/1847, 01:01:15') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -1,'hour') ).to.be.eql( gCD('1847-11-30 23:01:15.000Z') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour') ).to.be.eql( gCD('1847-12-01 00:01:15.000Z') ) // notice!
+        // modify minute
+        expect( timelineMethods.modifyDate('2019/10/27 0:00:00', 61,'minute') ).to.be.eql( gCD('2019/10/27 01:01:00') ) // DST
+        expect( timelineMethods.modifyDate('2019-3-31 0:00:00', 120,'minute') ).to.be.eql( gCD('2019/3/31 03:00:00') ) // DST
+        expect( timelineMethods.modifyDate('765-9-26 1:23:45',  +21,'minute') ).to.be.eql( gCD('0765/9/26 01:44:45') )
+        expect( timelineMethods.modifyDate('1970/1/1 00:15:00', -45,'minute') ).to.be.eql( gCD('1969-12-31 23:30:00') )
+        expect( timelineMethods.modifyDate('1969/12/31 23:30:00',30,'minute') ).to.be.eql( gCD('1970/1/1 00:00:00') )
+        //expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -2,'minute') ).to.be.eql( gCD('1847/11/30 23:58:00') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -1,'minute') ).to.be.eql( gCD('1847/11/30 23:59:00') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/11/30 23:59:00',1,'minute') ).to.be.eql( gCD('1847/12/1 00:00:00') ) // notice!
+        //expect( timelineMethods.modifyDate('1847/12/1 0:00:00', +1,'minute') ).to.be.eql( gCD('1847/12/1 00:01:00') ) // notice!
+        // modify second
+        expect( timelineMethods.modifyDate('2019/10/27 1:59:59',  1,'second') ).to.be.eql( gCD('2019/10/27 1:00:00') ) // DST
+        expect( timelineMethods.modifyDate('2019-3-31 0:59:59',  +1,'second') ).to.be.eql( gCD('2019/3/31 2:00:00') ) // DST
+        expect( timelineMethods.modifyDate('765-9-26 1:23:45',  +21,'second') ).to.be.eql( gCD('765/9/26 1:24:06') )
+        expect( timelineMethods.modifyDate('1970/1/1 00:15:00', -45,'second') ).to.be.eql( gCD('1970/1/1 0:14:15') )
+        expect( timelineMethods.modifyDate('1969/12/31 23:30:00',30,'second') ).to.be.eql( gCD('1969/12/31 23:30:30') )
+        expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -2,'second') ).to.be.eql( gCD('1847/11/30 23:59:58') )
+        expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -1,'second') ).to.be.eql( gCD('1847/11/30 23:59:59') )
+        expect( timelineMethods.modifyDate('1847/11/30 23:59:59',1,'second') ).to.be.eql( gCD('1847/12/1 0:01:15') ) // notice!
+        expect( timelineMethods.modifyDate('1847/12/1 0:00:00', +1,'second') ).to.be.eql( gCD('1847/12/1 0:01:16') ) // notice!
+        // modify millisecond
+        expect( timelineMethods.modifyDate('2019/10/27 1:59:59', 789,'millisecond') ).to.be.eql( gCD('2019-10-27 1:59:59.789') ) // DST
+        expect( timelineMethods.modifyDate('2019-3-31 2:00:00', -100,'millisecond') ).to.be.eql( gCD('2019/3/31 0:59:59.900') ) // DST
+        expect( timelineMethods.modifyDate('1956/12/3 0:06:01',+3456,'millisecond') ).to.be.eql( gCD('1956/12/3 0:06:04.456') )
     })
     
     it ( 'diffDate: Acquire the difference between two dates with the specified scale value', () => {
@@ -165,6 +320,10 @@ console.log( timelineMethods.getWeek('') )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
         expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
         expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
+        // when case "half-hour"
+        
+        // when case "quarter-hour"
+        
         // when case "minute"
         expect( diffDate(gCD('169/12/31 23:50'), gCD('170/1/1 0:10'),'minute') ).to.be.an('object').that.to.include({'169/12/31 23:50': 60, '170/1/1 0:0': 60})
         expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'minute') ).to.be.false
@@ -189,7 +348,7 @@ console.log( timelineMethods.getWeek('') )
         expect( diffDate(gCD('2015-6-30 23:59:59'), gCD('2015-7-1 0:00:01'),'millisecond') ).to.equal( 2 * 1000 )
     })
     
-    it ( 'getHigherScale: ', () => {
+    it ( 'getHigherScale: Retrieve one higher scale', () => {
         let getHigherScale = timelineMethods.getHigherScale
         
         expect( getHigherScale( 'millisecond' ) ).to.equal( 'second' )
@@ -226,7 +385,7 @@ console.log( timelineMethods.getWeek('') )
     })
     
     // verifyScale
-    it ( 'verifyScale: ', () => {
+    it ( 'verifyScale: Verify whether is allowed scale in the plugin', () => {
         let _now = new Date(),
             _pass = {
                 millisecond: new Date().setMilliseconds( _now.getMilliseconds() + 789 ),
@@ -245,6 +404,7 @@ console.log( timelineMethods.getWeek('') )
         
 /*
 console.log( _now.getTime(), _pass )
+*/
 console.log( '0::ms: ', timelineMethods.verifyScale( 'millisecond', _now.getTime(), _pass.millisecond, true ) )
 console.log( '1::sec:', timelineMethods.verifyScale( 'second', _now.getTime(), _pass.second, true ) )
 console.log( '2::min:', timelineMethods.verifyScale( 'minute', _now.getTime(), _pass.minute, true ) )
@@ -259,7 +419,7 @@ console.log( 'a::lst:', timelineMethods.verifyScale( 'lustrum', _now.getTime(), 
 console.log( 'b::dec:', timelineMethods.verifyScale( 'decade', _now.getTime(), _pass.decade, true ) )
 console.log( 'c::cen:', timelineMethods.verifyScale( 'century', _now.getTime(), _pass.century, true ) )
 console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(), _pass.millennium, true ) )
-*/
+/* */
         // whether or not valid scale
         expect( timelineMethods.verifyScale() ).to.be.false
         expect( timelineMethods.verifyScale( 'auto' ) ).to.be.false
@@ -270,7 +430,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.verifyScale( 'half-hour' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'hour' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'day' ) ).to.be.true
-        expect( timelineMethods.verifyScale( 'weekday' ) ).to.be.false
+        expect( timelineMethods.verifyScale( 'weekday' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'week' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'month' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'year' ) ).to.be.true
@@ -279,48 +439,81 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.verifyScale( 'century' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'millennium' ) ).to.be.true
         // retrieves that values of intervals on the scale
+        // - isVLS = false
         expect( timelineMethods.verifyScale( 'millisecond', _now.getTime(), _pass.millisecond ) ).to.be.a('number').that.to.equal( 1 )
-        expect( timelineMethods.verifyScale( 'millisecond', _now.getTime(), _pass.millisecond, true ) ).to.be.a('number')
         expect( timelineMethods.verifyScale( 'second', _now.getTime(), _pass.second ) ).to.be.a('number').that.to.equal( 1000 )
-        expect( timelineMethods.verifyScale( 'second', _now.getTime(), _pass.second, true ) ).to.be.an('object')
         expect( timelineMethods.verifyScale( 'minute', _now.getTime(), _pass.minute ) ).to.be.a('number').that.to.equal( 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'minute', _now.getTime(), _pass.minute, true ) ).to.be.an('object')
         expect( timelineMethods.verifyScale( 'quarter-hour', _now.getTime(), _pass.hour ) ).to.be.a('number').that.to.equal( 15 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'quarter-hour', _now.getTime(), _pass.hour, true ) )
         expect( timelineMethods.verifyScale( 'half-hour', _now.getTime(), _pass.hour ) ).to.be.a('number').that.to.equal( 30 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'half-hour', _now.getTime(), _pass.hour, true ) )
         expect( timelineMethods.verifyScale( 'hour', _now.getTime(), _pass.hour ) ).to.be.a('number').that.to.equal( 60 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'hour', _now.getTime(), _pass.hour, true ) ).to.be.an('object')
         expect( timelineMethods.verifyScale( 'day', _now.getTime(), _pass.day ) ).to.be.a('number').that.to.equal( 24 * 60 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'day', _now.getTime(), _pass.day, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.day, 'day' ) )
+        expect( timelineMethods.verifyScale( 'weekday', _now.getTime(), _pass.day ) ).to.be.a('number').that.to.equal( 24 * 60 * 60 * 1000 )
         expect( timelineMethods.verifyScale( 'week', _now.getTime(), _pass.week ) ).to.be.a('number').that.to.equal( 7 * 24 * 60 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'week', _now.getTime(), _pass.week, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.week, 'week' ) )
         expect( timelineMethods.verifyScale( 'month', _now.getTime(), _pass.month ) ).to.be.a('number').that.to.equal( 30.44 * 24 * 60 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'month', _now.getTime(), _pass.month, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.month, 'month' ) )
         expect( timelineMethods.verifyScale( 'year', _now.getTime(), _pass.year ) ).to.be.a('number').that.to.equal( 365.25 * 24 * 60 * 60 * 1000 )
-        expect( timelineMethods.verifyScale( 'year', _now.getTime(), _pass.year, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.year, 'year' ) )
         expect( timelineMethods.verifyScale( 'lustrum', _now.getTime(), _pass.lustrum ) ).to.be.a('number').that.to.equal( 157788000 * 1000 )
-        //expect( timelineMethods.verifyScale( 'lustrum', _now.getTime(), _pass.lustrum, true ) ).to.be.an('object')
         expect( timelineMethods.verifyScale( 'decade', _now.getTime(), _pass.decade ) ).to.be.a('number').that.to.equal( 315576000 * 1000 )
-        //expect( timelineMethods.verifyScale( 'decade', _now.getTime(), _pass.decade, true ) ).to.be.an('object')
         expect( timelineMethods.verifyScale( 'century', _now.getTime(), _pass.century ) ).to.be.a('number').that.to.equal( 3155760000 * 1000 )
-        //expect( timelineMethods.verifyScale( 'century', _now.getTime(), _pass.century, true ) ).to.be.an('object')
         expect( timelineMethods.verifyScale( 'millennium', _now.getTime(), _pass.millennium ) ).to.be.a('number').that.to.equal( 3155760000 * 10 * 1000 )
-        //expect( timelineMethods.verifyScale( 'millennium', _now.getTime(), _pass.millennium, true ) ).to.be.an('object')
+        // - isVLS = true
+        expect( timelineMethods.verifyScale( 'millisecond', _now.getTime(), _pass.millisecond, true ) ).to.be.a('number')
+        expect( timelineMethods.verifyScale( 'second', _now.getTime(), _pass.second, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.second, 'second' ) )
+        expect( timelineMethods.verifyScale( 'minute', _now.getTime(), _pass.minute, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.minute, 'minute' ) )
+        expect( timelineMethods.verifyScale( 'quarter-hour', _now.getTime(), _pass.hour, true ) ) //.to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.hour, 'quarter-hour' ) )
+        expect( timelineMethods.verifyScale( 'half-hour', _now.getTime(), _pass.hour, true ) ) //.to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.hour, 'half-hour' ) )
+        expect( timelineMethods.verifyScale( 'hour', _now.getTime(), _pass.hour, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.hour, 'hour' ) )
+        expect( timelineMethods.verifyScale( 'day', _now.getTime(), _pass.day, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.day, 'day' ) )
+        expect( timelineMethods.verifyScale( 'weekday', _now.getTime(), _pass.day, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.day, 'day' ) )
+        expect( timelineMethods.verifyScale( 'week', _now.getTime(), _pass.week, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.week, 'week' ) )
+        expect( timelineMethods.verifyScale( 'month', _now.getTime(), _pass.month, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.month, 'month' ) )
+        expect( timelineMethods.verifyScale( 'year', _now.getTime(), _pass.year, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.year, 'year' ) )
+        expect( timelineMethods.verifyScale( 'lustrum', _now.getTime(), _pass.lustrum, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.lustrum, 'lustrum' ) )
+        expect( timelineMethods.verifyScale( 'decade', _now.getTime(), _pass.decade, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.decade, 'decade' ) )
+        expect( timelineMethods.verifyScale( 'century', _now.getTime(), _pass.century, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.century, 'century' ) )
+        expect( timelineMethods.verifyScale( 'millennium', _now.getTime(), _pass.millennium, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.millennium, 'millennium' ) )
     })
     
     
-    /*
-    it ( 'initialized:', () => {
-        let $jqtl = $el.Timeline(),
+    // public methods
+    /* */
+    it ( 'bind timeline object:', () => {
+        let $jqtl = $el.Timeline({
+                startDatetime: '2019/10/1',
+                endDatetime: '2019/10/31',
+                scale: 'day',
+                //rows: 3,
+                minGridSize: 44,
+                sidebar: {
+                    sticky: true,
+                    overlay: true,
+                    list: [
+                        '<span style="margin:0 15px;">Row 1st</span>',
+                        '<span style="margin:0 15px;">Row 2nd</span>',
+                        '<span style="margin:0 15px;">Row 3rd</span>',
+                        '<span style="margin:0 15px;">Row 4th</span>',
+                        '<span style="margin:0 15px;">Row 5th</span>',
+                        '<span style="margin:0 15px;">Row 6th</span>',
+                        '<span style="margin:0 15px;">Row 7th</span>',
+                        '<span style="margin:0 15px;">Row 8th</span>',
+                        '<span style="margin:0 15px;">Row 9th</span>',
+                        '<span style="margin:0 15px;">Row 10th</span>',
+                    ]
+                },
+                ruler: {
+                    top: { lines: [ 'years', 'Months', 'week', 'Day' ], format: { hour12: false, year: 'numeric', month: 'long', day: 'numeric', week: 'ordinal' } },
+                bottom: { lines: [ 'hour', 'Weekday', 'Year' ], format: { hour12: false, weekday: 'short' } }
+                },
+            }),
             timeline = $timeline.Constructor._getInstance( $jqtl[0] ),
-            spy = sinon.spy( timeline, 'initialized' )
+            spy = sinon.spy( $timeline.Constructor.prototype, '_calcVars' )
         
-        console.log( timeline, timeline._instanceProps )
+        console.log( timeline._config )
+        console.log( timeline._instanceProps )
         //let stub = sinon.stub( timeline, '_calcVars' )
         
-        assert.ok( spy.called, 'method is called once' )
+        //assert.ok( spy.called, 'method is called once' )
+        $('#main-content').empty().append( $jqtl )
     })
-    */
+    /* */
 
 })

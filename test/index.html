@@ -9,15 +9,15 @@
 </head>
 <body>
 
-<!-- /*
-  <div id="myTimeline">
-    <ul class="timeline-events">
-      <li data-timeline-node="{start:'2019-3-18 9:50',end:'2019-12-19 19:15',content:'The start point and the end point are out of range (before the time line range)'}">Event outside the range</li>
-    </ul>
+  <div id="main-content" style="margin: 50px auto 0; padding: 15px;"><!-- /*
+    <div id="myTimeline">
+      <ul class="timeline-events">
+        <li data-timeline-node="{start:'2019-3-18 9:50',end:'2019-12-19 19:15',content:'The start point and the end point are out of range (before the time line range)'}">Event outside the range</li>
+      </ul>
+    </div> */ -->
   </div>
-*/ -->
 
-  <!-- mocha�UI -->
+  <!-- mocha UI -->
   <div id="mocha"></div>
 
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -32,14 +32,14 @@
   <!-- sinon -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sinon.js/7.3.2/sinon-no-sourcemaps.min.js"></script>
 
-  <!-- initialize mocha�-->
+  <!-- initialize mocha -->
   <script class="mocha-init">
     mocha.setup('bdd');
     mocha.checkLeaks();
   </script>
   <script src="timeline-spec.js"></script>
 
-  <!-- execute mocha�-->
+  <!-- execute mocha -->
   <script class="mocha-exec">
     mocha.globals(['jQuery']);
     mocha.run();

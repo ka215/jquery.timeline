@@ -299,20 +299,56 @@ class Timeline {
     }
     
     /*
-     * @private: Filter the scale key name for LimitScaleGrids
+     * @private: Filter the given scale key name to allowed for plugin
      */
     _filterScaleKeyName( key ) {
         let filteredKey = null
         
         switch( true ) {
+            case /^millenniums?|millennia$/i.test( key ):
+                filteredKey = 'millennium'
+                break
+            case /^century$/i.test( key ):
+                filteredKey = 'century'
+                break
+            case /^dec(ade|ennium)$/i.test( key ):
+                filteredKey = 'decade'
+                break
+            case /^lustrum$/i.test( key ):
+                filteredKey = 'lustrum'
+                break
+            case /^years?$/i.test( key ):
+                filteredKey = 'year'
+                break
+            case /^months?$/i.test( key ):
+                filteredKey = 'month'
+                break
+            case /^weeks?$/i.test( key ):
+                filteredKey = 'week'
+                break
+            case /^weekdays?$/i.test( key ):
+                filteredKey = 'weekday'
+                break
+            case /^da(y|te)s?$/i.test( key ):
+                filteredKey = 'day'
+                break
+            case /^hours?$/i.test( key ):
+                filteredKey = 'hour'
+                break
             case /^quarter-?(|hour)$/i.test( key ):
                 filteredKey = 'quarterHour'
                 break
             case /^half-?(|hour)$/i.test( key ):
                 filteredKey = 'halfHour'
                 break
+            case /^minutes?$/i.test( key ):
+                filteredKey = 'minute'
+                break
+            case /^seconds?$/i.test( key ):
+                filteredKey = 'second'
+                break
             default:
-                filteredKey = key
+                filteredKey = 'millisecond'
         }
         return filteredKey
     }
@@ -414,25 +450,37 @@ class Timeline {
      * @private: Calculate each properties of the timeline instance
      */
     _calcVars() {
-        let _opts  = this._config,
-            _props = {}
+        let _opts     = this._config,
+            _props    = {},
+            _callback = ( _ac, _cv ) => {
+                if ( this.verifyScale( _cv ) ) {
+                    _cv = this._filterScaleKeyName( _cv )
+                    if ( _ac.indexOf( _cv ) === -1 ) {
+                        _ac.push( _cv )
+                    }
+                }
+                return _ac
+            }
         
-        _props.begin      = this.supplement( null, this._getPluggableDatetime( _opts.startDatetime, 'first' ) )
-        _props.end        = this.supplement( null, this._getPluggableDatetime( _opts.endDatetime, 'last' ) )
-        _props.scaleSize  = this.supplement( null, _opts.minGridSize, this.validateNumeric )
-        _props.rows       = this._getPluggableRows()
-        _props.rowSize    = this.supplement( null, _opts.rowHeight, this.validateNumeric )
-        _props.width      = this.supplement( null, _opts.width, this.validateNumeric )
-        _props.height     = this.supplement( null, _opts.height, this.validateNumeric )
-        _props.isVLS      = false // Whether is the variable length scale, defaults to false (:> 設定スケールが可変長スケールかどうか
-        // _props.scale         // An average millisecond of one base grid on the setting scale (:> 設定スケールにおける起点グリッド1目盛の平均ミリ秒
+        _props.begin      = this.supplement( null, this._getPluggableDatetime( _opts.startDatetime, 'first' ) ) // The milliseconds as start datetime (:> 開始日時のミリ秒
+        _props.end        = this.supplement( null, this._getPluggableDatetime( _opts.endDatetime, 'last' ) ) // The milliseconds as end datetime (:> 終了日時のミリ秒
+        _props.scaleSize  = this.supplement( null, _opts.minGridSize, this.validateNumeric ) // The minimum width of one grid on the base scale (:> 基本スケール上の1グリッドの最小幅
+        _props.rows       = this._getPluggableRows() // The number of rows on the timeline container (:> タイムラインコンテナの行数
+        _props.rowSize    = this.supplement( null, _opts.rowHeight, this.validateNumeric ) // The height of one row on the timeline container (:> タイムラインコンテナの1行の高さ
+        _props.width      = this.supplement( null, _opts.width, this.validateNumeric ) // ?
+        _props.height     = this.supplement( null, _opts.height, this.validateNumeric ) // ?
+        _props.isVLS      = true // Whether is the variable length scale, defaults to true (:> 設定スケールが可変長スケールかどうか (※原則、すべて可変長スケールとして扱う)
+        // _props.scale         // The basic millisecond of one base grid on the setting scale (:> 設定スケールにおける起点グリッド1目盛の基準ミリ秒
         // _props.grids         // Number of base grids on the setting scale (= number of grids displayed) (:> 設定スケールにおける起点グリッド数（=表示されるグリッド数）
         // _props.variableScale // An object that referable as the width of the base grid on the setting scale (:> 設定スケールにおける起点グリッド幅の幅員基準値となるオブジェクト
+        // _props.gridsMap      // An object that mapped the available grids (:> 有効グリッドをマップしたオブジェクト -> これを定義するとメモリを食うのでNG
+        // _props.rulers        // The available scale list on the ruler (:> 有効な目盛のスケールリスト
         // _props.fullwidth     // The total width of the timeline container (:> タイムラインコンテナの横幅の全長
         // _props.fullheight    // The total height of the timeline container (:> タイムラインコンテナの縦幅の全長
         // _props.visibleWidth  // The width of the timeline that will display (:> 表示されるタイムラインの横幅
         // _props.visibleHeight // The height of the timeline that will display (:> 表示されるタイムラインの縦幅
         
+        /*
         switch ( true ) {
             case /^dec(ade|ennium)$/i.test( _opts.scale ):
             case /^lustrum$/i.test( _opts.scale ):
@@ -440,12 +488,20 @@ class Timeline {
             case /^months?$/i.test( _opts.scale ):
             case /^weeks?$/i.test( _opts.scale ):
             case /^(|week)days?$/i.test( _opts.scale ):
-            //case /^hours?$/i.test( _opts.scale ):
+            case /^hours?$/i.test( _opts.scale ):
                 _props.isVLS = true
                 break
             default:
                 break
         }
+        */
+        
+        // get all scales on ruler
+        let _rulers = _opts.ruler.top.lines.reduce( _callback, [])
+        if ( _opts.ruler.hasOwnProperty('bottom') && _opts.ruler.bottom.hasOwnProperty('lines') ) {
+            _rulers = [..._rulers, ..._opts.ruler.bottom.lines].reduce( _callback, [] )
+        }
+        _props.rulers = _rulers
         
         this._instanceProps = _props // pre-cache
         
@@ -454,25 +510,23 @@ class Timeline {
             let _temp       = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS ),
                 _values     = Object.values( _temp ),
                 _averageVar = this.numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average value within the range
+                _minVar     = Math.min( ..._values ),
                 _totalWidth = 0,
-                _baseVar
+                _base_is_min = true, // Whether use min value of scale as base grid width
+                _baseVar    = _base_is_min ? _minVar : _averageVar
             
             switch ( true ) {
                 case /^years?$/i.test( _opts.scale ):
-                    _baseVar = 365
-                    _props.scale = _averageVar * ( 24 * 60 * 60 * 1000 )
+                    _props.scale = _baseVar * ( 24 * 60 * 60 * 1000 )
                     break
                 case /^months?$/i.test( _opts.scale ):
-                    _baseVar = 30
-                    _props.scale = _averageVar * ( 24 * 60 * 60 * 1000 )
+                    _props.scale = _baseVar * ( 24 * 60 * 60 * 1000 )
                     break
                 case /^weeks?$/i.test( _opts.scale ):
-                    _baseVar = 24 * 7
-                    _props.scale = _averageVar * ( 60 * 60 * 1000 )
+                    _props.scale = _baseVar * ( 60 * 60 * 1000 )
                     break
                 case /^(|week)days?$/i.test( _opts.scale ):
-                    _baseVar = 24
-                    _props.scale = _averageVar * ( 60 * 60 * 1000 )
+                    _props.scale = _baseVar * ( 60 * 60 * 1000 )
                     break
             }
 //console.log( '!', _opts.scale, _temp, _vals )
@@ -484,7 +538,7 @@ class Timeline {
             _props.variableScale = _temp
             _props.fullwidth     = _totalWidth
         } else {
-            // In case of fixed length scale (:> 固定長スケールの場合
+            // Deprecated: In case of fixed length scale (:> 固定長スケールの場合 (廃止予定)
             _props.scale         = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS )
             _props.grids         = Math.ceil( ( _props.end - _props.begin ) / _props.scale )
             _props.variableScale = null
@@ -508,7 +562,7 @@ class Timeline {
             throw new TypeError( `The range of the timeline to be rendered is incorrect.` )
         }
         
-console.log( '!_calcVars::return:', _props )
+//console.log( '!_calcVars::return:', _props )
         this._instanceProps = _props
     }
     
@@ -805,6 +859,8 @@ console.log( '!_calcVars::return:', _props )
                 ctx_grid.stroke()
             },
             drawHorizontalLine = ( pos_y, is_dotted ) => {
+                let _correction = 0.5
+                
                 is_dotted = this.supplement( false, is_dotted )
                 // console.log( pos_y, is_dotted )
                 ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.1 )'
@@ -816,12 +872,14 @@ console.log( '!_calcVars::return:', _props )
                 } else {
                     ctx_grid.setLineDash([])
                 }
-                ctx_grid.moveTo( 0, pos_y + 0.5 )
-                ctx_grid.lineTo( _props.fullwidth, pos_y + 0.5 )
+                ctx_grid.moveTo( 0, pos_y + _correction )
+                ctx_grid.lineTo( _props.fullwidth, pos_y + _correction )
                 ctx_grid.closePath()
                 ctx_grid.stroke()
             },
             drawVerticalLine = ( pos_x, is_dotted ) => {
+                let _correction = -0.5
+                
                 is_dotted = this.supplement( false, is_dotted )
                 // console.log( pos_x, is_dotted )
                 ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.025 )'
@@ -833,8 +891,8 @@ console.log( '!_calcVars::return:', _props )
                 } else {
                     ctx_grid.setLineDash([])
                 }
-                ctx_grid.moveTo( pos_x - 0.5, 0 )
-                ctx_grid.lineTo( pos_x - 0.5, _props.fullheight )
+                ctx_grid.moveTo( pos_x + _correction, 0 )
+                ctx_grid.lineTo( pos_x + _correction, _props.fullheight )
                 ctx_grid.closePath()
                 ctx_grid.stroke()
             }
@@ -925,7 +983,7 @@ console.log( '!_calcVars::return:', _props )
             _finalLines = 0,
             ctx_ruler   = _ruler_bg[0].getContext('2d')
             
-//console.log( grids, size_per_grid, scale, begin, min_scale, ruler, position, ruler_line, line_height, ctx_ruler.canvas.width, ctx_ruler.canvas.height )
+//console.log( '!_createRuler:', ruler_line, ruler_opts )
         // Draw background of ruler
         ctx_ruler.fillStyle = background
         ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height )
@@ -951,31 +1009,19 @@ console.log( '!_calcVars::return:', _props )
             // Draw cols
             let _line_grids = null,
                 _grid_x     = 0,
-                _correction = -1.5
+                _correction = -0.5
             
-            //if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
-                // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
-                _line_grids = this._filterVariableScale( line_scale )
-//console.log( '!_createRuler:', line_scale, _line_grids )
-                
-                for ( let _key of Object.keys( _line_grids ) ) {
-                    _grid_x += this.numRound( _line_grids[_key], 2 )
-                    
-                    ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
-                    ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
-                }
-            //} else
             //if ( /^(week|day)s?$/i.test( _opts.scale ) ) {
-                // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
-                _line_grids = this._filterVariableScale( line_scale )
-console.log( '!_createRuler:', line_scale, _line_grids )
+            // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
+            _line_grids = this._filterVariableScale( line_scale )
+//console.log( '!!_createRuler:', line_scale, _line_grids )
+            
+            for ( let _key of Object.keys( _line_grids ) ) {
+                _grid_x += this.numRound( _line_grids[_key], 2 )
                 
-                for ( let _key of Object.keys( _line_grids ) ) {
-                    _grid_x += this.numRound( _line_grids[_key], 2 )
-                    
-                    ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
-                    ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
-                }
+                ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
+                ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
+            }
             /*} else {
                 // In case of fixed length scale (:> 固定長スケールの場合
                 _line_grids = this._getGridsPerScale( line_scale )
@@ -999,6 +1045,15 @@ console.log( '!_createRuler:', line_scale, _line_grids )
             _ruler_body.append( this._createRulerContent( _line_grids, line_scale, ruler_opts ) )
             _finalLines++
         })
+        
+        /*
+        // drow line of ruler right
+        ctx_ruler.beginPath()
+        ctx_ruler.moveTo( ctx_ruler.canvas.width, 0 )
+        ctx_ruler.lineTo( ctx_ruler.canvas.width, ctx_ruler.canvas.height )
+        ctx_ruler.closePath()
+        ctx_ruler.stroke()
+        */
         
         if ( ruler_line.length != _finalLines ) {
             _ruler.css( 'height', `${_finalLines * line_height}px` )
@@ -1055,7 +1110,7 @@ console.log( '!_createRuler:', line_scale, _line_grids )
         }
         
         // グリッド幅の起点となるスケールは _opts.scale で、表示用にフィルタされるスケールは target_scale なので、それに合わせてサイズを計算する
-console.log( `!_filterVariableScale::${_opts.scale} -> ${target_scale}:`, scales )
+//console.log( `!_filterVariableScale::${_opts.scale} -> ${target_scale}:`, scales )
         for ( let _dt of Object.keys( scales ) ) {
             let grid_size = this.numRound( ( scales[_dt] * _props.scaleSize ) / _baseVar, 2 ),
                 _newKey   = null,
@@ -1130,12 +1185,12 @@ console.log( `!_filterVariableScale::${_opts.scale} -> ${target_scale}:`, scales
             }
         }
         
-console.log( '!!!_filterVariableScale::return:', retObj )
+//console.log( `!!!_filterVariableScale::${_opts.scale} -> ${target_scale}:`, retObj )
         return retObj
     }
     
     /*
-     * @private: Get the grid number per scale (for fixed length scale) (:> スケールごとのグリッド数を取得する（固定長スケール用）
+     * @private: Get the grid number per scale (for fixed length scale); Deprecated (:> スケールごとのグリッド数を取得する（固定長スケール用） (※廃止予定)
      */
     _getGridsPerScale( target_scale ) {
         //let _opts        = this._config,
@@ -1206,15 +1261,15 @@ console.log( '!!!_filterVariableScale::return:', retObj )
         for ( let _key of Object.keys( _line_grids ) ) {
             let _item_width      = _line_grids[_key],
                 _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
-                _ruler_string    = '',
+                _ruler_string    = this.getLocaleString( _key, this._filterScaleKeyName( line_scale ), locale, format ),
                 _data_ruler_item = '',
                 _temp
             
+/*
             switch ( true ) {
                 case /^(year|month)s?$/i.test( _opts.scale ):
                     _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
                     break
-/*
                 case /^weeks?$/i.test( _opts.scale ):
                     _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
                     break
@@ -1222,22 +1277,24 @@ console.log( '!!!_filterVariableScale::return:', retObj )
                     _temp = _key.split(',')
                     _ruler_string = this.getLocaleString( _temp[0], line_scale, locale, format )
                     break
-*/
                 default:
                     _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
                     break
             }
-console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _line_grids[_key], locale, format, _item_width, _ruler_string )
+*/
+//console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _line_grids[_key], locale, format, _item_width, _ruler_string )
             
             _data_ruler_item = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
-            _line.attr( 'data-ruler-item', _data_ruler_item ).html( _ruler_string )
+            _line.attr( 'data-ruler-item', _data_ruler_item ).html( `<span>${_ruler_string}</span>` )
             
             if ( _item_width > this.strWidth( _ruler_string ) ) {
                 // Adjust position of ruler item string
-//console.log( _item_width, _ruler_string, _ruler_string.length, this.strWidth( _ruler_string ), $(this._element).width() )
+                /*
+//console.log( _item_width, _ruler_string, _ruler_string.toString().length, this.strWidth( _ruler_string ), $(this._element).get(0).clientWidth )
                 if ( _item_width > $(this._element).width() ) {
-                    _line.addClass( ClassName.RULER_ITEM_ALIGN_LEFT )
+                    _line.children('span').addClass( ClassName.RULER_ITEM_ALIGN_LEFT )
                 }
+                */
             }
             
             _ruler_lines.append( _line ).attr( 'data-ruler-scope', line_scale )
@@ -1258,7 +1315,7 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
             _wrapper = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR }),
             _margin  = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR_MARGIN }),
             _list    = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR_ITEM }),
-            _c       = 0.5
+            _c       = -0.5
         
         if ( _sticky ) {
             _wrapper.addClass( ClassName.STICKY_LEFT )
@@ -1270,18 +1327,18 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
         
         //_wrapper.css( 'margin-top', margin.top + 'px' ).css( 'margin-bottom', margin.bottom + 'px' )
         if ( margin.top > 0 ) {
-            _wrapper.prepend( _margin.clone().css( 'height', `${( margin.top + 1 )}px` ) )
+            _wrapper.prepend( _margin.clone().css( 'height', `${margin.top}px` ) )
         }
         
         for ( let i = 0; i < _props.rows; i++ ) {
-            let _item = _list.clone().html( _sbList[i] )
+            let _item = _list.clone().html( `${_sbList[i]}` )
             
             _wrapper.append( _item )
         }
         _wrapper.find( Selector.TIMELINE_SIDEBAR_ITEM ).css( 'height', `${( _props.rowSize + _c )}px` ).css( 'line-height', `${( _props.rowSize + _c )}px` )
         
         if ( margin.bottom > 0 ) {
-            _wrapper.append( _margin.clone().css( 'height', `${( margin.bottom + 1 )}px` ) )
+            _wrapper.append( _margin.clone().css( 'height', `${( margin.bottom + _c )}px` ) )
         }
         
         return _wrapper
@@ -3243,8 +3300,92 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
      *
      * @return mixed (return modified new Date object when given valid argument, or false if failed)
      */
-    modifyDatetime( datetime, fluctuation, scale ) {
-        // This work in progress yet
+    modifyDate( datetime, fluctuation, scale ) {
+        if ( this.is_empty( datetime ) || this.is_empty( fluctuation ) || this.is_empty( scale ) || ! this.verifyScale( scale ) ) {
+            return false
+        }
+        let baseDate = this.getCorrectDatetime( datetime ),
+            flct     = this.validateNumeric( 0, fluctuation ),
+            dateElms = [
+                baseDate.getFullYear(),    // 0: year
+                baseDate.getMonth(),       // 1: month (index)
+                baseDate.getDate(),        // 2: day
+                baseDate.getHours(),       // 3: hour
+                baseDate.getMinutes(),     // 4: minute
+                baseDate.getSeconds(),     // 5: second
+                baseDate.getMilliseconds() // 6: millisec
+            ],
+            tmpDate  = new Date( new Date( ...dateElms ).setFullYear( dateElms[0] ) ),
+            isAdjust = false,
+            newDate
+        
+        switch ( true ) {
+            case /^millenniums?|millennia$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 1000) ) )
+                break
+            case /^century$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 100) ) )
+                break
+            case /^dec(ade|ennium)$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 10) ) )
+                break
+            case /^lustrum$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 5) ) )
+                break
+            case /^years?$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + flct ) )
+                break
+            case /^months?$/i.test( scale ):
+                newDate = new Date( tmpDate.setMonth( tmpDate.getMonth() + flct ) )
+                break
+            case /^weeks?$/i.test( scale ):
+                newDate = new Date( tmpDate.setDate( tmpDate.getDate() + (flct * 7) ) )
+                newDate.setHours( dateElms[3] )
+                newDate.setMinutes( dateElms[4] )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^(|week)days?$/i.test( scale ):
+                newDate = new Date( tmpDate.setDate( tmpDate.getDate() + flct ) )
+                newDate.setHours( dateElms[3] )
+                newDate.setMinutes( dateElms[4] )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                //isAdjust = true
+                break
+            case /^hours?$/i.test( scale ):
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + ( flct * 60 * 60 * 1000 ) ) )
+                newDate.setMinutes( dateElms[4] )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^minutes?$/i.test( scale ):
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + ( flct * 60 * 1000 ) ) )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^seconds?$/i.test( scale ):
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + ( flct * 1000 ) ) )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            default:
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + flct ) )
+                break
+        }
+        
+        if ( isAdjust ) {
+            // Why different time of 1 min 15 sec on 12/01/1847, 0:00:00? (GMT+0001)
+            let divide = this.getCorrectDatetime( '1847/12/1 0:01:15' )
+            
+            if ( baseDate.getTime() < divide.getTime() && newDate.getTime() >= divide.getTime() ) {
+                newDate = new Date( newDate.setTime( newDate.getTime() - (60 * 1000) ) )
+            } else
+            if ( baseDate.getTime() > divide.getTime() && newDate.getTime() <= divide.getTime() ) {
+                newDate = new Date( newDate.setTime( newDate.getTime() - (75 * 1000) ) )
+            }
+        }
+//console.log( 'modifyDate:', baseDate.toString(), '-[', flct, scale, ']->', newDate.toString() )
+        return newDate
     }
     
     /*
@@ -3540,6 +3681,7 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
     /*
      * Verify whether is allowed scale in the plugin. (:> 許容スケールかを確認します。
      * Then retrieves that values of intervals on the scale if the scale is available and given arguments of date range. (:> 有効スケールかつ日付範囲引数が与えられた場合、対象スケールの間隔値を取得します
+     * And return the base millisecond of scale if it is not the variable length scale (isVLS to false) (:> 可変長スケールでない場合はスケールの基本ミリ秒を返します
      *
      * @param string scale (required)
      * @param int begin (optional; begin of range as unit millisecs that got by `Date.getTime()`)
@@ -3583,7 +3725,7 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
                 // Hour (:> 時（時間）
                 _ms = 60 * 60 * 1000
                 break
-            case /^days?$/i.test( scale ):
+            case /^(|week)days?$/i.test( scale ):
                 // Day (is the variable length scale by DST) (:> 日 (サマータイムによる可変長スケール)
                 _ms = 24 * 60 * 60 * 1000
                 break
@@ -3623,7 +3765,7 @@ console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _li
                 _ms = 3155760000 * 10 * 1000
                 break
             default:
-                console.warn( 'Specified an invalid scale.' )
+                console.warn( `Specified an invalid "${scale}" scale.` )
                 _ms = -1
         }
         if ( isBool ) {
