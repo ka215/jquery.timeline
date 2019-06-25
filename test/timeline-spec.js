@@ -58,18 +58,79 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( filterScaleKeyName('Millisecond') ).to.be.equal( 'millisecond' )
     })
     
-    /*
-    it ( '_getPluggableDatetime: Retrieve the pluggable datetime as milliseconds from specified keyword', () => {
-        let timelineMethods._config = {
-                scale: 'day'
-            }
-console.log( timelineMethods._getPluggableDatetime( 'currently', 'first' ) )
-console.log( timelineMethods._getPluggableDatetime( 'auto', 'last' ) )
+    it ( '_getPluggableDatetime: Retrieve the pluggable datetime as milliseconds depend on specific preset keyword', () => {
+        const getPluggableDatetime = ( preset_key, round_type = '', obj = {} ) => {
+            timelineMethods._config = Object.assign( defaultOptions, obj )
+            return timelineMethods._getPluggableDatetime( preset_key, round_type )
+        }
+        let getCorrectDatetime = timelineMethods.getCorrectDatetime,
+            _nowDt  = new Date()
         
-        //expect( timelineMethods._getPluggableDatetime() )
+        // exceptional case as startDatetime
+        expect( new Date( getPluggableDatetime( 'currently' ) ).toDateString() ).to.be.equal( _nowDt.toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', '', { scale: 'day' } ) ).toDateString() ).to.be.equal( _nowDt.toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', '', { scale: 'month' } ) ).toDateString() ).to.be.equal( _nowDt.toDateString() )
+        // for startDatetime
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'millennium' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), 0, 1 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'century' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), 0, 1 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'decade' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), 0, 1 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'lustrum' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), 0, 1 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'year' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), 0, 1 ).toDateString() )
+        //expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'month' } ) ).toDateString() ).to.be.equal( timelineMethods.modifyDate( _nowDt.toDateString(), (_nowDt.getDate() * -1 + 1), 'day' ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'month' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), 1 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'week' } ) ).toDateString() ).to.be.equal( _nowDt.toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'day' } ) ).toDateString() ).to.be.equal( _nowDt.toDateString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'hour' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours(), 0, 0 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'half-hour' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours(), 0, 0 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'quarter-hour' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours(), 0, 0 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'minute' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours(), _nowDt.getMinutes(), 0 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'currently', 'first', { scale: 'second' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours(), _nowDt.getMinutes(), _nowDt.getSeconds() ).toUTCString() )
+        expect( new Date( getPluggableDatetime( '-1-2-3', 'first', { scale: 'year' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-1').toDateString() )
+        expect( new Date( getPluggableDatetime( '0-1-2', 'first', { scale: 'month' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('0').toDateString() )
+        expect( new Date( getPluggableDatetime( '1-2-3', 'first', { scale: 'week' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('1-2-3').toDateString() )
+        expect( new Date( getPluggableDatetime( '74', 'first', { scale: 'day' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('74').toDateString() )
+        expect( new Date( getPluggableDatetime( '169-1-31', 'first', { scale: 'month' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('169-1').toDateString() )
+        expect( new Date( getPluggableDatetime( '794/4/5 12', 'first', { scale: 'day' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('794/4/5').toDateString() )
+        expect( new Date( getPluggableDatetime( '1600/10/21 10:20', 'first', { scale: 'hour' } ) ).toUTCString() ).to.be.equal( getCorrectDatetime('1600/10/21 10').toUTCString() )
+        expect( new Date( getPluggableDatetime( '1847/11/30 23:59:59', 'first', { scale: 'minute' } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/11/30 23:59').toString() )
+        expect( new Date( getPluggableDatetime( '2010/11/9 12:34:56.789', 'first', { scale: 'second' } ) ).toString() ).to.be.equal( getCorrectDatetime('2010/11/9 12:34:56').toString() )
+        // exceptional case as startDatetime
+        timelineMethods._config.scale = 'day' // initialize scale
+        expect( new Date( getPluggableDatetime( 'auto' ) ).toDateString() ).to.be.equal( timelineMethods.modifyDate( _nowDt, timelineMethods._config.range, 'month' ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', '', { scale: 'day' } ) ).toDateString() ).to.be.equal( timelineMethods.modifyDate( _nowDt, timelineMethods._config.range, 'month' ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', '', { scale: 'month' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + timelineMethods._config.range, _nowDt.getMonth(), 1 ).toDateString() )
+        // for endDatetime
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'millennium' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + (1000 * timelineMethods._config.range), 11, 31 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'century' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + (1000 * timelineMethods._config.range), 11, 31 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'decade' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + (100 * timelineMethods._config.range), 11, 31 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'lustrum' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + (10 * timelineMethods._config.range), 11, 31 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'year' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + (5 * timelineMethods._config.range), 11, 31 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'month' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear() + timelineMethods._config.range, _nowDt.getMonth() + 1, 0 ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'week' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth() + timelineMethods._config.range, _nowDt.getDate() ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'day' } ) ).toDateString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth() + timelineMethods._config.range, _nowDt.getDate() ).toDateString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'hour' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate() + timelineMethods._config.range, _nowDt.getHours() + 1, 0, -1 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'half-hour' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate() + timelineMethods._config.range, _nowDt.getHours() + 1, 0, -1 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'quarter-hour' } ) ).toUTCString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate() + timelineMethods._config.range, _nowDt.getHours() + 1, 0, -1 ).toUTCString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'minute' } ) ).toString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours() + timelineMethods._config.range, _nowDt.getMinutes() + 1, -1 ).toString() )
+        expect( new Date( getPluggableDatetime( 'auto', 'last', { scale: 'second' } ) ).toString() ).to.be.equal( new Date( _nowDt.getFullYear(), _nowDt.getMonth(), _nowDt.getDate(), _nowDt.getHours(), _nowDt.getMinutes() + timelineMethods._config.range, _nowDt.getSeconds() + 1, -1 ).toString() )
+        expect( new Date( getPluggableDatetime( '-12-3-4', 'last', { scale: 'year', range: null } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-11-1-1').toDateString() )
+        expect( new Date( getPluggableDatetime( '-1', 'last', { scale: 'year', range: 10 } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-2/12/31').toDateString() )
+        expect( new Date( getPluggableDatetime( '0-1-2', 'last', { scale: 'month', range: 0 } ) ).toDateString() ).to.be.equal( getCorrectDatetime('0/1/31').toDateString() )
+        expect( new Date( getPluggableDatetime( '1-2-3', 'last', { scale: 'week' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('1-2-3').toDateString() )
+        expect( new Date( getPluggableDatetime( '74-5-6', 'last', { scale: 'day' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('74/5/6').toDateString() )
+        expect( new Date( getPluggableDatetime( '74/5/6 13:45', 'last', { scale: 'day' } ) ).toString() ).to.be.equal( getCorrectDatetime('74/5/6 23:59:59').toString() )
+        expect( new Date( getPluggableDatetime( '1847/11/30 23:59:59', 'last', { scale: 'hour' } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/11/30 23:59:59').toString() )
+        expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:01:59').toString() )
+        // general purpose case (because this case is equal to "getCorrectDatetime" method, should use that method)
+        expect( new Date( getPluggableDatetime( '-12-3-4', '', { scale: 'year' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-12-3-4').toDateString() )
+        expect( new Date( getPluggableDatetime( '-1', '', { scale: 'year' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-1/1/1').toDateString() )
+        expect( new Date( getPluggableDatetime( '0-1-2', '', { scale: 'month' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('0/1/2').toDateString() )
+        expect( new Date( getPluggableDatetime( '1-2-3', '', { scale: 'week' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('1-2-3').toDateString() )
+        expect( new Date( getPluggableDatetime( '74-5-6', '', { scale: 'day' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('74/5/6').toDateString() )
+        expect( new Date( getPluggableDatetime( '74/5/6 13:45', '', { scale: 'day' } ) ).toString() ).to.be.equal( getCorrectDatetime('74/5/6 13:45').toString() )
+        expect( new Date( getPluggableDatetime( '1847/11/30 23:59:59', '', { scale: 'hour' } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/11/30 23:59:59').toString() )
+        expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', '', { scale: 'minute' } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:00:00').toString() )
     })
-    */
-    
     
     // public methods as utility
     it ( 'getCorrectDatetime: This method is able to get the correct datetime instead of built in "new Date" on javascript', () => {
@@ -82,12 +143,12 @@ console.log( timelineMethods._getPluggableDatetime( 'auto', 'last' ) )
         expect( getCorrectDatetime(0).toUTCString() ).to.be.equal('Thu, 01 Jan 1970 00:00:00 GMT')
         expect( getCorrectDatetime(1559641760068).toUTCString() ).to.be.equal('Tue, 04 Jun 2019 09:49:20 GMT')
         // string argument
-        expect( getCorrectDatetime('-234').toUTCString() ).to.be.equal('Wed, 01 Jan -234 00:01:15 GMT')
-        expect( getCorrectDatetime('-1').toUTCString() ).to.be.equal('Fri, 01 Jan -001 00:01:15 GMT')
+        expect( getCorrectDatetime('-234').toUTCString() ).to.be.equal('Wed, 01 Jan -0234 00:01:15 GMT')
+        expect( getCorrectDatetime('-1').toUTCString() ).to.be.equal('Fri, 01 Jan -0001 00:01:15 GMT')
         expect( getCorrectDatetime('0').toUTCString() ).to.be.equal('Sat, 01 Jan 0000 00:01:15 GMT')
         expect( getCorrectDatetime('1').toUTCString() ).to.be.equal('Mon, 01 Jan 0001 00:01:15 GMT')
-        expect( getCorrectDatetime('-234/12').toUTCString() ).to.be.equal('Mon, 01 Dec -234 00:01:15 GMT')
-        expect( getCorrectDatetime('-1/5/31').toUTCString() ).to.be.equal('Mon, 31 May -001 00:01:15 GMT')
+        expect( getCorrectDatetime('-234/12').toUTCString() ).to.be.equal('Mon, 01 Dec -0234 00:01:15 GMT')
+        expect( getCorrectDatetime('-1/5/31').toUTCString() ).to.be.equal('Mon, 31 May -0001 00:01:15 GMT')
         expect( getCorrectDatetime('7-1').toDateString() ).to.be.equal('Mon Jan 01 0007')
         expect( getCorrectDatetime('9/2').toDateString() ).to.be.equal('Sun Feb 01 0009')
         expect( getCorrectDatetime('32-5').toDateString() ).to.be.equal('Sat May 01 0032')
@@ -110,10 +171,10 @@ console.log( timelineMethods._getPluggableDatetime( 'auto', 'last' ) )
         expect( getCorrectDatetime('Wed Jun 28 1993 14:39:07 GMT-0600 (PDT)').toUTCString() ).to.be.equal('Mon, 28 Jun 1993 14:39:07 GMT')
         expect( getCorrectDatetime('12/19/2012, 7:00:00 PM').toUTCString() ).to.be.equal('Wed, 19 Dec 2012 19:00:00 GMT')
         // invalid argument
-        expect( getCorrectDatetime('not datetime') ).to.be.null
-        expect( getCorrectDatetime() ).to.be.null
-        expect( getCorrectDatetime(false) ).to.be.null
-        expect( getCorrectDatetime('Donnerstag, 20. Dezember 2012') ).to.be.null
+        expect( getCorrectDatetime('not datetime') ).to.be.null // console.warn: "not datetime" Cannot parse date because invalid format.
+        expect( getCorrectDatetime() ).to.be.null // console.warn: "undefined" Cannot parse date because invalid format.
+        expect( getCorrectDatetime(false) ).to.be.null // console.warn: "false" Cannot parse date because invalid format.
+        expect( getCorrectDatetime('Donnerstag, 20. Dezember 2012') ).to.be.null // console.warn: "Donnerstag, 20. Dezember 2012" Cannot parse date because invalid format.
     })
     
     it ( 'getWeek: get week number as extension of Date object', () => {
@@ -251,9 +312,9 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         let diffDate = timelineMethods.diffDate,
             gCD = timelineMethods.getCorrectDatetime
         
-        expect( diffDate() ).to.be.false
-        expect( diffDate('2019/1/1') ).to.be.false
-        expect( diffDate('2019/1/1', '2019/12/31') ).to.be.false
+        expect( diffDate() ).to.be.false // console.warn: Cannot parse date to get difference because undefined.
+        expect( diffDate('2019/1/1') ).to.be.false // console.warn: Cannot parse date to get difference because undefined.
+        expect( diffDate('2019/1/1', '2019/12/31') ).to.be.false // console.warn: Cannot parse date to get difference because invalid format.
         expect( diffDate(gCD('2019/1/1'), gCD('2019/12/31')) ).to.be.a('number')
         // when case "millennium"
         expect( diffDate(gCD('0'), gCD('1000'),'millennium') ).to.be.an('object').that.to.eql({1: 1000})
@@ -310,11 +371,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
         // when case "hour"
         expect( diffDate(gCD('169/12/31'), gCD('170/1/1'),'hour') ).to.be.an('object').that.to.include({'169/12/31 0': 60, '170/1/1 0': 60})
-        expect( diffDate(new Date('2020-1-29 0'), new Date('2020-1-29 12'),'hour') ).to.be.false
+        expect( diffDate(new Date('2020-1-29 0'), new Date('2020-1-29 12'),'hour') ).to.be.false // console.warn: Cannot parse date to get difference because invalid format.
         expect( diffDate(gCD('2020-1-29 0'), gCD('2020-1-29 12'),'hour') ).to.be.an('object').that.to.include({'2020/1/29 0': 60, '2020/1/29 12': 60})
         expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 23:00'),'hour') ) ).to.have.lengthOf( 24 )
         expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 24:00'),'hour') ) ).to.have.lengthOf( 25 )
-        expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'hour') ).to.be.false
+        expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'hour') ).to.be.false // console.warn: Cannot parse date to get difference because invalid format.
         expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:01'),'hour') ).to.be.an('object').that.to.include({'1970/1/2 0': 60})
         expect( diffDate(gCD('1998-1-29 5:22'), gCD('1998-1-29 14:08'),'hour') ).to.be.an('object').that.to.eql({'1998/1/29 5': 60, '1998/1/29 6': 60, '1998/1/29 7': 60, '1998/1/29 8': 60, '1998/1/29 9': 60, '1998/1/29 10': 60, '1998/1/29 11': 60, '1998/1/29 12': 60, '1998/1/29 13': 60, '1998/1/29 14': 60})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
@@ -326,7 +387,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         
         // when case "minute"
         expect( diffDate(gCD('169/12/31 23:50'), gCD('170/1/1 0:10'),'minute') ).to.be.an('object').that.to.include({'169/12/31 23:50': 60, '170/1/1 0:0': 60})
-        expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'minute') ).to.be.false
+        expect( diffDate(new Date('1970-1-1 0:00'), new Date('1970-1-1 24:01'),'minute') ).to.be.false // console.warn: Cannot parse date to get difference because invalid format.
         expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:01'),'minute') ).to.be.an('object').that.to.include({'1970/1/1 23:59': 60, '1970/1/2 0:0': 60, '1970/1/2 0:1': 60})
         expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 9:59'),'minute') ) ).to.have.lengthOf( 600 )
         expect( Object.keys( diffDate(gCD('1998/1/29 5:22'), gCD('1998/1/29 7:08'),'minute') ) ).to.have.lengthOf( 107 )
@@ -404,7 +465,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         
 /*
 console.log( _now.getTime(), _pass )
-*/
+* /
 console.log( '0::ms: ', timelineMethods.verifyScale( 'millisecond', _now.getTime(), _pass.millisecond, true ) )
 console.log( '1::sec:', timelineMethods.verifyScale( 'second', _now.getTime(), _pass.second, true ) )
 console.log( '2::min:', timelineMethods.verifyScale( 'minute', _now.getTime(), _pass.minute, true ) )
@@ -422,7 +483,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
 /* */
         // whether or not valid scale
         expect( timelineMethods.verifyScale() ).to.be.false
-        expect( timelineMethods.verifyScale( 'auto' ) ).to.be.false
+        expect( timelineMethods.verifyScale( 'auto' ) ).to.be.false // console.warn: Specified an invalid "auto" scale.
         expect( timelineMethods.verifyScale( 'millisecond' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'second' ) ).to.be.true
         expect( timelineMethods.verifyScale( 'minute' ) ).to.be.true
@@ -477,11 +538,31 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
     // public methods
     /* */
     it ( 'bind timeline object:', () => {
-        let $jqtl = $el.Timeline({
-                startDatetime: '2019/10/1',
-                endDatetime: '2019/10/31',
-                scale: 'day',
-                //rows: 3,
+        let dateset = {
+                'normal-year': [ 'currently', 'auto', 'year' ], // -> 
+                'normal-month': [ 'currently', 'auto', 'month' ], // -> 
+                'normal-week': [ 'currently', 'auto', 'week' ], // -> 
+                'normal-day': [ 'currently', 'auto', 'day' ], // -> 
+                'normal-weekday':  [ 'currently', 'auto', 'weekday' ], // -> 
+                'normal-hour':  [ 'currently', 'auto', 'hour' ], // -> 
+                'normal-minute':  [ 'currently', 'auto', 'minute' ], // -> 
+                'normal-second':  [ 'currently', 'auto', 'second' ], // -> 
+                'DSTs':   [ '2019/3/1', '2019/4/1', 'day' ], // -> Ok
+                'DSTe':   [ '2019/10/1', '2019/10/31', 'day' ], // -> Ok
+                'DSTs-h': [ '2019/3/31 0:00', '2019/3/31 23:59', 'hour' ], // -> Ok
+                'DSTe-h': [ '2019/10/27 0:00', '2019/10/27 23:59', 'hour' ], // -> Ok
+                'halfH':    [ '2019/10/27 0:00', '2019/10/27 23:59', 'half-hour' ], // -> 
+                'quarterH': [ '2019/10/27 0:00', '2019/10/27 23:59', 'quarter-hour' ], // -> 
+                'GMT+0001m': [ '1847/11/30 23:50', '1847/12/1 0:10', 'minute' ], // -> Ok
+                'GMT+0001s': [ '1847/11/30 23:59:30', '1847/12/1 0:01:59', 'second' ], // -> Ok
+                'leap-second': [ '2016/12/31 23:59:59', '2017/1/1 0:1:1', 'second' ], // -> Ok
+            },
+            datesetKey = 'normal-day',
+            $jqtl = $el.Timeline({
+                startDatetime: dateset[datesetKey][0],
+                endDatetime: dateset[datesetKey][1],
+                scale: dateset[datesetKey][2],
+                rows: 3,
                 minGridSize: 44,
                 sidebar: {
                     sticky: true,
@@ -500,9 +581,77 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     ]
                 },
                 ruler: {
-                    top: { lines: [ 'years', 'Months', 'week', 'Day' ], format: { hour12: false, year: 'numeric', month: 'long', day: 'numeric', week: 'ordinal' } },
-                bottom: { lines: [ 'hour', 'Weekday', 'Year' ], format: { hour12: false, weekday: 'short' } }
+                    top: {
+                        lines: [
+                            'millennia',
+                            'century',
+                            'decade',
+                            'lustrum',
+                            'years',
+                            'months',
+                            'weeks',
+                            'days',
+                            'weekdays',
+                            'hours',
+                            //'half-hour',
+                            //'quarter-hour',
+                            'minutes',
+                            'seconds',
+                        ], 
+                        format: { hour12: false,
+                            millennium: 'ordinal',
+                            century: 'ordinal',
+                            decade: 'ordinal',
+                            lustrum: 'ordinal',
+                            year: 'numeric', // 'numeric', '2-digit' or 'zerofill'
+                            month: 'long', // 'numeric', '2-digit', 'narrow', 'short', 'long'
+                            week: 'ordinal',
+                            day: 'numeric', // 'numeric', '2-digit' or 'ordinal'
+                            weekday: 'short', // 'narrow', 'short', 'long'
+                            hour: 'numeric', // 'numeric', '2-digit' or 'fulltime'
+                            minute: '2-digit', // 'numeric', '2-digit' or 'fulltime'
+                            second: '2-digit', // 'numeric', '2-digit' or 'fulltime'
+                        }
+                    },
+                    bottom: {
+                        lines: [ /*
+                            'Second',
+                            'Minute',
+                            //'quarter',
+                            //'half',
+                            'Hour',
+                            'Weekday',
+                            'Day',
+                            'Week',
+                            'Month',
+                            'Year',
+                            'Lustrum',
+                            'Decennium',
+                            'Century',
+                            'Millenniums', */
+                        ], 
+                        format: { hour12: false,
+                            year: '2-digit',
+                            month: 'short',
+                            weekday: 'narrow',
+                            hour: 'numeric',
+                            minute: 'numeric',
+                            second: 'numeric',
+                        }
+                    }
                 },
+                effects: {
+                    presentTime: true,
+                    hoverEvent: true,
+                    stripedGridRow: true,
+                    horizontalGridStyle: 'dotted',
+                    verticalGridStyle: 'solid',
+                },
+                eventData: [
+                    { start: '2019/6/26 0:00', end: '2019/6/27 23:59', label: 'Test-1', content: '6/26 10:00 - 6/27 19:00' },
+                    { start: '2019/6/27 12:00', end: '2019/6/28 12:00', row: 2, label: 'Test-2', content: '6/27 20:40 - 6/27 23:30' },
+                    { start: '2019/6/24 10:00', end: '2019/6/27 0:00', row: 3, label: 'Test-3', content: '6/27 20:40 - 6/27 23:30' },
+                ],
             }),
             timeline = $timeline.Constructor._getInstance( $jqtl[0] ),
             spy = sinon.spy( $timeline.Constructor.prototype, '_calcVars' )

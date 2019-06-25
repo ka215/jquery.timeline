@@ -27,12 +27,12 @@
  * @property {string} [formatMatcher] - 
  * @property {string} [weekday] - The representation of the weekday. Possible values are "narrow", "short", "long".
  * @property {string} [era] - The representation of the era. Possible values are "narrow", "short", "long".
- * @property {string} [year] - The representation of the year. Possible values are "numeric", "2-digit".
+ * @property {string} [year] - The representation of the year. Possible values are "numeric", "2-digit". Then an extended value by this plugin is "zerofill".
  * @property {string} [month] - The representation of the month. Possible values are "numeric", "2-digit", "narrow", "short", "long".
- * @property {string} [day] - The representation of the day. Possible values are "numeric", "2-digit".
- * @property {string} [hour] - The representation of the hour. Possible values are "numeric", "2-digit".
- * @property {string} [minute] - The representation of the minute. Possible values are "numeric", "2-digit".
- * @property {string} [second] - The representation of the second. Possible values are "numeric", "2-digit".
+ * @property {string} [day] - The representation of the day. Possible values are "numeric", "2-digit". Then an extended value by this plugin is "ordinal".
+ * @property {string} [hour] - The representation of the hour. Possible values are "numeric", "2-digit". Then an extended value by this plugin is "fulltime".
+ * @property {string} [minute] - The representation of the minute. Possible values are "numeric", "2-digit". Then an extended value by this plugin is "fulltime".
+ * @property {string} [second] - The representation of the second. Possible values are "numeric", "2-digit". Then an extended value by this plugin is "fulltime".
  * @property {string} [timeZoneName] - The representation of the time zone name. Possible values are "short", "long".
  */
 
@@ -103,6 +103,17 @@
  */
 
 /**
+ * Various effect settings to the timeline object displayed in the DOM
+ *
+ * @typedef {Object} Effects
+ * @property {boolean} [presentTime=false] - Whether to show marking a present time on the timeline container.
+ * @property {boolean} [hoverEvent=true] - Whether to show the effect when individual events on the timeline container are mouse over.
+ * @property {string} [horizontalGridStyle="solid"] - The style of horizontal grid line on the Timeline container. possible values are "solid", "dotted", "none".
+ * @property {string} [verticalGridStyle="solid"] - The style of vertical grid line on the Timeline container. possible values are "solid", "dotted", "none".
+ * @since 2.0.0
+ */
+
+/**
  * Default options for generating the timeline by the jQuery.Timeline plugin.
  * Those defaults are overridden to undefined settings of the timeline configuration.
  *
@@ -126,6 +137,8 @@
  * @property {string} [loader="default"] - Custom loader definition, possible values are "default", false and selector of loader element
  * @property {boolean} [hideScrollbar=false] - Whether or not to display the scroll bar displayed when the width of the timeline overflows (even if it is set to non-display, it will not function depending on the browser)
  * @property {EventMeta} [eventMeta] - Display meta of range on event node when the timeline type is "bar"
+ * @property {array.<Object>} [eventData] - 
+ * @property {Effects} [effects] - 
  * @property {string} [storage="session"] - Specification of Web storage to cache event data, defaults to sessionStorage
  * @property {boolean} [reloadCacheKeep=true] - Whether to load cached events during reloading, the cache is discarded if false
  * @property {boolean} [zoom=false] - Whether to use the ability to zoom the scale of the timeline by double clicking on any scale on the ruler

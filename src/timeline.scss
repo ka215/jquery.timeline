@@ -200,6 +200,10 @@
   text-overflow: ellipsis;
   border: 0;
   outline: 0;
+
+  span {
+    display: inline-block;
+  }
 }
 
 .jqtl-rli-left {
@@ -254,8 +258,8 @@
   justify-content: flex-start;
   align-items: center;
   align-content: center;
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 0;
+  padding-right: 0;
   border-radius: 2px;
   overflow: hidden;
   z-index: 7;
@@ -274,7 +278,11 @@
 .jqtl-event-node > * {
   /*flex-grow: 1;*/
   align-self: center;
+  width: max-content;
+  max-width: 100%;
   min-width: 0;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

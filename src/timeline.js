@@ -72,9 +72,13 @@ const Default = {
         format      : { hour12: false },
         content     : ""
     },
+    eventData       : [],
     effects         : {
         presentTime : true,
         hoverEvent  : true,
+        stripedGridRow : true,
+        horizontalGridStyle : 'dotted',
+        verticalGridStyle : 'solid',
     },
     rangeAlign      : "latest",
     loader          : "default",
@@ -147,6 +151,7 @@ const Event = {
     CLICK_EVENT        : `click.open${EVENT_KEY}`,
     FOCUSIN_EVENT      : `focusin.event${EVENT_KEY}`,
     FOCUSOUT_EVENT     : `focusout.event${EVENT_KEY}`,
+    SCROLL_TIMELINE    : `scroll.timeline${EVENT_KEY}`,
     MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
     MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
     ZOOMIN_SCALE       : `dblclick.zoom${EVENT_KEY}`
@@ -195,6 +200,7 @@ const Selector = {
     RULER_TOP                 : `.${PREFIX}ruler-top`,
     RULER_BOTTOM              : `.${PREFIX}ruler-bottom`,
     TIMELINE_CONTAINER        : `.${ClassName.TIMELINE_CONTAINER}`,
+    TIMELINE_MAIN             : `.${ClassName.TIMELINE_MAIN}`,
     TIMELINE_RULER_TOP        : `.${PREFIX}ruler-top`,
     TIMELINE_RULER_BOTTOM     : `.${PREFIX}ruler-bottom`,
     TIMELINE_RULER_ITEM       : `.${ClassName.TIMELINE_RULER_ITEM}`,
@@ -377,73 +383,76 @@ class Timeline {
             throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
         }
         
-        //return this.sleep( _sleep ).then(() => {
-            
-            this._renderView()
-            
-            if ( ! this._isCached ) {
-                this._loadEvent()
-            }
-            
-            if ( this._isCached ) {
-                this._placeEvent()
-            }
-            
-            // Assign events for the timeline
-            $(document).on(
-                Event.CLICK_EVENT,
-                `${this._selector} ${Selector.EVENT_NODE}`,
-                ( event ) => this.openEvent( event )
+        this._renderView()
+        
+        if ( ! this._isCached ) {
+            this._loadEvent()
+        }
+        
+        if ( this._isCached ) {
+            this._placeEvent()
+        }
+        
+        // Assign events for the timeline
+        $(document).on(
+            Event.CLICK_EVENT,
+            `${this._selector} ${Selector.EVENT_NODE}`,
+            ( event ) => this.openEvent( event )
+        )
+        $(_elem).on(
+            Event.FOCUSIN_EVENT,
+            Selector.TIMELINE_EVENT_NODE,
+            ( event ) => this._activeEvent( event )
+        )
+        $(_elem).on(
+            Event.FOCUSOUT_EVENT,
+            Selector.TIMELINE_EVENT_NODE,
+            ( event ) => this._activeEvent( event )
+        )
+        /*
+        $(_elem).on(
+            Event.SCROLL_TIMELINE,
+            Selector.TIMELINE_MAIN,
+            ( event ) => this._scrollTimeline( event )
+        )
+        */
+        if ( /^point(|er)$/i.test( this._config.type ) ) {
+            $(_elem).on(
+                Event.MOUSEENTER_POINTER,
+                Selector.VIEWER_EVENT_TYPE_POINTER,
+                ( event ) => this._hoverPointer( event )
             )
             $(_elem).on(
-                Event.FOCUSIN_EVENT,
-                Selector.TIMELINE_EVENT_NODE,
-                ( event ) => this._activeEvent( event )
+                Event.MOUSELEAVE_POINTER,
+                Selector.VIEWER_EVENT_TYPE_POINTER,
+                ( event ) => this._hoverPointer( event )
             )
+        }
+        if ( this._config.zoom ) {
             $(_elem).on(
-                Event.FOCUSOUT_EVENT,
-                Selector.TIMELINE_EVENT_NODE,
-                ( event ) => this._activeEvent( event )
+                Event.ZOOMIN_SCALE,
+                Selector.TIMELINE_RULER_ITEM,
+                ( event ) => this.zoomScale( event )
             )
-            if ( /^point(|er)$/i.test( this._config.type ) ) {
-                $(_elem).on(
-                    Event.MOUSEENTER_POINTER,
-                    Selector.VIEWER_EVENT_TYPE_POINTER,
-                    ( event ) => this._hoverPointer( event )
-                )
-                $(_elem).on(
-                    Event.MOUSELEAVE_POINTER,
-                    Selector.VIEWER_EVENT_TYPE_POINTER,
-                    ( event ) => this._hoverPointer( event )
-                )
-            }
-            if ( this._config.zoom ) {
-                $(_elem).on(
-                    Event.ZOOMIN_SCALE,
-                    Selector.TIMELINE_RULER_ITEM,
-                    ( event ) => this.zoomScale( event )
-                )
-                
-            }
             
-            this._isCompleted = true
+        }
+        
+        this._isCompleted = true
+        
+        this.alignment()
+        
+        if ( ! this._isInitialized ) {
+            const afterInitEvent = $.Event( Event.INITIALIZED, _elem )
             
-            this.alignment()
+            $(_elem).trigger( afterInitEvent )
             
-        // }).then(() => {
-            if ( ! this._isInitialized ) {
-                const afterInitEvent = $.Event( Event.INITIALIZED, _elem )
-                
-                $(_elem).trigger( afterInitEvent )
-                
-                $(_elem).off( Event.INITIALIZED )
-                
-            }
-            // Binding bs.popover
-            if ( $.fn['popover'] ) {
-                $('[data-toggle="popover"]').popover()
-            }
-        // })
+            $(_elem).off( Event.INITIALIZED )
+            
+        }
+        // Binding bs.popover
+        if ( $.fn['popover'] ) {
+            $('[data-toggle="popover"]').popover()
+        }
     }
     
     /*
@@ -516,21 +525,37 @@ class Timeline {
                 _baseVar    = _base_is_min ? _minVar : _averageVar
             
             switch ( true ) {
-                case /^years?$/i.test( _opts.scale ):
-                    _props.scale = _baseVar * ( 24 * 60 * 60 * 1000 )
+                case /^millenniums?|millennia$/i.test( _opts.scale ):
+                case /^century$/i.test( _opts.scale ):
+                    // unit: years = 365.25 * 24 * 60 * 60 * 1000
+                    _props.scale = _baseVar * ( 365.25 * 24 * 60 * 60 * 1000 )
                     break
+                case /^dec(ade|ennium)$/i.test( _opts.scale ):
+                case /^lustrum$/i.test( _opts.scale ):
+                case /^years?$/i.test( _opts.scale ):
                 case /^months?$/i.test( _opts.scale ):
+                    // unit: days = 24 * 60 * 60 * 1000
                     _props.scale = _baseVar * ( 24 * 60 * 60 * 1000 )
                     break
                 case /^weeks?$/i.test( _opts.scale ):
+                case /^(|week)days?$/i.test( _opts.scale ):
+                    // unit: hours = 60 * 60 * 1000
                     _props.scale = _baseVar * ( 60 * 60 * 1000 )
                     break
-                case /^(|week)days?$/i.test( _opts.scale ):
-                    _props.scale = _baseVar * ( 60 * 60 * 1000 )
+                case /^hours?$/i.test( _opts.scale ):
+                case /^minutes?$/i.test( _opts.scale ):
+                case /^seconds?$/i.test( _opts.scale ):
+                    // unit: seconds = 1000
+                    _props.scale = _baseVar * 1000
+                    break
+                default:
+                    // unit: milliseconds = 1
+                    _props.scale = _baseVar * 1
                     break
             }
-//console.log( '!', _opts.scale, _temp, _vals )
+//console.log( '!_calcVars::', _opts.scale, _temp, _values )
             _values.forEach( ( val ) => {
+//console.log( `!!_calcVars::_totalWidth: ${_totalWidth} + ${this.numRound( ( val * _props.scaleSize ) / _baseVar, 2 )}` )
                 _totalWidth += this.numRound( ( val * _props.scaleSize ) / _baseVar, 2 )
             })
             
@@ -538,11 +563,13 @@ class Timeline {
             _props.variableScale = _temp
             _props.fullwidth     = _totalWidth
         } else {
+            /*
             // Deprecated: In case of fixed length scale (:> 固定長スケールの場合 (廃止予定)
             _props.scale         = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS )
             _props.grids         = Math.ceil( ( _props.end - _props.begin ) / _props.scale )
             _props.variableScale = null
             _props.fullwidth     = _props.grids * _props.scaleSize
+            */
         }
         _props.fullheight = _props.rows * _props.rowSize
         // Define visible size according to full size of timeline (:> タイムラインのフルサイズに準じた可視サイズを定義
@@ -567,14 +594,20 @@ class Timeline {
     }
     
     /*
-     * @private: Retrieve the pluggable datetime as milliseconds from specified keyword
+     * @private: Retrieve the pluggable datetime as milliseconds depend on specific preset keyword
+     *
+     * @param mixed key (required; preset keywords 'current', 'currently', 'auto' or seed of datetime)
+     * @param string round_type (optional; defaults to '')
+     *
+     * @return int (milliseconds as valid datetime)
      */
     _getPluggableDatetime( key, round_type = '' ) {
         let _opts        = this._config,
-            _props       = this._instanceProps,
             _date        = null,
             getFirstDate = ( dateObj, scale ) => {
-                let _tmpDate
+                let _fullYear  = dateObj.getFullYear(),
+                    _remapYear = _fullYear >= 0 && Math.abs( _fullYear ) < 100 ? true : false,
+                    _tmpDate
                 
                 switch ( true ) {
                     case /^millenniums?|millennia$/i.test( scale ):
@@ -582,28 +615,37 @@ class Timeline {
                     case /^dec(ade|ennium)$/i.test( scale ):
                     case /^lustrum$/i.test( scale ):
                     case /^years?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), 0, 1 )
+                        _tmpDate = new Date( _fullYear, 0, 1 )
                         break
                     case /^months?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), 1 )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), 1 )
                         break
                     case /^(week|day)s?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate() )
                         break
                     case /^(|half|quarter)-?hours?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours() )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours() )
                         break
                     case /^minutes?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes() )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes() )
                         break
                     case /^seconds?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds() )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds() )
                         break
+                    default:
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds(), dateObj.getMilliseconds() )
+                        break
+                }
+                if ( _remapYear ) {
+                    _tmpDate.setFullYear( _fullYear )
                 }
                 return _tmpDate
             },
             getLastDate  = ( dateObj, scale ) => {
-                let _tmpDate
+                let _fullYear  = dateObj.getFullYear(),
+                    _remapYear = _fullYear >= 0 && Math.abs( _fullYear ) < 100 ? true : false,
+                    _offset    = _fullYear >= 0 ? -1 : 1,
+                    _tmpDate
                 
                 switch ( true ) {
                     case /^millenniums?|millennia$/i.test( scale ):
@@ -611,69 +653,52 @@ class Timeline {
                     case /^dec(ade|ennium)$/i.test( scale ):
                     case /^lustrum$/i.test( scale ):
                     case /^years?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear() + 1, 0, 1 )
+                        _tmpDate = new Date( _fullYear + 1, 0, 1 )
+                        _remapYear = ( _fullYear + 1 ) >= 0 && Math.abs( _fullYear + 1 ) < 100 ? true : false
+                        _offset    = ( _fullYear + 1 ) >= 0 ? -1 : 1
                         break
                     case /^months?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth() + 1, 1 )
                         break
                     case /^(week|day)s?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + 1 )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate() + 1 )
                         break
                     case /^(|half|quarter)-?hours?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours() + 1 )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours() + 1 )
                         break
                     case /^minutes?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes() + 1 )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes() + 1 )
                         break
                     case /^seconds?$/i.test( scale ):
-                        _tmpDate = new Date( dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds() + 1 )
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds() + 1 )
+                        break
+                    default:
+                        _tmpDate = new Date( _fullYear, dateObj.getMonth(), dateObj.getDate(), dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds(), dateObj.getMilliseconds() + 1 )
                         break
                 }
-                return new Date( _tmpDate.getTime() - 1 )
-            },
-            is_remapping = /^\d{1,2}(|(-|\/).+)$/.test( key.toString() )
-//console.log( '!_getPluggableDatetime:', key, round_type, is_remapping )
+                if ( _remapYear ) {
+                    _tmpDate.setFullYear( _fullYear )
+                }
+                return new Date( _tmpDate.getTime() + _offset )
+            }
         
         switch ( true ) {
             case /^current(|ly)$/i.test( key ):
+                // now date
                 _date = new Date()
-//console.log( '!_getPluggableDatetime::currently:', _opts.scale, this.getHigherScale( _opts.scale ), key, _date.getTime() )
                 break
             case /^auto$/i.test( key ): {
                 let _ms          = null,
-                    _higherScale = this.getHigherScale( _opts.scale )
+                    _auto_range  = _opts.range && _opts.range > 0 ? parseInt( _opts.range, 10 ) : 3,
+                    _higherScale = /^(|week)days?$/i.test( _opts.scale ) ? 'month' : this.getHigherScale( _opts.scale )
                 
                 if ( /^current(|ly)$/i.test( _opts.startDatetime ) ) {
-                    _date = new Date()
-                    //if ( /^(year|month)s?$/i.test( _opts.scale ) ) {
-                        _date = getFirstDate( _date, _opts.scale )
-                    //}
+                    _date = getFirstDate( new Date(), _opts.scale )
                 } else {
                     _date = this.getCorrectDatetime( _opts.startDatetime )
                 }
                 
-                if ( _opts.range || _opts.range > 0 ) {
-                    if ( /^years?$/i.test( _higherScale ) ) {
-                        _ms = 365.25 * 24 * 60 * 60 * 1000
-                    } else
-                    if ( /^months?$/i.test( _higherScale ) ) {
-                        _ms = 30.44 * 24 * 60 * 60 * 1000
-                    } else {
-                        _ms = this.verifyScale( _higherScale, _date.getTime(), _date.getTime(), false )
-                    }
-                    _date.setTime( _date.getTime() + ( _ms * _opts.range ) )
-                } else {
-                    if ( /^years?$/i.test( _opts.scale ) ) {
-                        _ms = 365.25 * 24 * 60 * 60 * 1000
-                    } else
-                    if ( /^months?$/i.test( _opts.scale ) ) {
-                        _ms = 30.44 * 24 * 60 * 60 * 1000
-                    } else {
-                        _ms = this.verifyScale( _opts.scale, _date.getTime(), _date.getTime(), false )
-                    }
-                    _date.setTime( _date.getTime() + ( _ms * LimitScaleGrids[this._filterScaleKeyName( _opts.scale )] ) )
-                }
-// console.log( '!_getPluggableDatetime::auto:', _opts.scale, this.getHigherScale( _opts.scale ), key, _date.getTime() )
+                _date = this.modifyDate( _date, _auto_range, _higherScale )
                 break
             }
             default:
@@ -681,25 +706,13 @@ class Timeline {
                 break
         }
         
-        if ( ! is_remapping ) {
-            is_remapping = _date.getFullYear() < 100
-        }
-        
         if ( ! this.is_empty( round_type ) ) {
             if ( 'first' === round_type ) {
-//console.log( '!_getPluggableDatetime::first:before:', key, _date, is_remapping )
                 _date = getFirstDate( _date, _opts.scale )
-//console.log( '!_getPluggableDatetime::first:after:', key, _date, is_remapping )
             } else
             if ( 'last' === round_type ) {
-//console.log( '!_getPluggableDatetime::last:before:', key, _date, is_remapping )
                 _date = getLastDate( _date, _opts.scale )
-//console.log( '!_getPluggableDatetime::last:after:', key, _date, is_remapping )
             }
-        }
-        
-        if ( is_remapping ) {
-            _date.setFullYear( String( _date.getFullYear() ).substr(-2) )
         }
         
 //console.log( '!_getPluggableDatetime::return:', _date )
@@ -851,6 +864,7 @@ class Timeline {
             _events_body  = $('<div></div>', { class: ClassName.TIMELINE_EVENTS }),
             _cy           = 0,
             ctx_grid      = _events_bg[0].getContext('2d'),
+            _grid_style   = { horizontal: 'dotted', vertical: 'solid' },
             drawRowRect   = ( pos_y, color ) => {
                 color = this.supplement( '#FFFFFF', color )
                 // console.log( 0, pos_y, _fullwidth, _size_row, color )
@@ -858,16 +872,25 @@ class Timeline {
                 ctx_grid.fillRect( 0, pos_y + 0.5, _props.fullwidth, _props.rowSize + 1.5 )
                 ctx_grid.stroke()
             },
-            drawHorizontalLine = ( pos_y, is_dotted ) => {
+            drawHorizontalLine = ( pos_y, style ) => {
                 let _correction = 0.5
                 
-                is_dotted = this.supplement( false, is_dotted )
-                // console.log( pos_y, is_dotted )
+                switch ( true ) {
+                    case /^solid$/i.test( style ):
+                        style = 'solid'
+                        break
+                    case /^dotted$/i.test( style ):
+                        style = 'dotted'
+                        break
+                    case /^none$/i.test( style ):
+                    default:
+                        return
+                }
                 ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.1 )'
                 ctx_grid.lineWidth = 1
                 ctx_grid.filter = 'url(#crisp)'
                 ctx_grid.beginPath()
-                if ( is_dotted ) {
+                if ( style === 'dotted' ) {
                     ctx_grid.setLineDash([ 1, 2 ])
                 } else {
                     ctx_grid.setLineDash([])
@@ -877,16 +900,25 @@ class Timeline {
                 ctx_grid.closePath()
                 ctx_grid.stroke()
             },
-            drawVerticalLine = ( pos_x, is_dotted ) => {
+            drawVerticalLine = ( pos_x, style ) => {
                 let _correction = -0.5
                 
-                is_dotted = this.supplement( false, is_dotted )
-                // console.log( pos_x, is_dotted )
+                switch ( true ) {
+                    case /^solid$/i.test( style ):
+                        style = 'solid'
+                        break
+                    case /^dotted$/i.test( style ):
+                        style = 'dotted'
+                        break
+                    case /^none$/i.test( style ):
+                    default:
+                        return
+                }
                 ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.025 )'
                 ctx_grid.lineWidth = 1
                 ctx_grid.filter = 'url(#crisp)'
                 ctx_grid.beginPath()
-                if ( is_dotted ) {
+                if ( style === 'dotted' ) {
                     ctx_grid.setLineDash([ 1, 2 ])
                 } else {
                     ctx_grid.setLineDash([])
@@ -897,17 +929,29 @@ class Timeline {
                 ctx_grid.stroke()
             }
         
+        if ( _opts.effects.hasOwnProperty( 'horizontalGridStyle' ) ) {
+            _grid_style.horizontal = _opts.effects.horizontalGridStyle
+        }
+        if ( _opts.effects.hasOwnProperty( 'verticalGridStyle' ) ) {
+            _grid_style.vertical = _opts.effects.verticalGridStyle
+        }
+        
         _cy = 0
         for ( let i = 0; i < _props.rows; i++ ) {
             _cy += i % 2 == 0 ? 1 : 0
-            let _pos_y = ( i * _props.rowSize ) + _cy
-            drawRowRect( _pos_y, i % 2 == 0 ? '#FEFEFE' : '#F8F8F8' )
+            let _pos_y = ( i * _props.rowSize ) + _cy,
+                _color = '#FEFEFE'
+            
+            if ( _opts.effects.hasOwnProperty( 'stripedGridRow' ) && _opts.effects.stripedGridRow ) {
+                _color = i % 2 == 0 ? '#FEFEFE' : '#F8F8F8'
+            }
+            drawRowRect( _pos_y, _color )
         }
         _cy = 0
         for ( let i = 1; i < _props.rows; i++ ) {
             _cy += i % 2 == 0 ? 1 : 0
             let _pos_y = ( i * _props.rowSize ) + _cy
-            drawHorizontalLine( _pos_y, true )
+            drawHorizontalLine( _pos_y, _grid_style.horizontal )
         }
         if ( _props.isVLS ) { // /^(year|month)s?$/i.test( _opts.scale ) ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
@@ -916,40 +960,37 @@ class Timeline {
             
             switch (true) {
                 case /^millenniums?|millennia$/i.test( _opts.scale ):
-                    _baseVar = 1000 // years
-                    break
                 case /^century$/i.test( _opts.scale ):
-                    _baseVar = 100 // years
+                    // unit: years = 365.25 * 24 * 60 * 60 * 1000
+                    _baseVar = _props.scale / ( 365.25 * 24 * 60 * 60 * 1000 )
                     break
                 case /^dec(ade|ennium)$/i.test( _opts.scale ):
-                    _baseVar = 10 // years
-                    break
                 case /^lustrum$/i.test( _opts.scale ):
-                    _baseVar = 5 // years
-                    break
                 case /^years?$/i.test( _opts.scale ):
-                    _baseVar = 365 // days
-                    break
                 case /^months?$/i.test( _opts.scale ):
-                    _baseVar = 30 // days
+                    // unit: days = 24 * 60 * 60 * 1000
+                    _baseVar = _props.scale / ( 24 * 60 * 60 * 1000 )
                     break
                 case /^weeks?$/i.test( _opts.scale ):
-                    _baseVar = 7 // days
-                    break
-                case /^weekdays?$/i.test( _opts.scale ):
-                case /^days?$/i.test( _opts.scale ):
-                    _baseVar = 24 // hours
+                case /^(|week)days?$/i.test( _opts.scale ):
+                    // unit: hours = 60 * 60 * 1000
+                    _baseVar = _props.scale / ( 60 * 60 * 1000 )
                     break
                 case /^hours?$/i.test( _opts.scale ):
                 case /^minutes?$/i.test( _opts.scale ):
                 case /^seconds?$/i.test( _opts.scale ):
-                    _baseVar = 1 // seconds
+                    // unit: seconds = 1000
+                    _baseVar = _props.scale / 1000
+                    break
+                default:
+                    // unit: milliseconds = 1
+                    _baseVar = _props.scale / 1
                     break
             }
             
             for ( let _key of Object.keys( _props.variableScale ) ) {
                 _sy += this.numRound( ( _props.variableScale[_key] * _props.scaleSize ) / _baseVar, 2 )
-                drawVerticalLine( _sy, false )
+                drawVerticalLine( _sy, _grid_style.vertical )
             }
         } else {
             // In case of fixed length scale (:> 固定長スケールの場合
@@ -1078,34 +1119,31 @@ class Timeline {
         
         switch (true) {
             case /^millenniums?|millennia$/i.test( _opts.scale ):
-                _baseVar = 1000 // years
-                break
             case /^century$/i.test( _opts.scale ):
-                _baseVar = 100 // years
+                // unit: years = 365.25 * 24 * 60 * 60 * 1000
+                _baseVar = _props.scale / ( 365.25 * 24 * 60 * 60 * 1000 )
                 break
             case /^dec(ade|ennium)$/i.test( _opts.scale ):
-                _baseVar = 10 // years
-                break
             case /^lustrum$/i.test( _opts.scale ):
-                _baseVar = 5 // years
-                break
             case /^years?$/i.test( _opts.scale ):
-                _baseVar = 365 // days
-                break
             case /^months?$/i.test( _opts.scale ):
-                _baseVar = 30 // days
+                // unit: days = 24 * 60 * 60 * 1000
+                _baseVar = _props.scale / ( 24 * 60 * 60 * 1000 )
                 break
             case /^weeks?$/i.test( _opts.scale ):
-                _baseVar = 7 // days
-                break
-            case /^weekdays?$/i.test( _opts.scale ):
-            case /^days?$/i.test( _opts.scale ):
-                _baseVar = 24 // hours
+            case /^(|week)days?$/i.test( _opts.scale ):
+                // unit: hours = 60 * 60 * 1000
+                _baseVar = _props.scale / ( 60 * 60 * 1000 )
                 break
             case /^hours?$/i.test( _opts.scale ):
             case /^minutes?$/i.test( _opts.scale ):
             case /^seconds?$/i.test( _opts.scale ):
-                _baseVar = 1 // seconds
+                // unit: seconds = 1000
+                _baseVar = _props.scale / 1000
+                break
+            default:
+                // unit: milliseconds = 1
+                _baseVar = _props.scale / 1
                 break
         }
         
@@ -1380,16 +1418,18 @@ class Timeline {
     
     /*
      * @private: Load all enabled events markupped on target element to the timeline object (:> 対象要素にマークアップされたすべての有効なイベントをタイムラインにロードする
+     *           Firstly load default events bound to plugin config (:> 最初にプラグイン設定にバインドされた初期イベントをロードする
      */
     _loadEvent() {
         this._debug( '_loadEvent' )
         
-        let _that         = this,
-            _elem         = this._element,
-            _event_list   = $(_elem).find( Selector.DEFAULT_EVENTS ),
-            _cnt          = 0,
-            events        = [],
-            lastEventId   = 0
+        let _that           = this,
+            _elem           = this._element,
+            _default_events = this._config.eventData,
+            _event_list     = $(_elem).find( Selector.DEFAULT_EVENTS ),
+            _cnt            = _default_events.length,
+            events          = [],
+            lastEventId     = 0
         
         _event_list.children().each(function() {
             let _attr = $(this).attr( 'data-timeline-node' )
@@ -1399,11 +1439,23 @@ class Timeline {
             }
         })
         
-        if ( _event_list.length == 0 || _cnt == 0 ) {
-            this._debug( 'Enable event does not exist.' )
+        if ( _cnt == 0 ) {
+            //this._debug( 'Enable event does not exist.' )
+            console.warn( 'Enable event does not exist.' )
         }
         
         // Register Event Data
+        if ( _default_events.length > 0 ) {
+            _default_events.forEach(( _evt_obj ) => {
+                let _one_event  = {}
+                
+                if ( ! this.is_empty( _evt_obj ) ) {
+                    _one_event = this._registerEventData( '<div></div>', _evt_obj )
+                    events.push( _one_event )
+                    lastEventId = Math.max( lastEventId, parseInt( _one_event.eventId, 10 ) )
+                }
+            })
+        }
         _event_list.children().each(function() {
             let _evt_params = _that._getPluggableParams( $(this).attr( 'data-timeline-node' ) ),
                 _one_event  = {}
@@ -1413,7 +1465,7 @@ class Timeline {
                 events.push( _one_event )
                 lastEventId = Math.max( lastEventId, parseInt( _one_event.eventId, 10 ) )
             }
-        });
+        })
         // Set event id with auto increment (:> イベントIDを自動採番
         let cacheIds = [] // for checking duplication of id (:> IDの重複チェック用
         events.forEach( ( _evt, _i, _this ) => {
@@ -1426,7 +1478,7 @@ class Timeline {
                 _this[_i].eventId = _chkId
             }
             cacheIds.push( _this[_i].eventId )
-        });
+        })
         
         this._isCached = this._saveToCache( events )
         
@@ -1526,7 +1578,6 @@ class Timeline {
      * @private: Get the coordinate X on the timeline of any date
      */
     _getCoordinateX( date ) {
-        //let _opts  = this._config,
         let _props = this._instanceProps,
             _date  = this.supplement( null, this._getPluggableDatetime( date ) ),
             coordinate_x = 0
@@ -2084,6 +2135,16 @@ class Timeline {
             $(_elem).removeClass( 'active' )
         }
     }
+    
+    /*
+     * @private: Event when scroll timeline
+     * /
+    _scrollTimeline( event ) {
+console.log( '!_scrollTimeline:', event )
+        let _elem = event.target
+        
+    }
+    */
     
     /*
      * @private: Event when hover on the pointer type event
@@ -3939,8 +4000,12 @@ class Timeline {
                 }
                 if ( is_toLocalString ) {
                     _options.day = options.hasOwnProperty('day') ? options.day : 'numeric'
-                    locales = options.hasOwnProperty('day') ? locales : 'en-US'
-                    locale_string = _temp.toLocaleString( locales, _options )
+                    if ( _options.day === 'ordinal' ) {
+                        locale_string = getOrdinal( parseInt( _temp.getDate(), 10 ) )
+                    } else {
+                        locales = options.hasOwnProperty('day') ? locales : 'en-US'
+                        locale_string = _temp.toLocaleString( locales, _options )
+                    }
                     //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
                 } else {
                     locale_string = _temp.getDate()
@@ -3952,8 +4017,9 @@ class Timeline {
                 _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 if ( is_toLocalString ) {
                     _options.hour = options.hasOwnProperty('hour') ? options.hour : 'numeric'
-                    if ( options.hasOwnProperty('minute') ) {
-                        _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
+                    if ( _options.hour === 'fulltime' ) {
+                        _options.hour   = 'numeric'
+                        _options.minute = 'numeric'
                     }
                     locale_string = _temp.toLocaleString( locales, _options )
                     //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
@@ -3966,8 +4032,9 @@ class Timeline {
                 _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 if ( is_toLocalString ) {
                     _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
-                    if ( options.hasOwnProperty('hour') ) {
-                        _options.hour   = options.hasOwnProperty('hour') ? options.hour : 'numeric'
+                    if ( _options.minute === 'fulltime' ) {
+                        _options.hour   = 'numeric'
+                        _options.minute = 'numeric'
                     }
                     locale_string = _temp.toLocaleString( locales, _options )
                     //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
@@ -3980,11 +4047,10 @@ class Timeline {
                 _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 if ( is_toLocalString ) {
                     _options.second = options.hasOwnProperty('second') ? options.second : 'numeric'
-                    if ( options.hasOwnProperty('hour') ) {
-                        _options.hour   = options.hasOwnProperty('hour') ? options.hour : 'numeric'
-                    }
-                    if ( options.hasOwnProperty('minute') ) {
-                        _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
+                    if ( _options.second === 'fulltime' ) {
+                        _options.hour   = 'numeric'
+                        _options.minute = 'numeric'
+                        _options.second = 'numeric'
                     }
                     locale_string = _temp.toLocaleString( locales, _options )
                     //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
