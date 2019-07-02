@@ -138,6 +138,7 @@ const EventParams = {
     margin    : Default.marginHeight,
     rangeMeta : '',
     size      : 'normal',
+    type      : '',
     extend    : {},
     remote    : false,
     relation  : {},
@@ -543,11 +544,14 @@ class Timeline {
                     _props.scale = _baseVar * ( 60 * 60 * 1000 )
                     break
                 case /^hours?$/i.test( _opts.scale ):
+                    // unit: minutes = 60 * 1000
+                    _props.scale = _baseVar * ( 60 * 1000 )
+                    break
                 case /^minutes?$/i.test( _opts.scale ):
-                case /^seconds?$/i.test( _opts.scale ):
                     // unit: seconds = 1000
                     _props.scale = _baseVar * 1000
                     break
+                case /^seconds?$/i.test( _opts.scale ):
                 default:
                     // unit: milliseconds = 1
                     _props.scale = _baseVar * 1
@@ -571,7 +575,7 @@ class Timeline {
             _props.fullwidth     = _props.grids * _props.scaleSize
             */
         }
-        _props.fullheight = _props.rows * _props.rowSize
+        _props.fullheight = _props.rows * _props.rowSize // Provisional value as theoretical value
         // Define visible size according to full size of timeline (:> タイムラインのフルサイズに準じた可視サイズを定義
         _props.visibleWidth  = _props.width > 0  ? `${( _props.width <= _props.fullwidth ? _props.width : _props.fullwidth )}px` : '100%'
         _props.visibleHeight = _props.height > 0 ? `${( _props.height <= _props.fullheight ? _props.height : _props.fullheight )}px` : 'auto'
@@ -953,7 +957,7 @@ class Timeline {
             let _pos_y = ( i * _props.rowSize ) + _cy
             drawHorizontalLine( _pos_y, _grid_style.horizontal )
         }
-        if ( _props.isVLS ) { // /^(year|month)s?$/i.test( _opts.scale ) ) {
+        if ( _props.isVLS ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
             let _sy = 0,
                 _baseVar
@@ -977,11 +981,14 @@ class Timeline {
                     _baseVar = _props.scale / ( 60 * 60 * 1000 )
                     break
                 case /^hours?$/i.test( _opts.scale ):
+                    // unit: minutes = 60 * 1000
+                    _baseVar = _props.scale / ( 60 * 1000 )
+                    break
                 case /^minutes?$/i.test( _opts.scale ):
-                case /^seconds?$/i.test( _opts.scale ):
                     // unit: seconds = 1000
                     _baseVar = _props.scale / 1000
                     break
+                case /^seconds?$/i.test( _opts.scale ):
                 default:
                     // unit: milliseconds = 1
                     _baseVar = _props.scale / 1
@@ -993,7 +1000,7 @@ class Timeline {
                 drawVerticalLine( _sy, _grid_style.vertical )
             }
         } else {
-            // In case of fixed length scale (:> 固定長スケールの場合
+            // In case of fixed length scale; Deprecated
             for ( let i = 1; i < _props.grids; i++ ) {
                 drawVerticalLine( ( i * _props.scaleSize ), false )
             }
@@ -1055,7 +1062,7 @@ class Timeline {
             //if ( /^(week|day)s?$/i.test( _opts.scale ) ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
             _line_grids = this._filterVariableScale( line_scale )
-//console.log( '!!_createRuler:', line_scale, _line_grids )
+console.log( '!!_createRuler:', line_scale, _line_grids )
             
             for ( let _key of Object.keys( _line_grids ) ) {
                 _grid_x += this.numRound( _line_grids[_key], 2 )
@@ -1136,11 +1143,14 @@ class Timeline {
                 _baseVar = _props.scale / ( 60 * 60 * 1000 )
                 break
             case /^hours?$/i.test( _opts.scale ):
+                // unit: minutes = 60 * 1000
+                _baseVar = _props.scale / ( 60 * 1000 )
+                break
             case /^minutes?$/i.test( _opts.scale ):
-            case /^seconds?$/i.test( _opts.scale ):
                 // unit: seconds = 1000
                 _baseVar = _props.scale / 1000
                 break
+            case /^seconds?$/i.test( _opts.scale ):
             default:
                 // unit: milliseconds = 1
                 _baseVar = _props.scale / 1
@@ -1153,7 +1163,7 @@ class Timeline {
             let grid_size = this.numRound( ( scales[_dt] * _props.scaleSize ) / _baseVar, 2 ),
                 _newKey   = null,
                 _arr      = _dt.split(','),
-                _tmpDt    = this.getCorrectDatetime( _arr[0] ),
+                _tmpDt    = /^weeks?$/i.test( _opts.scale ) ? this.getFirstDayOfWeek( parseInt( _arr[1], 10 ), parseInt( _arr[0], 10 ) ) : this.getCorrectDatetime( _arr[0] ),
                 _temp
 //console.log( '!!_filterVariableScale:', _dt, this.getCorrectDatetime( _dt ), _props.scaleSize, scales[_dt], grid_size )
             
@@ -1187,15 +1197,24 @@ class Timeline {
                     _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}`
                     break
                 case /^weeks?$/i.test( target_scale ):
-                    _temp = this.getWeek( _arr[0] )
-                    _newKey = `${_tmpDt.getFullYear()},${_temp}`
-//console.log( `!!_filterVariableScale::${target_scale}:`, _arr, _tmpDt, _newKey )
+                    if ( /^weeks?$/i.test( _opts.scale ) ) {
+                        _newKey = _arr.join()
+                    } else {
+                        _temp   = this.getWeek( _tmpDt )
+                        _newKey = `${_tmpDt.getFullYear()},${_temp}`
+                    }
                     break
                 case /^weekdays?$/i.test( target_scale ):
+                    if ( /^weeks?$/i.test( _opts.scale ) && this.is_empty( retObj ) ) {
+                        _tmpDt  = new Date( _props.begin )
+                    }
                     _temp = _tmpDt.getDay()
                     _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()},${_temp}`
                     break
                 case /^days?$/i.test( target_scale ):
+                    if ( /^weeks?$/i.test( _opts.scale ) && this.is_empty( retObj ) ) {
+                        _tmpDt  = new Date( _props.begin )
+                    }
                     _newKey = `${_tmpDt.getFullYear()}/${_tmpDt.getMonth() + 1}/${_tmpDt.getDate()}`
                     break
                 case /^hours?$/i.test( target_scale ):
@@ -1230,6 +1249,7 @@ class Timeline {
     /*
      * @private: Get the grid number per scale (for fixed length scale); Deprecated (:> スケールごとのグリッド数を取得する（固定長スケール用） (※廃止予定)
      */
+    /*
     _getGridsPerScale( target_scale ) {
         //let _opts        = this._config,
         let _props       = this._instanceProps,
@@ -1252,7 +1272,7 @@ class Timeline {
                 _h   = _tmp.getHours(),
                 _min = _tmp.getMinutes(),
                 _s   = _tmp.getSeconds()
-// console.log( '!!:', _tmp, `y: ${_y}`, `w: ${_w}`, /* `mil: ${_mil}`, `cen: ${_cen}`, `dec: ${_dec}`, `lus: ${_lus}` */ )
+// console.log( '!!:', _tmp, `y: ${_y}`, `w: ${_w}` )
             
             _scopes.push({
                 millennium : _mil,
@@ -1282,6 +1302,7 @@ class Timeline {
         
         return this.toIterableObject( _scale_grids )
     }
+    */
     
     /*
      * @private: Create the content of ruler of the timeline (:> タイムラインの目盛本文を作成する
@@ -1353,6 +1374,7 @@ class Timeline {
             _wrapper = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR }),
             _margin  = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR_MARGIN }),
             _list    = $('<div></div>', { class: ClassName.TIMELINE_SIDEBAR_ITEM }),
+            _item_h  = this.numRound( (_props.fullheight + Math.ceil(_props.rows / 2)) / _props.rows, 2 ), // Actual height of container: fullheight + Math.ceil( rows / 2 )
             _c       = -0.5
         
         if ( _sticky ) {
@@ -1363,7 +1385,6 @@ class Timeline {
             _list.addClass( ClassName.OVERLAY )
         }
         
-        //_wrapper.css( 'margin-top', margin.top + 'px' ).css( 'margin-bottom', margin.bottom + 'px' )
         if ( margin.top > 0 ) {
             _wrapper.prepend( _margin.clone().css( 'height', `${margin.top}px` ) )
         }
@@ -1371,9 +1392,14 @@ class Timeline {
         for ( let i = 0; i < _props.rows; i++ ) {
             let _item = _list.clone().html( `${_sbList[i]}` )
             
+            if ( i + 1 == _props.rows ) {
+                _item.css( 'height', `${(_item_h + _c)}px` ).css( 'line-height', `${(_item_h + _c)}px` )
+            } else {
+                _item.css( 'height', `${(_item_h - 1)}px` ).css( 'line-height', `${(_item_h - 1)}px` )
+            }
+            
             _wrapper.append( _item )
         }
-        _wrapper.find( Selector.TIMELINE_SIDEBAR_ITEM ).css( 'height', `${( _props.rowSize + _c )}px` ).css( 'line-height', `${( _props.rowSize + _c )}px` )
         
         if ( margin.bottom > 0 ) {
             _wrapper.append( _margin.clone().css( 'height', `${( margin.bottom + _c )}px` ) )
@@ -1498,7 +1524,7 @@ class Timeline {
                 }
             },
             _relation = {},
-            _x, _w, _c //, _pointSize
+            _x, _w, _row, _c //, _pointSize
 //console.log( '!_registerEventData:', _opts, params )
         
         if ( params.hasOwnProperty( 'start' ) && ! this.is_empty( params.start ) ) {
@@ -1511,7 +1537,7 @@ class Timeline {
                 
                 if ( _opts.eventMeta.display ) {
                     if ( this.is_empty( _opts.eventMeta.content ) && ! params.hasOwnProperty( 'rangeMeta' ) ) {
-//console.log( '!_registerEventData:', _opts.eventMeta.locale, _opts.eventMeta.format, _opts.scale, params )
+//console.log( '!_registerEventData::', _opts.eventMeta.locale, _opts.eventMeta.format, _opts.scale, params )
                         
                         new_event.rangeMeta += this.getLocaleString( params.start, _opts.eventMeta.scale, _opts.eventMeta.locale, _opts.eventMeta.format )
                         new_event.rangeMeta += ` - ${this.getLocaleString( params.end, _opts.eventMeta.scale, _opts.eventMeta.locale, _opts.eventMeta.format )}`
@@ -1522,11 +1548,10 @@ class Timeline {
             } else {
                 new_event.width = 0
             }
-//console.log( 'getX:', _x, 'getW:', _w, event_element )
-            if ( params.hasOwnProperty( 'row' ) ) {
-                _c = Math.floor( params.row / 2 )
-                new_event.y = ( params.row - 1 ) * _opts.rowHeight + new_event.margin + _c
-            }
+            _row = params.hasOwnProperty( 'row' ) ? parseInt( params.row, 10 ) : 1
+            _c = Math.floor( _row / 2 )
+            new_event.y = ( _row - 1 ) * _opts.rowHeight + new_event.margin + _c
+//console.log( '!!_registerEventData::', new_event, 'C:', _c )
             
             Object.keys( new_event ).forEach( ( _prop ) => {
                 switch( true ) {
@@ -1549,7 +1574,7 @@ class Timeline {
                         break
                     case /^relation$/i.test( _prop ):
                         // For drawing the relation line
-                        if ( /^point(|er)$/i.test( _opts.type ) ) {
+                        if ( /^mix(|ed)$/i.test( _opts.type ) || /^point(|er)$/i.test( _opts.type ) ) {
                             //let _pointSize  = this._getPointerSize( new_event.size, new_event.margin )
                             
                             _relation.x = this.numRound( new_event.x, 2 )
@@ -1582,6 +1607,7 @@ class Timeline {
             _date  = this.supplement( null, this._getPluggableDatetime( date ) ),
             coordinate_x = 0
         
+//console.log( '!_getCoordinateX::', _props, _date )
         if ( _date ) {
             if ( _date - _props.begin >= 0 && _props.end - _date >= 0 ) {
                 // When the given date is within the range of timeline begin and end (:> 指定された日付がタイムラインの開始と終了の範囲内にある場合
@@ -1682,7 +1708,7 @@ class Timeline {
             })
         }
         
-        if ( /^point(|er)$/i.test( _opts.type ) ) {
+        if ( /^mix(|ed)$/i.test( _opts.type ) || /^point(|er)$/i.test( _opts.type ) ) {
             this._drawRelationLine( events )
         }
         
@@ -1714,8 +1740,23 @@ class Timeline {
                     backgroundColor : this.hexToRgbA( params.bgColor ),
                 },
                 html  : `<div class="${ClassName.TIMELINE_EVENT_LABEL}">${params.label}</div>`
-            })
-//console.log( '!_createEventNode:', params )
+            }),
+            _is_bar   = true
+        
+        // Whether this event type is bar or point
+        if ( /^point(|er)$/i.test( _opts.type ) ) {
+            _is_bar = false // point type
+        } else
+        if ( /^mix(|ed)$/i.test( _opts.type ) ) {
+            if ( /^point(|er)$/i.test( params.type ) ) {
+                _is_bar = false // point type
+            } else
+            if ( params.width < 1 ) {
+                _is_bar = ! /^bar$/i.test( params.type ) ? false : true
+            }
+        }
+        
+//console.log( '!_createEventNode:', params, _is_bar )
         
         // Whether this event is within the display range of the timeline (:> タイムライン表示範囲内のイベントかどうか
         // For events excluded, set the width to -1 (:> 除外イベントは幅を -1 に設定する
@@ -1736,7 +1777,7 @@ class Timeline {
             }
         } else {
             // The event start datetime is before the timeline start datetime (:> イベント始点がタイムラインの始点より前
-            if ( /^point(|er)$/i.test( _opts.type ) ) {
+            if ( ! _is_bar ) {
                 // In the case of "point" type, that is an exclude event (:> ポインター型の場合は除外イベント
                 params.width = -1
             } else {
@@ -1760,19 +1801,21 @@ class Timeline {
         }
 //console.log( 'x:', params.x, 'w:', params.width, 'x-end:', Math.abs( params.x ) + params.width, 'fw:', _props.fullwidth, 'ps:', params.size )
         
-        if ( /^point(|er)$/i.test( _opts.type ) ) {
+        if ( ! _is_bar ) {
+            // If this event is the point type
             if ( params.width < 0 ) {
                 return null
             }
             let _pointSize = this._getPointerSize( params.size, params.margin ),
-                _shiftX    = this.numRound( params.x - ( _pointSize / 2 ), 2 ),
-                _shiftY    = this.numRound( params.y + ( ( params.height - _pointSize ) / 2 ), 2 )
+                _shiftX    = this.numRound( params.x - ( _pointSize / 2 ), 2 ) - params.margin,
+                _shiftY    = this.numRound( params.y + ( ( params.height - _pointSize ) / 2 ), 2 ) - params.margin
             
-//console.log( '!_createEventNode:', params, _pointSize, _shiftX, _shiftY )
+//console.log( '!!_createEventNode::', params, _pointSize, _shiftX, _shiftY )
             _evt_elem.addClass( ClassName.VIEWER_EVENT_TYPE_POINTER ).css( 'border-color', params.bdColor )
             .css( 'left', `${_shiftX}px` ).css( 'top', `${_shiftY}px` ).css( 'width', `${_pointSize}px` ).css( 'height', `${_pointSize}px` )
             .attr( 'data-base-size', _pointSize ).attr( 'data-base-left', _shiftX ).attr( 'data-base-top', _shiftY )
         } else {
+            // If this event is the bar type
             if ( params.width < 1 ) {
                 return null
             }
@@ -1782,7 +1825,7 @@ class Timeline {
         _evt_elem.attr( 'data-uid', params.uid )
         
         if ( ! this.is_empty( params.image ) ) {
-            if ( /^point(|er)$/i.test( _opts.type ) ) {
+            if ( ! _is_bar ) {
                 _evt_elem.css( 'background-image', `url(${params.image})` )
             } else {
                 let _imgSize = params.height - ( params.margin * 2 )
@@ -1790,7 +1833,7 @@ class Timeline {
             }
         }
         
-        if ( /^bar$/i.test( _opts.type ) && _opts.eventMeta.display ) {
+        if ( _is_bar && _opts.eventMeta.display ) {
 //console.log( '!_createEventNode:', params )
             params.extend.meta = params.rangeMeta
         }
@@ -1821,24 +1864,26 @@ class Timeline {
     _getPointerSize( key, margin ) {
         //let _opts  = this._config,
         let _props = this._instanceProps,
-            _max   = Math.min( _props.scaleSize, _props.rowSize ) - ( margin * 2 ),
+            _max   = Math.min( (_props.scaleSize - ( margin * 2 )), (_props.rowSize - ( margin * 2 )) ),
             _size  = null
         
         switch ( true ) {
-            case /^large$/i.test( key ):
-                _size = Math.max( this.numRound( _max * 0.8, 1 ), MIN_POINTER_SIZE )
-                break
-            case /^normal$/i.test( key ):
-                _size = Math.max( this.numRound( _max / 2, 1 ), MIN_POINTER_SIZE )
+            case /^([1-9]\d*|0)$/i.test( key ):
+                _size = Math.max( parseInt( key, 10 ), MIN_POINTER_SIZE )
                 break
             case /^small$/i.test( key ):
-                _size = Math.max( this.numRound( _max / 4, 1 ), MIN_POINTER_SIZE )
+                _size = Math.max( this.numRound( _max / 4, 2 ), MIN_POINTER_SIZE )
                 break
+            case /^large$/i.test( key ):
+                _size = Math.max( this.numRound( _max * 0.75, 2 ), MIN_POINTER_SIZE )
+                break
+            case /^normal$/i.test( key ):
             default:
-                _size = Math.max( parseInt( key, 10 ), MIN_POINTER_SIZE )
+                _size = Math.max( this.numRound( _max / 2, 2 ), MIN_POINTER_SIZE )
+                break
         }
         
-//console.log( '!_getPointerSize:', _props, key, _max, _size )
+// console.log( '!_getPointerSize:', _props, key, _max, _size )
         return _size
     }
     
@@ -2046,17 +2091,17 @@ class Timeline {
             if ( _rel.hasOwnProperty( 'before' ) ) {
                 // before: targetEvent[ _ex, _ey ] <---- selfEvent[ _sx, _sy ]
                 // (:> before: 自分を起点（ _sx, _sy ）として左方向の連結点（ _ex, _ey ）へ向かう描画方式
-                _sx = _rel.x
-                _sy = _rel.y
+                _sx = _rel.x + this.numRound( evt.margin / 2, 2 )
+                _sy = _rel.y + this.numRound( evt.margin / 2, 2 )
                 _targetId = parseInt( _rel.before, 10 )
                 if ( _targetId < 0 ) {
                     _ex = 0
-                    _ey = _sy
+                    _ey = _sy + this.numRound( evt.margin / 2, 2 )
                 } else {
                     _targetEvent = events.find( ( _evt ) => parseInt( _evt.eventId, 10 ) == _targetId )
                     if ( ! this.is_empty( _targetEvent ) && _targetEvent.relation ) {
-                        _ex = _targetEvent.relation.x < 0 ? 0 : _targetEvent.relation.x
-                        _ey = _targetEvent.relation.y
+                        _ex = _targetEvent.relation.x < 0 ? 0 : _targetEvent.relation.x + this.numRound( evt.margin / 2, 2 )
+                        _ey = _targetEvent.relation.y + this.numRound( evt.margin / 2, 2 )
                     }
                 }
                 if ( _sx >= 0 && _sy >= 0 && _ex >= 0 && _ey >= 0 ) {
@@ -2066,17 +2111,17 @@ class Timeline {
             if ( _rel.hasOwnProperty( 'after' ) ) {
                 // after: selfEvent[ _sx, _sy ] ----> targetEvent[ _ex, _ey ]
                 // (:> after: 自分を起点（ _sx, _sy ）として右方向の連結点（ _ex, _ey ）へ向かう描画方式
-                _sx = _rel.x
-                _sy = _rel.y
+                _sx = _rel.x + this.numRound( evt.margin / 2, 2 )
+                _sy = _rel.y + this.numRound( evt.margin / 2, 2 )
                 _targetId = parseInt( _rel.after, 10 )
                 if ( _targetId < 0 ) {
                     _ex = _props.fullwidth
-                    _ey = _sy
+                    _ey = _sy + this.numRound( evt.margin / 2, 2 )
                 } else {
                     _targetEvent = events.find( ( _evt ) => parseInt( _evt.eventId, 10 ) == _targetId )
                     if ( ! this.is_empty( _targetEvent ) && _targetEvent.relation ) {
-                        _ex = _targetEvent.relation.x > _props.fullwidth ? _props.fullwidth : _targetEvent.relation.x
-                        _ey = _targetEvent.relation.y
+                        _ex = _targetEvent.relation.x > _props.fullwidth ? _props.fullwidth : _targetEvent.relation.x + this.numRound( evt.margin / 2, 2 )
+                        _ey = _targetEvent.relation.y + this.numRound( evt.margin / 2, 2 )
                     }
                 }
                 if ( _sx >= 0 && _sy >= 0 && _ex >= 0 && _ey >= 0 ) {
@@ -3350,6 +3395,33 @@ console.log( '!_scrollTimeline:', event )
             _onejan = this.getCorrectDatetime( `${targetDate.getFullYear()}/1/1` )
         
         return Math.ceil( ( ( ( targetDate - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 )
+    }
+    
+    /*
+     * Retrieve a first day of the week from week number
+     *
+     * @param int week_number (required)
+     * @param int year (required)
+     *
+     * @return Date object as the first day of week
+     */
+    getFirstDayOfWeek( week_number, year ) {
+        let firstDayOfYear = this.getCorrectDatetime( `${year}/1/1` ),
+            _weekday       = firstDayOfYear.getDay(),
+            _millisecInDay = 24 * 60 * 60 * 1000,
+            _week_time     = (week_number - 1) * _millisecInDay * 7,
+            _day_offset, _tempDt, _time, _retDt
+        
+        _weekday = _weekday == 0 ? 7 : _weekday
+        _day_offset = 1 - _weekday
+        if ( 7 - _weekday + 1 < 4 ) {
+            _day_offset += 7
+        }
+        _tempDt = new Date( firstDayOfYear.getTime() + _day_offset * _millisecInDay )
+        _time   = _tempDt.getTime() + _week_time
+        _retDt  = new Date( _tempDt.setTime( _time ) )
+//console.log( '!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
+        return _retDt
     }
     
     /*

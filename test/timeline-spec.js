@@ -539,14 +539,15 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
     /* */
     it ( 'bind timeline object:', () => {
         let dateset = {
-                'normal-year': [ 'currently', 'auto', 'year' ], // -> 
-                'normal-month': [ 'currently', 'auto', 'month' ], // -> 
-                'normal-week': [ 'currently', 'auto', 'week' ], // -> 
-                'normal-day': [ 'currently', 'auto', 'day' ], // -> 
-                'normal-weekday':  [ 'currently', 'auto', 'weekday' ], // -> 
-                'normal-hour':  [ 'currently', 'auto', 'hour' ], // -> 
-                'normal-minute':  [ 'currently', 'auto', 'minute' ], // -> 
-                'normal-second':  [ 'currently', 'auto', 'second' ], // -> 
+                // currently datetime: 2019/7/2 3:43 (GMT)
+                'normal-year': [ 'currently', 'auto', 'year' ], // -> 2019 - 2034 (5 * 3 + 1 = 16 years); Ok
+                'normal-month': [ 'currently', 'auto', 'month' ], // -> 2019/7/1 - 2022/7/31 (12 * 3 + 1 = 37 months); Ok
+                'normal-week': [ 'currently', 'auto', 'week' ], // -> 2019/7/2 - 2019/10/2 (3 months after); Ok
+                'normal-day': [ 'currently', 'auto', 'day' ], // -> 2019/7/2 0:00:00 - 2019/10/2 23:59:59 (3 months after); Ok
+                'normal-weekday':  [ 'currently', 'auto', 'weekday' ], // -> Error because invalid scale; Ok
+                'normal-hour':  [ 'currently', 'auto', 'hour' ], // -> 2019/7/2 03:00:00 - 2019/7/5 03:59:59 (3 day after); Ok
+                'normal-minute':  [ 'currently', 'auto', 'minute' ], // -> 2019/7/2 04:03:00 - 2019/7/2 07:03:59 (3 hours after); Ok
+                'normal-second':  [ 'currently', 'auto', 'second' ], // -> 2019/7/2 04:10:24 - 2019/7/2 04:13:24 (3 minutes after); Ok
                 'DSTs':   [ '2019/3/1', '2019/4/1', 'day' ], // -> Ok
                 'DSTe':   [ '2019/10/1', '2019/10/31', 'day' ], // -> Ok
                 'DSTs-h': [ '2019/3/31 0:00', '2019/3/31 23:59', 'hour' ], // -> Ok
@@ -559,10 +560,11 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
             },
             datesetKey = 'normal-day',
             $jqtl = $el.Timeline({
+                type: 'mixed',
                 startDatetime: dateset[datesetKey][0],
                 endDatetime: dateset[datesetKey][1],
                 scale: dateset[datesetKey][2],
-                rows: 3,
+                //rows: 3,
                 minGridSize: 44,
                 sidebar: {
                     sticky: true,
@@ -577,7 +579,17 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                         '<span style="margin:0 15px;">Row 7th</span>',
                         '<span style="margin:0 15px;">Row 8th</span>',
                         '<span style="margin:0 15px;">Row 9th</span>',
-                        '<span style="margin:0 15px;">Row 10th</span>',
+                        '<span style="margin:0 15px;">Row 10th</span>',/*
+                        '<span style="margin:0 15px;">Row 11th</span>',
+                        '<span style="margin:0 15px;">Row 12th</span>',
+                        '<span style="margin:0 15px;">Row 13th</span>',
+                        '<span style="margin:0 15px;">Row 14th</span>',
+                        '<span style="margin:0 15px;">Row 15th</span>',
+                        '<span style="margin:0 15px;">Row 16th</span>',
+                        '<span style="margin:0 15px;">Row 17th</span>',
+                        '<span style="margin:0 15px;">Row 18th</span>',
+                        '<span style="margin:0 15px;">Row 19th</span>',
+                        '<span style="margin:0 15px;">Row 20th</span>',*/
                     ]
                 },
                 ruler: {
@@ -648,10 +660,25 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     verticalGridStyle: 'solid',
                 },
                 eventData: [
-                    { start: '2019/6/26 0:00', end: '2019/6/27 23:59', label: 'Test-1', content: '6/26 10:00 - 6/27 19:00' },
-                    { start: '2019/6/27 12:00', end: '2019/6/28 12:00', row: 2, label: 'Test-2', content: '6/27 20:40 - 6/27 23:30' },
-                    { start: '2019/6/24 10:00', end: '2019/6/27 0:00', row: 3, label: 'Test-3', content: '6/27 20:40 - 6/27 23:30' },
+                    { start: '2019/7/2 0:00', end: '2019/7/3 23:59', label: 'Test-1', content: '7/2 0:00 - 7/3 23:59' }, // 1
+                    { start: '2019/7/3 12:00', end: '2019/7/8 12:00', row: 2, label: 'Test-2', content: '7/3 12:00 - 7/8 12:00' }, // 2
+                    { start: '2019/6/30 10:00', end: '2019/7/27 0:00', row: 3, label: 'Test-3', content: '6/30 10:00 - 7/27 0:00' }, // 3
+                    { start: '2019/7/1 18:35', end: '2019/7/2 23:59', row: 4, label: 'Test-4', content: '' }, // 4
+                    { start: '2019/7/6 12:00', end: '2019/7/6 12:00', row: 4, label: 'Test-5', content: 'Same datetime', type: 'point', relation:{after:-1} }, // 5
+                    { start: '2019/7/2 8:12', end: '2019/7/4 3:51', row: 5, label: 'Test-6', content: '' }, // 6
+                    { start: '2019/7/4 0:00', row: 6, label: 'Test-7', content: '', relation:{before:-1,after:5,curve:1} }, // 7
+                    { start: '2019/7/4 0:00', end: '2019/7/4 23:59:59', row: 7, label: 'Test-8', content: '', type: 'bar' }, // 8
+                    { start: '2019/7/4 0:00', row: 8, label: 'Test-9', content: '', type: 'bar' }, // 9
+                    { start: '2019/7/4 0:00', row: 8, label: 'Test-10', content: '', type: 'bar' }, // 10
+                    { start: '2019/7/9 12:00', row: 8, label: 'Test-11', type: 'pointer', relation:{after:12,curve:1} }, // 11
+                    { start: '2019/7/11 12:00', row: 9, label: 'Test-12', type: 'pointer', relation:{} }, // 12
+                    { start: '2019/7/8 0:00', row: 10, label: 'Test-13', type: 'pointer', relation:{before:14,after:12,curve:1} }, // 13
+                    { start: '2019/7/7 0:00', row: 9, label: 'Test-14', type: 'pointer', relation:{after:11,curve:1} }, // 14
+                    { start: '2019-7-2 4:8:40', end: '2019-7-2 4:21:15', row: 9, label: 'Test-15' }, // 15
+                    { start: '2019-7-2 4:10:48.500', end: '2019-7-2 4:10:59.250', row: 10, label: 'Test-16' }, // 16
+                    
                 ],
+                zoom: true,
             }),
             timeline = $timeline.Constructor._getInstance( $jqtl[0] ),
             spy = sinon.spy( $timeline.Constructor.prototype, '_calcVars' )
