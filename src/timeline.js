@@ -3337,14 +3337,18 @@ console.log( '!_scrollTimeline:', event )
                             _raise = Math.floor( _parts[1] / 13 )
                             _parts[1] = parseInt( _parts[1], 10 ) - 1 // to month index
                         }
+                        let _his_base = [ 0, 0, 0 ]
                         if ( _his ) {
-                            _parts.push( ..._his.split(':') )
+                            //_parts.push( ..._his.split(':') )
+                            _parts.push( ...Object.assign( _his_base, _his.split(':') ) )
+                        } else {
+                            _parts.push( ..._his_base )
                         }
                         _date = new Date( new Date( ..._parts ).setFullYear( parseInt( _parts[0], 10 ) + _raise ) )
                         break
                     }
                     case /^-?\d+$/.test( _chk_str ):
-                        _date = new Date( 1, 0, 1 ).setFullYear( parseInt( _chk_str, 10 ) )
+                        _date = new Date( _chk_str, 0, 1, 0, 0, 0, 0 ).setFullYear( parseInt( _chk_str, 10 ) )
                         break
                     default:
                         _date = new Date( _chk_str.toString() )
@@ -3401,11 +3405,15 @@ console.log( '!_scrollTimeline:', event )
      * Retrieve a first day of the week from week number
      *
      * @param int week_number (required)
-     * @param int year (required)
+     * @param int year (optional; defaults to current year)
      *
-     * @return Date object as the first day of week
+     * @return mixed (return Date object as the first day of week when given valid arguments, or false if failed)
      */
     getFirstDayOfWeek( week_number, year ) {
+        if ( this.is_empty( week_number ) ) {
+            return false
+        }
+        year = this.is_empty( year ) ? new Date().getFullYear() : parseInt( year, 10 )
         let firstDayOfYear = this.getCorrectDatetime( `${year}/1/1` ),
             _weekday       = firstDayOfYear.getDay(),
             _millisecInDay = 24 * 60 * 60 * 1000,
@@ -3942,11 +3950,11 @@ console.log( '!_scrollTimeline:', event )
      * Retrieve the date string of specified locale (:> 指定されたロケールの日付文字列を取得する
      *
      * @param string date_seed (required)
-     * @param string scale (optional)
-     * @param string locales (optional)
-     * @param object options (optional)
+     * @param string scale (optional; defalts to '')
+     * @param string locales (optional and omittable; defaults to 'en-US')
+     * @param object options (optional; defaults to empty object)
      *
-     * @return string locale_string
+     * @return mixed locale_string (return false if failure)
      */
     getLocaleString( date_seed, scale = '', locales = 'en-US', options = {} ) {
         function toLocaleStringSupportsLocales() {
@@ -3958,20 +3966,22 @@ console.log( '!_scrollTimeline:', event )
             return false;
         }
         let is_toLocalString = toLocaleStringSupportsLocales(),
-            locale_string = '',
-            _options = {},
-            getOrdinal = ( n ) => {
-                let s = [ 'th', 'st', 'nd', 'rd' ], v = n % 100
+            locale_string    = '',
+            _options         = {}, // options for built-in method only
+            _ext_opts        = {}, // options extended for this plugin
+            getOrdinal       = ( n ) => {
+                let s = [ 'th', 'st', 'nd', 'rd' ],
+                    v = n % 100
                 
                 return n + ( s[(v - 20)%10] || s[v] || s[0] )
             },
-            getZerofill = ( num, digit = 4 ) => {
+            getZerofill      = ( num, digit = 4 ) => {
                 let strDuplicate = ( n, str ) => Array( n + 1 ).join( str ),
-                    zero = strDuplicate( digit - num.length, '0' )
+                    zero = strDuplicate( digit - String( num ).length, '0' )
                 
                 return String( num ).length == digit ? String( num ) : ( zero + num ).substr( num * -1 )
             },
-            parseDatetime = ( date_str ) => {
+            parseDatetime    = ( date_str ) => {
                 let [ _ymd, _his ] = date_str.split(' '),
                     _parts         = []
                 
@@ -3989,39 +3999,77 @@ console.log( '!_scrollTimeline:', event )
                     return new Date( date_str )
                 }
             },
-            _prop, _temp, _str, _num
+            _has_options     = false,
+            _prop, _temp, _str, _num, _year
         
+        if ( this.is_empty( date_seed ) ) {
+            return false
+        }
+        locales = this.supplement( 'en-US', locales, this.validateString )
+        options = this.supplement( {}, options, this.validateObject )
         for ( _prop in options ) {
-            if ( _prop === 'timeZone' || _prop === 'hour12' ) {
+            if ( /^(localeMatcher|timeZone|hour12|formatMatcher|era|timeZoneName)$/.test( _prop ) ) {
                 _options[_prop] = options[_prop]
             }
         }
-//console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], is_toLocalString )
+        if ( Object.keys( _options ).length > 0 ) {
+            _has_options = true
+        }
+//console.log( `!getLocaleString::${scale}:`, date_seed, locales, options[scale], is_toLocalString )
         
         switch ( true ) {
             case /^millenniums?|millennia$/i.test( scale ):
             case /^century$/i.test( scale ):
             case /^dec(ade|ennium)$/i.test( scale ):
             case /^lustrum$/i.test( scale ):
-                if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
-                    locale_string = getOrdinal( date_seed )
+                // Allowed value as format: 'numeric', 'ordinal'
+                _year = this.getCorrectDatetime( date_seed ).getFullYear()
+                if ( /^millenniums?|millennia$/i.test( scale ) ) {
+                    _temp = 1000
+                } else
+                if ( /^century$/i.test( scale ) ) {
+                    _temp = 100
+                } else
+                if ( /^dec(ade|ennium)$/i.test( scale ) ) {
+                    _temp = 10
                 } else {
-                    locale_string = date_seed
+                    _temp = 5
+                }
+                _num = this.numRound( _year / _temp, 0, 'ceil' )
+                if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
+                    locale_string = getOrdinal( _num )
+                } else {
+                    locale_string = _num
                 }
                 break
             case /^years?$/i.test( scale ):
-                if ( is_toLocalString && options.hasOwnProperty( scale ) ) {
-                    if ( [ 'numeric', '2-digit' ].includes( options[scale] ) ) {
-                        _options.year = options[scale]
-                        locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
+                // Allowed value as format: 'numeric', '2-digit', 'zerofill'
+                _temp = this.getCorrectDatetime( date_seed )
+                _year = _temp.getFullYear()
+                if ( is_toLocalString ) {
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
+                            _options.year = options[scale]
+                            locale_string = _temp.toLocaleString( locales, _options )
+                        } else
+                        if ( /^zerofill$/i.test( options[scale] ) ) {
+                            locale_string = _year.toString().length > 3 ? _year : getZerofill( _year, 4 )
+                            if ( _has_options ) {
+                                locale_string = _temp.toLocaleDateString( locales, _options ).replace( _year, locale_string )
+                            }
+                        } else {
+                            locale_string = _year
+                        }
                     } else
-                    if ( 'zerofill' === options[scale] ) {
-                        locale_string = getZerofill( date_seed )
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleDateString( locales, _options )
                     }
                 }
-                locale_string = this.is_empty( locale_string ) ? this.getCorrectDatetime( date_seed ).getFullYear() : locale_string
+                locale_string = this.is_empty( locale_string ) ? _year : locale_string
                 break
             case /^months?$/i.test( scale ):
+console.log( `!getLocaleString::${scale}:`, date_seed, locales, options, _options, _has_options )
+                // Allowed value as format: 'numeric', '2-digit', 'narrow', 'short', 'long'
                 if ( is_toLocalString && options.hasOwnProperty( scale ) ) {
                     if ( [ 'numeric', '2-digit', 'narrow', 'short', 'long' ].includes( options[scale] ) ) {
                         _options.month = options[scale]
@@ -4038,6 +4086,7 @@ console.log( '!_scrollTimeline:', event )
                 }
                 break
             case /^weeks?$/i.test( scale ):
+                // Allowed value as format: 'numeric', 'ordinal'
                 [ _str, _num ] = date_seed.split(',')
 //console.log( date_seed, _str, _num, new Date( _str ), parseDatetime( _str ), this.getCorrectDatetime( _str ) )
                 if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
@@ -4047,6 +4096,7 @@ console.log( '!_scrollTimeline:', event )
                 }
                 break
             case /^weekdays?$/i.test( scale ):
+                // Allowed value as format: 'narrow', 'short', 'long'
                 [ _str, _num ] = date_seed.split(',')
                 if ( /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))$/.test( _str ) ) {
                     _str = _str.split('/')
@@ -4064,6 +4114,7 @@ console.log( '!_scrollTimeline:', event )
                 }
                 break
             case /^days?$/i.test( scale ):
+                // Allowed value as format: 'numeric', '2-digit', 'ordinal'
                 if ( /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))$/.test( date_seed ) ) {
                     _str = date_seed.split('/')
                     _temp = new Date( ..._str )
@@ -4086,6 +4137,7 @@ console.log( '!_scrollTimeline:', event )
                 break
             case /^hours?$/i.test( scale ):
             case /^(half|quarter)-?hours?$/i.test( scale ):
+                // Allowed value as format: 'numeric', '2-digit', 'fulltime'
                 _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 if ( is_toLocalString ) {
                     _options.hour = options.hasOwnProperty('hour') ? options.hour : 'numeric'
@@ -4101,6 +4153,7 @@ console.log( '!_scrollTimeline:', event )
                 }
                 break
             case /^minutes?$/i.test( scale ):
+                // Allowed value as format: 'numeric', '2-digit', 'fulltime'
                 _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 if ( is_toLocalString ) {
                     _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
@@ -4116,6 +4169,7 @@ console.log( '!_scrollTimeline:', event )
                 }
                 break
             case /^seconds?$/i.test( scale ):
+                // Allowed value as format: 'numeric', '2-digit', 'fulltime'
                 _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 if ( is_toLocalString ) {
                     _options.second = options.hasOwnProperty('second') ? options.second : 'numeric'
@@ -4131,15 +4185,25 @@ console.log( '!_scrollTimeline:', event )
                     //locale_string = this.getCorrectDatetime( date_seed ).getSeconds()
                 }
                 break
+            case /^custom$/i.test( scale ):
+                // Custom format
+                _temp = this.getCorrectDatetime( date_seed )
+                
+                break
             case /^millisec(|ond)s?$/i.test( scale ):
             default:
-                _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
-                locale_string = _temp.toString()
-                //locale_string = this.getCorrectDatetime( date_seed )
+                // Allowed value as format: 'narrow'
+                //_temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
+                _temp = this.getCorrectDatetime( date_seed )
+                if ( _has_options ) {
+                    locale_string = _temp.toLocaleString( locales, _options )
+                } else {
+                    locale_string = _temp.toString()
+                }
                 break
         }
 //console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], locale_string )
-        return locale_string
+        return locale_string.toString()
     }
     
     /*

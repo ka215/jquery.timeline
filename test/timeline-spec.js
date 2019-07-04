@@ -7,10 +7,13 @@ const $timeline = $.fn.Timeline
 describe( 'jQuery.Timeline Unit Tests', () => {
     let $el = $('<div id="myTimeline"><ul class="timeline-events"></ul></div>'),
         timelineMethods = $timeline.Constructor.prototype,
-        defaultOptions  = $timeline.Constructor.Default
+        defaultOptions  = $timeline.Constructor.Default,
+        timezoneOffset  = new Date().getTimezoneOffset(),
+        isGMT           = timezoneOffset == 0
     
     before(() => {
-        // let $jqtl = $el.Timeline()
+        let tzo_ms = timezoneOffset * 60 * 1000
+        // console.log( `${(timezoneOffset / 60)} h`, `${timezoneOffset} min`, `${tzo_ms} ms`, `GMT:${isGMT ? 'true' : 'false'}` )
     })
     
     beforeEach(() => {
@@ -120,7 +123,11 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( new Date( getPluggableDatetime( '74-5-6', 'last', { scale: 'day' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('74/5/6').toDateString() )
         expect( new Date( getPluggableDatetime( '74/5/6 13:45', 'last', { scale: 'day' } ) ).toString() ).to.be.equal( getCorrectDatetime('74/5/6 23:59:59').toString() )
         expect( new Date( getPluggableDatetime( '1847/11/30 23:59:59', 'last', { scale: 'hour' } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/11/30 23:59:59').toString() )
-        expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:01:59').toString() )
+        if ( isGMT ) {
+            expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:01:59').toString() )
+        } else {
+            expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:00:59').toString() )
+        }
         // general purpose case (because this case is equal to "getCorrectDatetime" method, should use that method)
         expect( new Date( getPluggableDatetime( '-12-3-4', '', { scale: 'year' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-12-3-4').toDateString() )
         expect( new Date( getPluggableDatetime( '-1', '', { scale: 'year' } ) ).toDateString() ).to.be.equal( getCorrectDatetime('-1/1/1').toDateString() )
@@ -143,33 +150,38 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( getCorrectDatetime(0).toUTCString() ).to.be.equal('Thu, 01 Jan 1970 00:00:00 GMT')
         expect( getCorrectDatetime(1559641760068).toUTCString() ).to.be.equal('Tue, 04 Jun 2019 09:49:20 GMT')
         // string argument
-        expect( getCorrectDatetime('-234').toUTCString() ).to.be.equal('Wed, 01 Jan -0234 00:01:15 GMT')
-        expect( getCorrectDatetime('-1').toUTCString() ).to.be.equal('Fri, 01 Jan -0001 00:01:15 GMT')
-        expect( getCorrectDatetime('0').toUTCString() ).to.be.equal('Sat, 01 Jan 0000 00:01:15 GMT')
-        expect( getCorrectDatetime('1').toUTCString() ).to.be.equal('Mon, 01 Jan 0001 00:01:15 GMT')
-        expect( getCorrectDatetime('-234/12').toUTCString() ).to.be.equal('Mon, 01 Dec -0234 00:01:15 GMT')
-        expect( getCorrectDatetime('-1/5/31').toUTCString() ).to.be.equal('Mon, 31 May -0001 00:01:15 GMT')
+        expect( getCorrectDatetime('-234').toString() ).to.be.equal(new Date( new Date(-234,0,1) ).toString())
+        expect( getCorrectDatetime('-1').toUTCString() ).to.be.equal(new Date( new Date(-1,0,1).setFullYear(-1) ).toUTCString())
+        expect( getCorrectDatetime('0').toString() ).to.be.equal(new Date( new Date(0,0,1).setFullYear(0) ).toString())
+        expect( getCorrectDatetime('1').toUTCString() ).to.be.equal(new Date( new Date(1,0,1).setFullYear(1) ).toUTCString())
+        expect( getCorrectDatetime('-234/12').toUTCString() ).to.be.equal(new Date( new Date(-234, 11, 1) ).toUTCString())
+        expect( getCorrectDatetime('-1/5/31').toUTCString() ).to.be.equal(new Date( new Date(-1, 4, 31).setFullYear(-1) ).toUTCString())
         expect( getCorrectDatetime('7-1').toDateString() ).to.be.equal('Mon Jan 01 0007')
         expect( getCorrectDatetime('9/2').toDateString() ).to.be.equal('Sun Feb 01 0009')
         expect( getCorrectDatetime('32-5').toDateString() ).to.be.equal('Sat May 01 0032')
         expect( getCorrectDatetime('64/3').toDateString() ).to.be.equal('Sat Mar 01 0064')
         expect( getCorrectDatetime('567/8/9').toDateString() ).to.be.equal('Sun Aug 09 0567')
-        expect( getCorrectDatetime('0079/4/30 13:49:57').toUTCString() ).to.be.equal('Sun, 30 Apr 0079 13:51:12 GMT')
-        expect( getCorrectDatetime('1974-2-15 3').toUTCString() ).to.be.equal('Fri, 15 Feb 1974 03:00:00 GMT')
-        expect( getCorrectDatetime('1998-9-26 4:56').toUTCString() ).to.be.equal('Sat, 26 Sep 1998 03:56:00 GMT')
-        expect( getCorrectDatetime('2010-11-9 21:47:36').toUTCString() ).to.be.equal('Tue, 09 Nov 2010 21:47:36 GMT')
-        expect( getCorrectDatetime('11223/12/31 12:34:56').toUTCString() ).to.be.equal('Sun, 31 Dec 11223 12:34:56 GMT')
+        expect( getCorrectDatetime('0079/4/30 13:49:57').toUTCString() ).to.be.equal(new Date( new Date(79, 3, 30, 13, 49, 57).setFullYear(79) ).toUTCString())
+        expect( getCorrectDatetime('1974-2-15 3').toUTCString() ).to.be.equal(new Date(1974, 1, 15, 3).toUTCString())
+        expect( getCorrectDatetime('1998-9-26 4:56').toUTCString() ).to.be.equal(new Date(1998, 8, 26, 4, 56).toUTCString())
+        expect( getCorrectDatetime('2010-11-9 21:47:36').toUTCString() ).to.be.equal(new Date(2010, 10, 9, 21, 47, 36).toUTCString())
+        expect( getCorrectDatetime('11223/12/31 12:34:56').toUTCString() ).to.be.equal(new Date(11223, 11, 31, 12, 34, 56).toUTCString())
         // invalid datetime
-        expect( getCorrectDatetime('1974-13-14').toUTCString() ).to.be.equal('Tue, 14 Jan 1975 00:00:00 GMT')
-        expect( getCorrectDatetime('1998/9/32').toUTCString() ).to.be.equal('Thu, 01 Oct 1998 23:00:00 GMT')
-        expect( getCorrectDatetime('2010-11-9 25:00').toUTCString() ).to.be.equal('Wed, 10 Nov 2010 01:00:00 GMT')
-        expect( getCorrectDatetime('2019/12/31 13:63').toUTCString() ).to.be.equal('Tue, 31 Dec 2019 14:03:00 GMT')
+        expect( getCorrectDatetime('1974-13-14').toUTCString() ).to.be.equal(new Date(1974, 12, 14).toUTCString())
+        expect( getCorrectDatetime('1998/9/32').toUTCString() ).to.be.equal(new Date(1998, 8, 32).toUTCString())
+        expect( getCorrectDatetime('2010-11-9 25:00').toUTCString() ).to.be.equal(new Date(2010, 10, 9, 25, 0).toUTCString())
+        expect( getCorrectDatetime('2019/12/31 13:63').toUTCString() ).to.be.equal(new Date(2019, 11, 31, 13, 63).toUTCString())
         // string as like date time
         expect( getCorrectDatetime('Wed, 31 Dec 1969 23:59:57 GMT').toUTCString() ).to.be.equal('Wed, 31 Dec 1969 23:59:57 GMT')
-        expect( getCorrectDatetime('Sun Mar 31 2019').toUTCString() ).to.be.equal('Sun, 31 Mar 2019 00:00:00 GMT')
-        expect( getCorrectDatetime('Sun Oct 27 2019').toUTCString() ).to.be.equal('Sat, 26 Oct 2019 23:00:00 GMT')
+        if ( isGMT ) {
+            expect( getCorrectDatetime('Sun Mar 31 2019').toUTCString() ).to.be.equal('Sun, 31 Mar 2019 00:00:00 GMT')
+            expect( getCorrectDatetime('Sun Oct 27 2019').toUTCString() ).to.be.equal('Sat, 26 Oct 2019 23:00:00 GMT')
+        } else {
+            expect( getCorrectDatetime('Sun Mar 31 2019').toString() ).to.be.equal(new Date(2019, 2, 31, 0, 0, 0).toString())
+            expect( getCorrectDatetime('Sun Oct 27 2019').toString() ).to.be.equal(new Date(2019, 9, 27, 0, 0, 0).toString())
+        }
         expect( getCorrectDatetime('Wed Jun 28 1993 14:39:07 GMT-0600 (PDT)').toUTCString() ).to.be.equal('Mon, 28 Jun 1993 14:39:07 GMT')
-        expect( getCorrectDatetime('12/19/2012, 7:00:00 PM').toUTCString() ).to.be.equal('Wed, 19 Dec 2012 19:00:00 GMT')
+        expect( getCorrectDatetime('12/19/2012, 7:00:00 PM').toString() ).to.be.equal(new Date(2012, 11, 19, 19, 0, 0).toString())
         // invalid argument
         expect( getCorrectDatetime('not datetime') ).to.be.null // console.warn: "not datetime" Cannot parse date because invalid format.
         expect( getCorrectDatetime() ).to.be.null // console.warn: "undefined" Cannot parse date because invalid format.
@@ -190,6 +202,19 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( timelineMethods.getWeek('1-3-4') ).to.be.equal(10)
         expect( timelineMethods.getWeek('96/12/31') ).to.be.equal(53)
         expect( timelineMethods.getWeek('1996/12/31') ).to.be.equal(53)
+    })
+    
+    it ( 'getFirstDayOfWeek: Retrieve a first day of the week from week number', () => {
+        
+        expect( timelineMethods.getFirstDayOfWeek() ).to.be.false
+        expect( timelineMethods.getFirstDayOfWeek(0, 0) ).to.be.false
+        expect( timelineMethods.getFirstDayOfWeek(1, 0).toDateString() ).to.be.equal('Mon Dec 31 2018')
+        expect( timelineMethods.getFirstDayOfWeek(2, 2019).toDateString() ).to.be.equal('Mon Jan 07 2019')
+        expect( timelineMethods.getFirstDayOfWeek(28, 2019).toDateString() ).to.be.equal('Mon Jul 08 2019')
+        expect( timelineMethods.getFirstDayOfWeek(54, 2019).toDateString() ).to.be.equal('Mon Jan 06 2020')
+        expect( timelineMethods.getFirstDayOfWeek(1, 1).toDateString() ).to.be.equal('Mon Jan 01 0001')
+        expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Mon Jan 04 -0012') // invalid?
+        expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Mon Jan 04 -0001') // invalid?
     })
     
     it ( 'modifyDate: Get the datetime shifted from the specified datetime by any fluctuation value', () => {
@@ -235,7 +260,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( timelineMethods.modifyDate('197-3-4', -12,'year') ).to.be.eql( gCD('185-3-4') )
         expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'year') ).to.be.eql( gCD('1987/6/10 1:23:45') )
         expect( timelineMethods.modifyDate('1847/11/30',1,'year') ).to.be.eql( gCD('1848-11-30') )
-        expect( timelineMethods.modifyDate('1847/12/1',-1,'year') ).to.be.eql( gCD('1846-12-1 0:01:15') ) // notice!
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('1847/12/1',-1,'year') ).to.be.eql( gCD('1846-12-1 0:01:15') ) // notice!
+        } else {
+            expect( timelineMethods.modifyDate('1847/12/1',-1,'year') ).to.be.eql( gCD('1846-12-1 0:00:00') )
+        }
         // modify month
         expect( timelineMethods.modifyDate('1',-25,'month') ).to.be.eql( gCD('-2/12') )
         expect( timelineMethods.modifyDate('1',-1,'month') ).to.be.eql( gCD('0/12') )
@@ -245,7 +274,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( timelineMethods.modifyDate('197-3-4', -12,'month') ).to.be.eql( gCD('196/3/4') )
         expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'month') ).to.be.eql( gCD('1984/9/10 1:23:45') )
         expect( timelineMethods.modifyDate('1847/11/30',1,'month') ).to.be.eql( gCD('1847/12/30') )
-        expect( timelineMethods.modifyDate('1847/12/1',-1,'month') ).to.be.eql( gCD('1847/11/1 0:01:15') ) // notice!
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('1847/12/1',-1,'month') ).to.be.eql( gCD('1847/11/1 0:01:15') ) // notice!
+        } else {
+            expect( timelineMethods.modifyDate('1847/12/1',-1,'month') ).to.be.eql( gCD('1847/11/1 0:00:00') )
+        }
         // modify week
         expect( timelineMethods.modifyDate('1',-53,'week') ).to.be.eql( gCD('-1/12/27') )
         expect( timelineMethods.modifyDate('1',-1,'week') ).to.be.eql( gCD('0/12/25') )
@@ -255,7 +288,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( timelineMethods.modifyDate('197-3-4', -3,'week') ).to.be.eql( gCD('197/2/11') )
         expect( timelineMethods.modifyDate('1984/6/10 1:23:45',3,'week') ).to.be.eql( gCD('1984/7/1 1:23:45') )
         expect( timelineMethods.modifyDate('1847/11/30',1,'week') ).to.be.eql( gCD('1847/12/7') )
-        expect( timelineMethods.modifyDate('1847/12/1',-1,'week') ).to.be.eql( gCD('1847/11/24 0:01:15') ) // notice!
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('1847/12/1',-1,'week') ).to.be.eql( gCD('1847/11/24 0:01:15') ) // notice!
+        } else {
+            expect( timelineMethods.modifyDate('1847/12/1',-1,'week') ).to.be.eql( gCD('1847/11/24 0:00:00') )
+        }
         // modify day
         expect( timelineMethods.modifyDate('1',-367,'day') ).to.be.eql( gCD('-1/12/31') )
         expect( timelineMethods.modifyDate('1',-1,'day') ).to.be.eql( gCD('0/12/31') )
@@ -272,8 +309,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( timelineMethods.modifyDate('1974/2/15 0:00:00',+25,'hour') ).to.be.eql( gCD('1974/2/16 01:00:00') )
         expect( timelineMethods.modifyDate('1192/2/9 0:00:00', -24,'hour') ).to.be.eql( gCD('1192/2/8 00:00:00') )
         expect( timelineMethods.modifyDate('1192/2/9 0:00:00', -25,'hour') ).to.be.eql( gCD('1192/2/7 23:00:00') )
-        expect( timelineMethods.modifyDate('2019/10/27',24,'hour') ).to.be.eql( gCD('2019/10/27 23:00:00') ) // DST
-        expect( timelineMethods.modifyDate('2019-3-31', 24,'hour') ).to.be.eql( gCD('2019/4/01 01:00:00') ) // DST
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('2019/10/27',24,'hour') ).to.be.eql( gCD('2019/10/27 23:00:00') ) // DST
+            expect( timelineMethods.modifyDate('2019-3-31', 24,'hour') ).to.be.eql( gCD('2019/4/01 01:00:00') ) // DST
+        } else {
+            expect( timelineMethods.modifyDate('2019/10/27',24,'hour') ).to.be.eql( gCD('2019/10/28 0:00:00') )
+            expect( timelineMethods.modifyDate('2019-3-31', 24,'hour') ).to.be.eql( gCD('2019/4/1 0:00:00') )
+        }
         expect( timelineMethods.modifyDate('1/1/1 00:00:00',+3,'hour') ).to.be.eql( gCD('0001/1/01 03:00:00') )
         expect( timelineMethods.modifyDate('1-1-1 00:00:00',-2,'hour') ).to.be.eql( gCD('0000/12/31 22:00:00') )
         expect( timelineMethods.modifyDate('645/11/11 20:12:34',+3,'hour') ).to.be.eql( gCD('0645-11-11 23:12:34') )
@@ -284,7 +326,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         //expect( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour') ).to.be.eql( gCD('1847-12-01 00:01:15.000Z') ) // notice!
         // modify minute
         expect( timelineMethods.modifyDate('2019/10/27 0:00:00', 61,'minute') ).to.be.eql( gCD('2019/10/27 01:01:00') ) // DST
-        expect( timelineMethods.modifyDate('2019-3-31 0:00:00', 120,'minute') ).to.be.eql( gCD('2019/3/31 03:00:00') ) // DST
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('2019-3-31 0:00:00', 120,'minute') ).to.be.eql( gCD('2019/3/31 03:00:00') ) // DST
+        } else {
+            expect( timelineMethods.modifyDate('2019-3-31 0:00:00', 120,'minute') ).to.be.eql( gCD('2019/3/31 02:00:00') )
+        }
         expect( timelineMethods.modifyDate('765-9-26 1:23:45',  +21,'minute') ).to.be.eql( gCD('0765/9/26 01:44:45') )
         expect( timelineMethods.modifyDate('1970/1/1 00:15:00', -45,'minute') ).to.be.eql( gCD('1969-12-31 23:30:00') )
         expect( timelineMethods.modifyDate('1969/12/31 23:30:00',30,'minute') ).to.be.eql( gCD('1970/1/1 00:00:00') )
@@ -293,18 +339,32 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         //expect( timelineMethods.modifyDate('1847/11/30 23:59:00',1,'minute') ).to.be.eql( gCD('1847/12/1 00:00:00') ) // notice!
         //expect( timelineMethods.modifyDate('1847/12/1 0:00:00', +1,'minute') ).to.be.eql( gCD('1847/12/1 00:01:00') ) // notice!
         // modify second
-        expect( timelineMethods.modifyDate('2019/10/27 1:59:59',  1,'second') ).to.be.eql( gCD('2019/10/27 1:00:00') ) // DST
-        expect( timelineMethods.modifyDate('2019-3-31 0:59:59',  +1,'second') ).to.be.eql( gCD('2019/3/31 2:00:00') ) // DST
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('2019/10/27 1:59:59',  1,'second') ).to.be.eql( gCD('2019/10/27 1:00:00') ) // DST
+            expect( timelineMethods.modifyDate('2019-3-31 0:59:59',  +1,'second') ).to.be.eql( gCD('2019/3/31 2:00:00') ) // DST
+        } else {
+            expect( timelineMethods.modifyDate('2019/10/27 1:59:59',  1,'second') ).to.be.eql( gCD('2019/10/27 2:00:00') )
+            expect( timelineMethods.modifyDate('2019-3-31 0:59:59',  +1,'second') ).to.be.eql( gCD('2019/3/31 1:00:00') )
+        }
         expect( timelineMethods.modifyDate('765-9-26 1:23:45',  +21,'second') ).to.be.eql( gCD('765/9/26 1:24:06') )
         expect( timelineMethods.modifyDate('1970/1/1 00:15:00', -45,'second') ).to.be.eql( gCD('1970/1/1 0:14:15') )
         expect( timelineMethods.modifyDate('1969/12/31 23:30:00',30,'second') ).to.be.eql( gCD('1969/12/31 23:30:30') )
         expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -2,'second') ).to.be.eql( gCD('1847/11/30 23:59:58') )
         expect( timelineMethods.modifyDate('1847/12/1 0:00:00', -1,'second') ).to.be.eql( gCD('1847/11/30 23:59:59') )
-        expect( timelineMethods.modifyDate('1847/11/30 23:59:59',1,'second') ).to.be.eql( gCD('1847/12/1 0:01:15') ) // notice!
-        expect( timelineMethods.modifyDate('1847/12/1 0:00:00', +1,'second') ).to.be.eql( gCD('1847/12/1 0:01:16') ) // notice!
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('1847/11/30 23:59:59',1,'second') ).to.be.eql( gCD('1847/12/1 0:01:15') ) // notice!
+            expect( timelineMethods.modifyDate('1847/12/1 0:00:00', +1,'second') ).to.be.eql( gCD('1847/12/1 0:01:16') ) // notice!
+        } else {
+            expect( timelineMethods.modifyDate('1847/11/30 23:59:59',1,'second') ).to.be.eql( gCD('1847/12/1 0:00:00') )
+            expect( timelineMethods.modifyDate('1847/12/1 0:00:00', +1,'second') ).to.be.eql( gCD('1847/12/1 0:00:01') )
+        }
         // modify millisecond
         expect( timelineMethods.modifyDate('2019/10/27 1:59:59', 789,'millisecond') ).to.be.eql( gCD('2019-10-27 1:59:59.789') ) // DST
-        expect( timelineMethods.modifyDate('2019-3-31 2:00:00', -100,'millisecond') ).to.be.eql( gCD('2019/3/31 0:59:59.900') ) // DST
+        if ( isGMT ) {
+            expect( timelineMethods.modifyDate('2019-3-31 2:00:00', -100,'millisecond') ).to.be.eql( gCD('2019/3/31 0:59:59.900') ) // DST
+        } else {
+            expect( timelineMethods.modifyDate('2019-3-31 2:00:00', -100,'millisecond') ).to.be.eql( gCD('2019/3/31 1:59:59.900') )
+        }
         expect( timelineMethods.modifyDate('1956/12/3 0:06:01',+3456,'millisecond') ).to.be.eql( gCD('1956/12/3 0:06:04.456') )
     })
     
@@ -358,17 +418,29 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( timelineMethods.diffDate(gCD('2020/1/1'), gCD('2020/2/31'),'week') ).to.be.an('object').that.to.eql({'2020,1': 96,'2020,2': 168,'2020,3': 168,'2020,4': 168,'2020,5': 168,'2020,6': 168,'2020,7': 168,'2020,8': 168,'2020,9': 168,'2020,10': 48})
         expect( timelineMethods.diffDate(gCD('2019-2'), gCD('2019-2'),'week') ).to.be.an('object').that.to.eql({'2019,5': 24})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 167, '2019,44': 169})
+        if ( isGMT ) {
+            expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 167, '2019,44': 169})
+        } else {
+            expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 168, '2019,44': 168})
+        }
         // when case "day"
         expect( diffDate(gCD('169/12/30'), gCD('170/1/3'),'day') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
         expect( Object.keys( diffDate(gCD('2020-1-29'), gCD('2020-2-31'),'day') ) ).to.have.lengthOf( 34 )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+        if ( isGMT ) {
+            expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+        } else {
+            expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 24, '2019/10/27': 24})
+        }
         // when case "weekday"
         expect( diffDate(gCD('169/12/30'), gCD('170/1/3'),'weekday') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
         expect( Object.keys( diffDate(gCD('2020-1-29'), gCD('2020-2-31'),'weekday') ) ).to.have.lengthOf( 34 )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+        if ( isGMT ) {
+            expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+        } else {
+            expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 24, '2019/10/27': 24})
+        }
         // when case "hour"
         expect( diffDate(gCD('169/12/31'), gCD('170/1/1'),'hour') ).to.be.an('object').that.to.include({'169/12/31 0': 60, '170/1/1 0': 60})
         expect( diffDate(new Date('2020-1-29 0'), new Date('2020-1-29 12'),'hour') ).to.be.false // console.warn: Cannot parse date to get difference because invalid format.
@@ -379,8 +451,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:01'),'hour') ).to.be.an('object').that.to.include({'1970/1/2 0': 60})
         expect( diffDate(gCD('1998-1-29 5:22'), gCD('1998-1-29 14:08'),'hour') ).to.be.an('object').that.to.eql({'1998/1/29 5': 60, '1998/1/29 6': 60, '1998/1/29 7': 60, '1998/1/29 8': 60, '1998/1/29 9': 60, '1998/1/29 10': 60, '1998/1/29 11': 60, '1998/1/29 12': 60, '1998/1/29 13': 60, '1998/1/29 14': 60})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
-        expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
+        if ( isGMT ) {
+            expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
+            expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
+        } else {
+            expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 1': 60, '2019/3/31 2': 60})
+            expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 0': 60, '2019/10/27 1': 60})
+        }
         // when case "half-hour"
         
         // when case "quarter-hour"
@@ -392,8 +469,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( Object.keys( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 9:59'),'minute') ) ).to.have.lengthOf( 600 )
         expect( Object.keys( diffDate(gCD('1998/1/29 5:22'), gCD('1998/1/29 7:08'),'minute') ) ).to.have.lengthOf( 107 )
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.eql({'2019/3/31 0:59': 60, '2019/3/31 2:0': 60})
-        expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 3660})
+        if ( isGMT ) {
+            expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.eql({'2019/3/31 0:59': 60, '2019/3/31 2:0': 60})
+            expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 3660})
+        } else {
+            expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/3/31 0:59': 60, '2019/3/31 1:0': 60, '2019/3/31 1:59': 60, '2019/3/31 2:0': 60})
+            expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 60})
+        }
         // when case "second"
         expect( diffDate(gCD('169/12/31 23:59:00'), gCD('170/1/1 0:01:00'),'second') ).to.be.a('object').that.to.include({'169/12/31 23:59:0': 1000, '169/12/31 23:59:59': 1000, '170/1/1 0:0:0': 1000, '170/1/1 0:1:0': 1000})
         expect( Object.keys( diffDate(gCD('1970/1/1 0:00:01'), gCD('1970/1/1 1:00:00'),'second') ) ).to.have.lengthOf( 3600 )
@@ -401,8 +483,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( diffDate(gCD('2015-6-30 23:59:59'), gCD('2015-7-1 0:00:01'),'second') ).to.be.an('object').that.to.eql({'2015/6/30 23:59:59': 1000, '2015/7/1 0:0:0': 1000, '2015/7/1 0:0:1': 1000})
         expect( diffDate(gCD('2016/12/31 23:59:59'), gCD('2017/1/1 00:00:01'),'second') ).to.be.an('object').that.to.eql({'2016/12/31 23:59:59': 1000, '2017/1/1 0:0:0': 1000, '2017/1/1 0:0:1': 1000})
         // - further with supported on summer time (DST); That must be testing timezone of "GMT Standard Time"
-        expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.eql({'2019/3/31 0:59:59': 1000, '2019/3/31 2:0:0': 1000})
-        expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 3601000})
+        if ( isGMT ) {
+            expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.eql({'2019/3/31 0:59:59': 1000, '2019/3/31 2:0:0': 1000})
+            expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 3601000})
+        } else {
+            expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.include({'2019/3/31 0:59:59': 1000, '2019/3/31 1:0:0': 1000, '2019/3/31 1:59:59': 1000, '2019/3/31 2:0:0': 1000})
+            expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 1000})
+        }
         // when case "other"
         expect( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 23:00'),'quarterHour') ).to.be.a('number').that.to.equal( 23 * 60 * 60 * 1000 )
         expect( diffDate(gCD('1970-1-1 0:00'), gCD('1970-1-1 24:00'),'halfHour') ).to.be.a('number').that.to.equal( 24 * 60 * 60 * 1000 )
@@ -445,7 +532,6 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         expect( getHigherScale( 'millennia' ) ).to.equal( 'millennium' )
     })
     
-    // verifyScale
     it ( 'verifyScale: Verify whether is allowed scale in the plugin', () => {
         let _now = new Date(),
             _pass = {
@@ -534,6 +620,45 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.verifyScale( 'millennium', _now.getTime(), _pass.millennium, true ) ).to.be.an('object').that.to.eql( timelineMethods.diffDate( _now.getTime(), _pass.millennium, 'millennium' ) )
     })
     
+    it ( 'getLocaleString: Retrieve the date string of specified locale', () => {
+        let _nowDt = new Date()
+        
+        expect( timelineMethods.getLocaleString() ).to.be.false
+        expect( timelineMethods.getLocaleString( _nowDt ) ).to.be.equal( _nowDt.toString() )
+        expect( timelineMethods.getLocaleString( _nowDt.toString() ) ).to.be.equal( _nowDt.toString() )
+        expect( timelineMethods.getLocaleString( _nowDt.getTime() ) ).to.be.equal( _nowDt.toString() )
+        expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', '', { era: 'narrow' } ) ).to.be.equal( '7 4, 2019 A, 4:51:13 PM' )
+        expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', null, null, { era: 'short' } ) ).to.be.equal( '7 4, 2019 AD, 4:51:13 PM' )
+        expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'en-GB', { era: 'short' } ) ).to.be.equal( '4 7 2019 AD, 16:51:13' )
+        expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'ja-JP-u-ca-japanese', { era: 'long' } ) ).to.be.equal( '令和1年7月4日 16:51:13' )
+        expect( timelineMethods.getLocaleString( _nowDt, 'millennium', null, { millennium: 'ordinal' } ) ).to.be.equal( '3rd' )
+        expect( timelineMethods.getLocaleString( '1974', 'millenniums', '', { millenniums: 'numeric' } ) ).to.be.equal( '2' )
+        expect( timelineMethods.getLocaleString( '645', 'millennia', '' ) ).to.be.equal( '1' )
+        expect( timelineMethods.getLocaleString( _nowDt, 'century', null, { century: 'ordinal' } ) ).to.be.equal( '21st' )
+        expect( timelineMethods.getLocaleString( '1847', 'century', '', { century: 'numeric' } ) ).to.be.equal( '19' )
+        expect( timelineMethods.getLocaleString( '96', 'century' ) ).to.be.equal( '1' )
+        expect( timelineMethods.getLocaleString( _nowDt, 'decade', null, { decade: 'ordinal' } ) ).to.be.equal( '202nd' )
+        expect( timelineMethods.getLocaleString( '1600', 'decennium', '', { decade: 'numeric' } ) ).to.be.equal( '160' )
+        expect( timelineMethods.getLocaleString( '11', 'decade' ) ).to.be.equal( '2' )
+        expect( timelineMethods.getLocaleString( _nowDt, 'lustrum', null, { lustrum: 'ordinal' } ) ).to.be.equal( '404th' )
+        expect( timelineMethods.getLocaleString( '1601', 'lustrum', '', { lustrum: 'numeric' } ) ).to.be.equal( '321' )
+        expect( timelineMethods.getLocaleString( '11', 'lustrum', '' ) ).to.be.equal( '3' )
+        expect( timelineMethods.getLocaleString( _nowDt, 'years' ) ).to.be.equal( _nowDt.getFullYear().toString() )
+        expect( timelineMethods.getLocaleString( _nowDt, 'years', null, { years: 'numeric' } ) ).to.be.equal( _nowDt.getFullYear().toString() )
+        expect( timelineMethods.getLocaleString( '1985', 'year', '', { year: '2-digit' } ) ).to.be.equal( '85' )
+        expect( timelineMethods.getLocaleString( '2014', 'years', '', { years: '2-digit' } ) ).to.be.equal( '14' )
+        expect( timelineMethods.getLocaleString( '79', 'year', '', { year: 'zerofill' } ) ).to.be.equal( '0079' )
+        expect( timelineMethods.getLocaleString( '123', 'years', '', { years: 'zerofill' } ) ).to.be.equal( '0123' )
+        expect( timelineMethods.getLocaleString( '2001', 'years', '', { years: 'zerofill' } ) ).to.be.equal( '2001' )
+        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow' } ) ).to.be.equal( '公元2019年7月4日' )
+        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow', year: '2-digit' } ) ).to.be.equal( '公元19年' )
+        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long' } ) ).to.be.equal( '西暦2019年7月4日' )
+        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long', year: 'numeric' } ) ).to.be.equal( '西暦2019年' )
+        expect( timelineMethods.getLocaleString( '8/7/6', 'year', 'ja-JP', { era: 'long', year: 'zerofill' } ) ).to.be.equal( '西暦0008年7月6日' )
+        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'de-DE', { era: 'short' } ) ).to.be.equal( '4. 7 2019 n. Chr.' )
+        expect( timelineMethods.getLocaleString( '19/7/4', 'year', 'de-DE', { era: 'short', year: 'zerofill' } ) ).to.be.equal( '4. 7 0019 n. Chr.' )
+        
+    })
     
     // public methods
     /* */
@@ -623,6 +748,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                             hour: 'numeric', // 'numeric', '2-digit' or 'fulltime'
                             minute: '2-digit', // 'numeric', '2-digit' or 'fulltime'
                             second: '2-digit', // 'numeric', '2-digit' or 'fulltime'
+                            millisecond: 'narrow',
                         }
                     },
                     bottom: {
