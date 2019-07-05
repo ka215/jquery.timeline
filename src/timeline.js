@@ -18,9 +18,9 @@ const VERSION            = "2.0.0b2"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
-const LOADING_MESSAGE    = "Loading..."
+const IS_TOUCH           = 'ontouchstart' in window
 const MIN_POINTER_SIZE   = 12
-const DEBUG_SLEEP        = 1200
+const DEBUG_SLEEP        = 1500
 const JQUERY_NO_CONFLICT = $.fn[NAME]
 
 const Default = {
@@ -48,6 +48,7 @@ const Default = {
         list        : [],
     },
     ruler           : {
+        truncateLowers : false,
         top         : {
             lines      : [],
             height     : 30,
@@ -82,11 +83,13 @@ const Default = {
     },
     rangeAlign      : "latest",
     loader          : "default",
+    loadingMessage  : "",
     hideScrollbar   : false,
     storage         : "session",
     reloadCacheKeep : true,
     zoom            : false,
     wrapScale       : true,
+    firstDayOfWeek  : 0, // 0: Sunday, 1: Monday, ... 6: Saturday
     engine          : "canvas",
     debug           : false,
     // datetimeFormat : {},       // --> Deprecated since v2.0.0
@@ -152,7 +155,9 @@ const Event = {
     CLICK_EVENT        : `click.open${EVENT_KEY}`,
     FOCUSIN_EVENT      : `focusin.event${EVENT_KEY}`,
     FOCUSOUT_EVENT     : `focusout.event${EVENT_KEY}`,
-    SCROLL_TIMELINE    : `scroll.timeline${EVENT_KEY}`,
+    TOUCHSTART_TIMELINE: `touchstart.timeline${EVENT_KEY} mousedown.timeline${EVENT_KEY}`,
+    TOUCHMOVE_TIMELINE : `touchmove.timeline${EVENT_KEY} mousemove.timeline${EVENT_KEY}`,
+    TOUCHEND_TIMELINE  : `touchend.timeline${EVENT_KEY} mouseup.timeline${EVENT_KEY}`,
     MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
     MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
     ZOOMIN_SCALE       : `dblclick.zoom${EVENT_KEY}`
@@ -192,6 +197,7 @@ const ClassName = {
     STICKY_LEFT                : `${PREFIX}sticky-left`,
     OVERLAY                    : `${PREFIX}overlay`,
     ALIGN_SELF_RIGHT           : `${PREFIX}align-self-right`,
+    PRESENT_TIME_MARKER        : `${PREFIX}present-time`,
     LOADER_ITEM                : `${PREFIX}loading`
 }
 
@@ -203,6 +209,7 @@ const Selector = {
     TIMELINE_CONTAINER        : `.${ClassName.TIMELINE_CONTAINER}`,
     TIMELINE_MAIN             : `.${ClassName.TIMELINE_MAIN}`,
     TIMELINE_RULER_TOP        : `.${PREFIX}ruler-top`,
+    TIMELINE_EVENT_CONTAINER  : `.${ClassName.TIMELINE_EVENT_CONTAINER}`,
     TIMELINE_RULER_BOTTOM     : `.${PREFIX}ruler-bottom`,
     TIMELINE_RULER_ITEM       : `.${ClassName.TIMELINE_RULER_ITEM}`,
     TIMELINE_RELATION_LINES   : `.${ClassName.TIMELINE_RELATION_LINES}`,
@@ -278,6 +285,7 @@ class Timeline {
         this._isCached      = false
         this._isCompleted   = false
         this._isShown       = false
+        this._isTouched     = false
         this._instanceProps = {}
         Data.setData( element, DATA_KEY, this )
     }
@@ -298,11 +306,14 @@ class Timeline {
      * @private: Define the default options of this plugin
      */
     _getConfig( config ) {
-        config = {
-            ...Default,
-            ...config
+        // config = { ...Default, ...config } // Note: this is NG because two objects have not merged deeply
+        if ( config.startDatetime instanceof Date ) {
+            config.startDatetime = config.startDatetime.toString()
         }
-        return config
+        if ( config.endDatetime instanceof Date ) {
+            config.endDatetime = config.endDatetime.toString()
+        }
+        return this.mergeDeep( Default, config )
     }
     
     /*
@@ -376,9 +387,9 @@ class Timeline {
             return this
         }
         
-        this.showLoader()
-        
         this._calcVars()
+        
+        this.showLoader()
         
         if ( ! this._verifyMaxRenderableRange() ) {
             throw new RangeError( `Timeline display period exceeds maximum renderable range.` )
@@ -410,13 +421,21 @@ class Timeline {
             Selector.TIMELINE_EVENT_NODE,
             ( event ) => this._activeEvent( event )
         )
-        /*
         $(_elem).on(
-            Event.SCROLL_TIMELINE,
+            Event.TOUCHSTART_TIMELINE,
             Selector.TIMELINE_MAIN,
-            ( event ) => this._scrollTimeline( event )
+            ( event ) => this._swipeStart( event )
         )
-        */
+        $(_elem).on(
+            Event.TOUCHMOVE_TIMELINE,
+            Selector.TIMELINE_MAIN,
+            ( event ) => this._swipeMove( event )
+        )
+        $(_elem).on(
+            Event.TOUCHEND_TIMELINE,
+            Selector.TIMELINE_MAIN,
+            ( event ) => this._swipeEnd( event )
+        )
         if ( /^point(|er)$/i.test( this._config.type ) ) {
             $(_elem).on(
                 Event.MOUSEENTER_POINTER,
@@ -437,6 +456,10 @@ class Timeline {
             )
             
         }
+        $(_elem).find( Selector.TIMELINE_CONTAINER ).on(
+            'scroll',
+            ( event ) => this._scrollTimeline( event )
+        )
         
         this._isCompleted = true
         
@@ -489,22 +512,8 @@ class Timeline {
         // _props.fullheight    // The total height of the timeline container (:> タイムラインコンテナの縦幅の全長
         // _props.visibleWidth  // The width of the timeline that will display (:> 表示されるタイムラインの横幅
         // _props.visibleHeight // The height of the timeline that will display (:> 表示されるタイムラインの縦幅
-        
-        /*
-        switch ( true ) {
-            case /^dec(ade|ennium)$/i.test( _opts.scale ):
-            case /^lustrum$/i.test( _opts.scale ):
-            case /^years?$/i.test( _opts.scale ):
-            case /^months?$/i.test( _opts.scale ):
-            case /^weeks?$/i.test( _opts.scale ):
-            case /^(|week)days?$/i.test( _opts.scale ):
-            case /^hours?$/i.test( _opts.scale ):
-                _props.isVLS = true
-                break
-            default:
-                break
-        }
-        */
+        _props.absX       = 0 // An absolute X position on the page for using in swipe event (:> スワイプイベント用
+        _props.moveX      = 0 // The moving position after doing the touchstart for using in swipe event (:> スワイプイベント用
         
         // get all scales on ruler
         let _rulers = _opts.ruler.top.lines.reduce( _callback, [])
@@ -581,7 +590,7 @@ class Timeline {
         _props.visibleHeight = _props.height > 0 ? `${( _props.height <= _props.fullheight ? _props.height : _props.fullheight )}px` : 'auto'
         
         for ( let _prop in _props ) {
-            if ( _prop === 'width' || _prop === 'height' || _prop === 'variableScale' ) {
+            if ( /^(width|height|variableScale|absX|moveX)$/.test( _prop ) ) {
                 continue
             }
             if ( this.is_empty( _props[_prop] ) ) {
@@ -834,17 +843,19 @@ class Timeline {
             _format  = this.supplement( Default.headline.format, _opts.headline.format ),
             _begin   = this.supplement( null, _props.begin ),
             _end     = this.supplement( null, _props.end ),
+            _scale   = _opts.scale,
             _tl_headline = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE }),
             _wrapper     = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE_WRAPPER })
         
-// console.log( '!_createHeadline:', _opts )
         if ( _title ) {
             _wrapper.append( `<h3 class="${ClassName.HEADLINE_TITLE}">${_opts.headline.title}</h3>` )
         }
         if ( _range ) {
             if ( _begin && _end ) {
-                let _meta = `${new Date( _begin ).toLocaleString( _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${new Date( _end ).toLocaleString( _locale, _format )}`
-                //let _meta = this.getCorrectDatetime( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ this.getCorrectDatetime( _end ).toLocaleString( _locale, _format )
+                if ( _format.hasOwnProperty('custom') ) {
+                    _scale = 'custom'
+                }
+                let _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
                 
                 _wrapper.append( `<div class="${ClassName.RANGE_META}">${_meta}</div>` )
             }
@@ -1015,7 +1026,19 @@ class Timeline {
     _createRuler( position ) {
         let _opts       = this._config,
             _props      = this._instanceProps,
-            ruler_line  = this.supplement( [ _opts.scale ], _opts.ruler[position].lines, ( def, val ) => Array.isArray( val ) && val.length > 0 ? val : def ),
+            ruler_line  = this.supplement( [ _opts.scale ], _opts.ruler[position].lines, ( def, val ) => {
+                if ( Array.isArray( val ) && val.length > 0 ) {
+                    if ( _opts.ruler.hasOwnProperty( 'truncateLowers' ) && _opts.ruler.truncateLowers ) {
+                        let _ignore_scales = this.findScale( _opts.scale, 'lower all' ),
+                            _filter_scales = val.filter( ( scl ) => ! _ignore_scales.includes( this._filterScaleKeyName( scl ) ) )
+//console.log( '!_createRuler::truncateLowers:', _opts.scale, _ignore_scales, val, _filter_scales )
+                        val = _filter_scales
+                    }
+                    return val
+                } else {
+                    return def
+                }
+            }),
             line_height = this.supplement( Default.ruler.top.height, _opts.ruler[position].height ),
             font_size   = this.supplement( Default.ruler.top.fontSize, _opts.ruler[position].fontSize ),
             text_color  = this.supplement( Default.ruler.top.color, _opts.ruler[position].color ),
@@ -1059,10 +1082,9 @@ class Timeline {
                 _grid_x     = 0,
                 _correction = -0.5
             
-            //if ( /^(week|day)s?$/i.test( _opts.scale ) ) {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
             _line_grids = this._filterVariableScale( line_scale )
-console.log( '!!_createRuler:', line_scale, _line_grids )
+//console.log( '!!_createRuler:', line_scale, _line_grids )
             
             for ( let _key of Object.keys( _line_grids ) ) {
                 _grid_x += this.numRound( _line_grids[_key], 2 )
@@ -1070,38 +1092,11 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
                 ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
                 ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
             }
-            /*} else {
-                // In case of fixed length scale (:> 固定長スケールの場合
-                _line_grids = this._getGridsPerScale( line_scale )
-                
-                for ( let _val of _line_grids ) {
-                    if ( this.is_empty( _val ) || _val >= _props.grids ) {
-                        break
-                    }
-                    let _grid_width = _val * _props.scaleSize
-                    
-                    _grid_x += _grid_width
-                    if ( Math.ceil( _grid_x ) - _correction >= ctx_ruler.canvas.width ) {
-                        break
-                    }
-                    ctx_ruler.moveTo( _grid_x + _correction, position === 'top' ? _line_y - line_height : _line_y )
-                    ctx_ruler.lineTo( _grid_x + _correction, position === 'top' ? _line_y : _line_y + line_height )
-                }
-            }*/
             ctx_ruler.closePath()
             ctx_ruler.stroke()
             _ruler_body.append( this._createRulerContent( _line_grids, line_scale, ruler_opts ) )
             _finalLines++
         })
-        
-        /*
-        // drow line of ruler right
-        ctx_ruler.beginPath()
-        ctx_ruler.moveTo( ctx_ruler.canvas.width, 0 )
-        ctx_ruler.lineTo( ctx_ruler.canvas.width, ctx_ruler.canvas.height )
-        ctx_ruler.closePath()
-        ctx_ruler.stroke()
-        */
         
         if ( ruler_line.length != _finalLines ) {
             _ruler.css( 'height', `${_finalLines * line_height}px` )
@@ -1203,6 +1198,7 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
                         _temp   = this.getWeek( _tmpDt )
                         _newKey = `${_tmpDt.getFullYear()},${_temp}`
                     }
+//console.log( `!!_filterVariableScale::${target_scale}:`, _opts.scale, _arr, _tmpDt, _temp, _newKey )
                     break
                 case /^weekdays?$/i.test( target_scale ):
                     if ( /^weeks?$/i.test( _opts.scale ) && this.is_empty( retObj ) ) {
@@ -1246,63 +1242,6 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
         return retObj
     }
     
-    /*
-     * @private: Get the grid number per scale (for fixed length scale); Deprecated (:> スケールごとのグリッド数を取得する（固定長スケール用） (※廃止予定)
-     */
-    /*
-    _getGridsPerScale( target_scale ) {
-        //let _opts        = this._config,
-        let _props       = this._instanceProps,
-            _scopes      = [],
-            _scale_grids = {},
-            _sep         = '/'
-        
-        for ( let i = 0; i < _props.grids; i++ ) {
-            let _tmp = new Date( _props.begin + ( i * _props.scale ) ),
-            //let _tmp = this.getCorrectDatetime( _props.begin + ( i * _props.scale ) ),
-                _y   = _tmp.getFullYear(),
-                _mil = Math.ceil( _y / 1000 ),
-                _cen = Math.ceil( _y / 100 ),
-                _dec = Math.ceil( _y / 10 ),
-                _lus = Math.ceil( _y / 5 ),
-                _m   = _tmp.getMonth() + 1,
-                _wd  = _tmp.getDay(), // 0 = Sun, ... 6 = Sat
-                _d   = _tmp.getDate(),
-                _w   = this.getWeek( `${_y}/${_m}/${_d}` ),
-                _h   = _tmp.getHours(),
-                _min = _tmp.getMinutes(),
-                _s   = _tmp.getSeconds()
-// console.log( '!!:', _tmp, `y: ${_y}`, `w: ${_w}` )
-            
-            _scopes.push({
-                millennium : _mil,
-                century    : _cen,
-                decade     : _dec,
-                lustrum    : _lus,
-                year       : _y,
-                month      : `${_y}${_sep}${_m}${_sep}1`,
-                week       : `${_y},${_w}`,
-                weekday    : `${_y}${_sep}${_m}${_sep}${_d},${_wd}`,
-                day        : `${_y}${_sep}${_m}${_sep}${_d}`,
-                hour       : `${_y}${_sep}${_m}${_sep}${_d} ${_h}`,
-                minute     : `${_y}${_sep}${_m}${_sep}${_d} ${_h}:${_min}`,
-                second     : `${_y}${_sep}${_m}${_sep}${_d} ${_h}:${_min}:${_s}`,
-                datetime   : _tmp.toString()
-            })
-        }
-        _scopes.forEach( ( _scope ) => {
-//console.log( _scope[target_scale], idx );
-            if ( ! _scale_grids[_scope[target_scale]] ) {
-                _scale_grids[_scope[target_scale]] = 1
-            } else {
-                _scale_grids[_scope[target_scale]]++
-            }
-        })
-//console.log( '!_getGridsPerScale:', target_scale, _scale_grids )
-        
-        return this.toIterableObject( _scale_grids )
-    }
-    */
     
     /*
      * @private: Create the content of ruler of the timeline (:> タイムラインの目盛本文を作成する
@@ -1323,25 +1262,6 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
                 _ruler_string    = this.getLocaleString( _key, this._filterScaleKeyName( line_scale ), locale, format ),
                 _data_ruler_item = '',
                 _temp
-            
-/*
-            switch ( true ) {
-                case /^(year|month)s?$/i.test( _opts.scale ):
-                    _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
-                    break
-                case /^weeks?$/i.test( _opts.scale ):
-                    _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
-                    break
-                case /^days?$/i.test( _opts.scale ):
-                    _temp = _key.split(',')
-                    _ruler_string = this.getLocaleString( _temp[0], line_scale, locale, format )
-                    break
-                default:
-                    _ruler_string = this.getLocaleString( _key, line_scale, locale, format )
-                    break
-            }
-*/
-//console.log( `!_createRulerContent::${line_scale} on ${_opts.scale}:`, _key, _line_grids[_key], locale, format, _item_width, _ruler_string )
             
             _data_ruler_item = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
             _line.attr( 'data-ruler-item', _data_ruler_item ).html( `<span>${_ruler_string}</span>` )
@@ -1417,17 +1337,19 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
             _display = this.supplement( Default.footer.display, _opts.footer.display ),
             _content = this.supplement( null, _opts.footer.content ),
             _range   = this.supplement( Default.footer.range, _opts.footer.range ),
-            _scale   = this.supplement( Default.footer.scale, _opts.footer.scale ),
             _locale  = this.supplement( Default.footer.locale, _opts.footer.locale ),
             _format  = this.supplement( Default.footer.format, _opts.footer.format ),
             _begin   = this.supplement( null, _props.begin ),
             _end     = this.supplement( null, _props.end ),
+            _scale   = _opts.scale,
             _tl_footer = $('<div></div>', { class: ClassName.TIMELINE_FOOTER })
         
         if ( _range ) {
             if ( _begin && _end ) {
-                let _meta = `${new Date( _begin ).toLocaleString( _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${new Date( _end ).toLocaleString( _locale, _format )}`
-                //let _meta = this.getCorrectDatetime( _begin ).toLocaleString( _locale, _format ) +'<span class="jqtl-range-span"></span>'+ this.getCorrectDatetime( _end ).toLocaleString( _locale, _format )
+                if ( _format.hasOwnProperty('custom') ) {
+                    _scale = 'custom'
+                }
+                let _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
                 
                 _tl_footer.append( `<div class="${ClassName.RANGE_META} ${ClassName.ALIGN_SELF_RIGHT}">${_meta}</div>` )
             }
@@ -1712,7 +1634,11 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
             this._drawRelationLine( events )
         }
         
-// console.log( '!_placeEvent:', _opts )
+        if ( _opts.effects.hasOwnProperty( 'presentTime' ) && _opts.effects.presentTime ) {
+            this._viewPresentTime()
+        }
+        
+//console.log( '!_placeEvent:', _opts )
         this.sleep( _sleep ).then(() => {
             this.hideLoader()
             _evt_container.fadeIn( 'fast', () => {
@@ -1862,7 +1788,6 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
      * @private: Retrieve the diameter size (pixel) of pointer (:> ポインタの直径サイズ（ピクセル値）を取得する
      */
     _getPointerSize( key, margin ) {
-        //let _opts  = this._config,
         let _props = this._instanceProps,
             _max   = Math.min( (_props.scaleSize - ( margin * 2 )), (_props.rowSize - ( margin * 2 )) ),
             _size  = null
@@ -2134,6 +2059,24 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
     }
     
     /*
+     * @private: Output a marker of the present time 
+     */
+    _viewPresentTime() {
+        let _elem  = this._element,
+            _props = this._instanceProps,
+            _nowDt = new Date()
+        
+        if ( this.diffDate( _props.begin, _nowDt ) < 0 || this.diffDate( _nowDt, _props.end ) < 0 ) {
+            return
+        }
+        let _marker = $('<div></div>', { class: ClassName.PRESENT_TIME_MARKER,
+                style: `left:${this.numRound( this._getCoordinateX( _nowDt ), 2 )}px;top:${$(_elem).find(Selector.TIMELINE_RULER_TOP).height()}px;height:${$(_elem).find(Selector.TIMELINE_EVENT_CONTAINER).height()}px;`,
+            })
+        
+        $(_elem).find(Selector.TIMELINE_MAIN).append( _marker )
+    }
+    
+    /*
      * @private: Retrieve the mapping data that placed current events
      */
     _mapPlacedEvents() {
@@ -2169,7 +2112,7 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
      * @private: Event when focus or blur
      */
     _activeEvent( event ) {
-// console.log( '!_activeEvent:', event )
+        this._debug( '_activeEvent@Event' )
         let _elem = event.target
         
         if ( 'focusin' === event.type ) {
@@ -2183,13 +2126,54 @@ console.log( '!!_createRuler:', line_scale, _line_grids )
     
     /*
      * @private: Event when scroll timeline
-     * /
+     */
     _scrollTimeline( event ) {
-console.log( '!_scrollTimeline:', event )
+        this._debug( '_scrollTimeline@Event' )
         let _elem = event.target
         
+//console.log( '!_scrollTimeline:', _elem.scrollLeft )
+        
     }
-    */
+    
+    /*
+     * @private: Event when touchstart or mousedown on the timeline container
+     */
+    _swipeStart( event ) {
+        this._debug( '_swipeStart@Event' )
+        event.preventDefault()
+        let _props = this._instanceProps
+        
+        _props.absX  = IS_TOUCH ? event.changedTouches[0].pageX : event.pageX
+        _props.moveX = $(event.currentTarget).parent(Selector.TIMELINE_CONTAINER).scrollLeft() * -1
+        this._isTouched = true
+    }
+    
+    /*
+     * @private: Event when touchmove or mousemove in the timeline container
+     */
+    _swipeMove( event ) {
+        if ( ! this._isTouched ) {
+            return
+        }
+        this._debug( '_swipeMove@Event' )
+        event.preventDefault()
+        let _props = this._instanceProps
+        
+        _props.moveX -= _props.absX - ( IS_TOUCH ? event.changedTouches[0].pageX : event.pageX )
+        $(event.currentTarget).parent(Selector.TIMELINE_CONTAINER).scrollLeft( _props.moveX * -1 )
+        _props.absX  = IS_TOUCH ? event.changedTouches[0].pageX : event.pageX
+    }
+    
+    /*
+     * @private: Event when touchend or mouseup from the timeline container
+     */
+    _swipeEnd( event ) {
+        if ( ! this._isTouched ) {
+            return
+        }
+        this._debug( '_swipeEnd@Event' )
+        this._isTouched = false
+    }
     
     /*
      * @private: Event when hover on the pointer type event
@@ -2198,6 +2182,7 @@ console.log( '!_scrollTimeline:', event )
         if ( ! this._config.effects.hoverEvent ) {
             return
         }
+        this._debug( '_hoverPointer@Event' )
         let _props = this._instanceProps,
             _elem  = event.target,
             _base  = {
@@ -2807,6 +2792,8 @@ console.log( '!_scrollTimeline:', event )
         
         this._calcVars()
         
+        this.showLoader()
+        
         if ( this._config.hasOwnProperty( 'moveScale' ) ) {
             _chk_scale = this._config.moveScale
             delete this._config.moveScale
@@ -2919,91 +2906,72 @@ console.log( '!_scrollTimeline:', event )
      */
     zoomScale( event ) {
         this._debug( 'zoomScale' )
+//console.log( '!zoomScale::', event, $(event.currentTarget) )
         
-        let _elem        = event.target,
+        let _elem        = event.currentTarget,
             ruler_item   = $(_elem).data( 'ruler-item' ),
             scaleMap     = {
-                millennium : { years: 1000, lower: 'century', minGrids: 10 },
-                century    : { years: 100,  lower: 'decade',  minGrids: 10 },
-                decade     : { years: 10,   lower: 'lustrum', minGrids: 2  },
-                lustrum    : { years: 5,    lower: 'year',    minGrids: 5  },
-                year       : { years: 1,    lower: 'month',   minGrids: 12 },
-                month      : {              lower: 'day',     minGrids: 28 },
-                week       : {              lower: 'day',     minGrids: 7  },
-                day        : {              lower: 'hour',    minGrids: 24 },
-                weekday    : {              lower: 'hour',    minGrids: 24 },
-                hour       : {              lower: 'minute',  minGrids: 60 },
-                minute     : {              lower: 'second',  minGrids: 60 },
-                second     : {              lower: null,      minGrids: 60 }
+                millennium : { years: 1000, lower: 'century',     minGrids: 10 },
+                century    : { years: 100,  lower: 'decade',      minGrids: 10 },
+                decade     : { years: 10,   lower: 'lustrum',     minGrids: 2  },
+                lustrum    : { years: 5,    lower: 'year',        minGrids: 5  },
+                year       : { years: 1,    lower: 'month',       minGrids: 12 },
+                month      : {              lower: 'day',         minGrids: 28 },
+                week       : {              lower: 'day',         minGrids: 7  },
+                day        : {              lower: 'hour',        minGrids: 24 },
+                weekday    : {              lower: 'hour',        minGrids: 24 },
+                hour       : {              lower: 'minute',      minGrids: 60 },
+                minute     : {              lower: 'second',      minGrids: 60 },
+                second     : {              lower: null,          minGrids: 60 },
+                millisecond: {              lower: null,          minGrids: 1000 }
             },
             getZoomScale = ( ruler_item ) => {
-                let [ scale, date_seed ] = ruler_item.split('-'),
+                let [ _scl, date_seed ] = ruler_item.split('-'),
+                    scale                = this._filterScaleKeyName( _scl ),
                     min_grids            = scaleMap[scale].minGrids,
                     begin_date, end_date, base_year, base_month, week_num, base_day, is_remapping, _tmpDate
+//console.log( '!zoomScale::getZoomScale:', ruler_item, '->', scale, ', ', date_seed, ', minGrid:', min_grids )
                 
                 switch ( true ) {
                     case /^millennium$/i.test( scale ):
                     case /^century$/i.test( scale ):
                     case /^decade$/i.test( scale ):
                     case /^lustrum$/i.test( scale ):
-                        begin_date = `${( ( date_seed - 1 ) * scaleMap[scale].years ) + 1}/1/1`
-                        _tmpDate   = new Date( begin_date, 0, 1 ).setFullYear( date_seed * scaleMap[scale].years + 1 )
-                        _tmpDate   = new Date( _tmpDate - 1 )
-                        end_date   = `${_tmpDate.getFullYear()}/${_tmpDate.getMonth()+1}/${_tmpDate.getDate()} 23:59:59`
+                        begin_date = `${( ( date_seed - 1 ) * scaleMap[scale].years ) + 1}/1/1 0:00:00`
+                        end_date   = new Date( this.modifyDate( begin_date, scaleMap[scale].years, 'year' ).getTime() - 1 ).toString()
                         break
                     case /^year$/i.test( scale ):
-                        begin_date = `${date_seed}/1/1`
-                        _tmpDate   = new Date( date_seed, 0, 1 ).setFullYear( parseInt( date_seed, 10 ) + 1 )
-                        _tmpDate   = new Date( _tmpDate - 1 )
-                        end_date   = `${_tmpDate.getFullYear()}/${_tmpDate.getMonth()+1}/${_tmpDate.getDate()} 23:59:59`
+                        begin_date = `${date_seed}/1/1 0:00:00`
+                        end_date = new Date( this.modifyDate( begin_date, scaleMap[scale].years, 'year' ).getTime() - 1 ).toString()
                         break
                     case /^month$/i.test( scale ):
-                        [ base_year, base_month ] = date_seed.split('/')
-                        is_remapping = parseInt( base_year, 10 ) < 100
-                        begin_date = new Date( base_year, parseInt( base_month, 10 ) - 1, 1 )
-                        if ( begin_date.getMonth() == 11 ) {
-                            _tmpDate = new Date( begin_date.getFullYear() + 1, 0, 1 ).setFullYear( parseInt( base_year, 10 ) + 1 )
-                        } else {
-                            _tmpDate = new Date( begin_date.getFullYear(), begin_date.getMonth() + 1, 1 ).setFullYear( parseInt( base_year, 10 ) )
-                        }
-                        begin_date = begin_date.toString()
-                        end_date   = new Date( _tmpDate - 1 ).toString()
+                        begin_date = this.getCorrectDatetime( date_seed ).toString()
+                        end_date   = new Date( this.modifyDate( begin_date, 1, 'month' ).getTime() - 1 ).toString()
                         break
-                    case /^week$/i.test( scale ):
+                    case /^week$/i.test( scale ): {
                         [ base_year, week_num ] = date_seed.split(',')
-                        is_remapping = parseInt( base_year, 10 ) < 100
-                        _tmpDate = new Date( base_year, 0, 1 )
-                        if ( is_remapping ) {
-                            _tmpDate.setFullYear( base_year )
-                        }
-                        begin_date = new Date( _tmpDate.getTime() + ( week_num * 7 * 24 * 60 * 60 * 1000 ) ).toString()
-                        end_date   = new Date( new Date( begin_date ).getTime() + ( 7 * 24 * 60 * 60 * 1000 ) - 1 ).toString()
+                        begin_date = this.getFirstDayOfWeek( week_num, base_year ).toString(),
+                        end_date = new Date( this.modifyDate( begin_date, 7, 'day' ).getTime() - 1 ).toString()
                         break
+                    }
                     case /^day$/i.test( scale ):
                     case /^weekday$/i.test( scale ):
-                        if ( 'weekday' === scale ) {
-                            let _tmp = date_seed.split(',')
-                            date_seed = _tmp[0]
-                        }
-                        [ base_year, base_month, base_day ] = date_seed.split('/')
-                        is_remapping = parseInt( base_year, 10 ) < 100
-                        _tmpDate = new Date( base_year, parseInt( base_month, 10 ) - 1, base_day )
-                        begin_date = _tmpDate.toString()
-                        end_date   = new Date( _tmpDate.getTime() + ( 24 * 60 * 60 * 1000 ) - 1 ).toString()
-//console.log( date_seed, base_year, week_num, begin_date, _tmpDate, new Date( _tmpDate ), new Date( _tmpDate - 1 ) )
+                        date_seed = 'weekday' === scale ? date_seed.substring( 0, date_seed.indexOf(',') ) : date_seed
+                        begin_date = this.getCorrectDatetime( date_seed ).toString()
+                        end_date = new Date( this.modifyDate( begin_date, 1, 'day' ).getTime() - 1 ).toString()
                         break
                     case /^hour$/i.test( scale ):
                     case /^minute$/i.test( scale ):
-                        begin_date = `${date_seed}:00`
-                        end_date   = `${date_seed}:59`
-                        break
+                    case /^second$/i.test( scale ):
+                    case /^millisecond$/i.test( scale ):
                     default:
-                        begin_date = null
-                        end_date   = null
+                        begin_date = this.getCorrectDatetime( date_seed ).toString()
+                        end_date = new Date( this.modifyDate( begin_date, 1, scale ).getTime() - 1 ).toString()
                         break
                 }
                 
                 scale = scaleMap.hasOwnProperty( scale ) ? scaleMap[scale].lower : scale
+//console.log( '!zoomScale::getZoomScale:', date_seed, ', to:', scale, ', beginDate:', begin_date, ', endDate:', end_date, ', minGrids:', min_grids )
                 return [ scale, begin_date, end_date, min_grids ]
             },
             [ to_scale, begin_date, end_date, min_grids ] = getZoomScale( ruler_item ),
@@ -3030,7 +2998,6 @@ console.log( '!_scrollTimeline:', event )
 // console.log( ruler_item, zoom_options, this._config.wrapScale, this._config.minGridSize )
         
         this.reload( [zoom_options] )
-        
     }
     
     /*
@@ -3039,37 +3006,47 @@ console.log( '!_scrollTimeline:', event )
     showLoader() {
         this._debug( 'showLoader' )
         
-        let _elem      = this._element,
-            _opts      = this._config,
-            _container = $(_elem).find( Selector.TIMELINE_CONTAINER ),
-            width      = _container.length > 0 ? _container.width() : $(_elem).width(),
-            height     = ( _container.length > 0 ? _container.height() : $(_elem).height() ) || 120,
-            _loader    = $('<div></div>', { id: 'jqtl-loader', style: `width:${width}px;height:${height}px;` })
+        let $elem       = $(this._element),
+            _opts       = this._config,
+            _props      = this._instanceProps,
+            _container  = $elem.find( Selector.TIMELINE_CONTAINER ),
+            _min_width  = _props.scaleSize * _props.grids,  //_container.length > 0 ? _container.offsetWidth : $(_elem).width(),
+            _min_height = _props.rowSize * _props.rows, //( _container.length > 0 ? _container.offsetHeight : $(_elem).height() ) || 120,
+            _loaderContainer = $('<div></div>', { id: 'jqtl-loader', style: `min-width:${_min_width}px;min-height:${_min_height}px;` }),
+            _loaderContent   = null,
+            _innerContent    = ''
         
-//console.log( '!showLoader:', width, height, _container.length )
         if ( _opts.loader === false ) {
             return
         }
-        
-        if ( $(_opts.loader).length == 0 ) {
-            let _loading_text = LOADING_MESSAGE.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\s\S]|^$/g).filter( Boolean )
-            
-            _loading_text.forEach( ( str, idx ) => {
-                let _fountain_text = $('<div></div>', { id: `jqtl-loading_${( idx + 1 )}`, class: ClassName.LOADER_ITEM }).text( str )
-                _loader.append( _fountain_text )
-            })
-        } else {
-            let _custom_loader = $(_opts.loader).clone().prop( 'hidden', false ).css( 'display', 'block' )
-            _loader.append( _custom_loader )
+        if ( _container.length == 0 ) {
+            // To avoid jquery memory leak
+            _container = _container.prevObject
         }
         
-        if ( $(_elem).find( Selector.LOADER ).length == 0 ) {
-            if ( _container.length > 0 ) {
-                _container.append( _loader )
+//console.log( '!showLoader::', _min_width, _min_height, _container.length, $elem.find( Selector.LOADER ).length )
+        if ( $elem.find( Selector.LOADER ).length == 0 ) {
+            // Generate loader container
+//console.log( `!!showLoader::GenerateLoader:`, $(_opts.loader).length )
+            if ( $(_opts.loader).length == 0 ) {
+                // Set built-in loader content
+                _innerContent = this.is_empty( _opts.loadingMessage ) ? '<span></span><span></span><span></span><span></span><span></span>' : _opts.loadingMessage
+                _loaderContent = $('<div></div>', { class: ClassName.LOADER_ITEM }).html( _innerContent )
             } else {
-                $(_elem).css( 'position', 'relative' ).css( 'min-height', `${height}px` ).append( _loader )
+                // Set custom loader content
+                _loaderContent = $(_opts.loader).clone().prop( 'hidden', false ).css( 'display', 'block' )
             }
+            _loaderContainer.append( _loaderContent )
+            _container.append( _loaderContainer )
+//console.log( `!!!showLoader::GenerateLoader:`, $elem, Selector.TIMELINE_CONTAINER, $elem.find( Selector.TIMELINE_CONTAINER ) )
+        } else {
+            $elem.find( Selector.LOADER ).css('width', '100%').css('height', '100%')
+//console.log( `!!showLoader::AdjustLoader:`, $elem.find( Selector.LOADER ) )
         }
+//console.log( '!!!!showLoader::', $elem.find( Selector.LOADER ).length )
+        this.exit()
+        // Show loader
+        $elem.find( Selector.LOADER ).show()
     }
     
     /*
@@ -3078,7 +3055,7 @@ console.log( '!_scrollTimeline:', event )
     hideLoader() {
         this._debug( 'hideLoader' )
         
-        $(this._element).find( Selector.LOADER ).remove()
+        $(this._element).find( Selector.LOADER ).hide()
     }
     
     
@@ -3227,6 +3204,23 @@ console.log( '!_scrollTimeline:', event )
     }
     
     /*
+     * Exit the script
+     *
+     * @param bool exec (optional)
+     *
+     * @return void
+     */
+    exit( exec = true ) {
+        try {
+            if ( exec ) {
+                throw new Error( 'Exit the script.' )
+            }
+        } catch ( e ) {
+            console.warn( e.message )
+        }
+    }
+    
+    /*
      * Supplemental method for validating arguments in local scope
      *
      * @param mixed default_value (required)
@@ -3320,9 +3314,19 @@ console.log( '!_scrollTimeline:', event )
                 if ( isMinus ) {
                     dateString = dateString.replace(/^-/, '')
                 }
-                // For Safari, IE
+                // for Safari and Firefox
                 _d = dateString.replace(/-/g, '/')
-                return /^\d{1,4}\/\d{1,2}$/.test( _d ) ? `${_m}${_d}/1` : `${_m}${_d}`
+                switch ( true ) {
+                    case /^\d{1,4}\/\d{1,2}$/.test( _d ):
+                        return `${_m}${_d}/1`
+                    case /^.+(\.\d{1,3})$/.test( _d ):
+                        if ( isNaN( Date.parse( _d ) ) ) {
+                            _d = _d.replace( RegExp.$1, '' )
+                        }
+                        return `${_m}${_d}`
+                    default:
+                        return `${_m}${_d}`
+                }
             },
             getDateObject = ( datetime ) => {
                 let _chk_str = normalizeDate( datetime ),
@@ -3385,6 +3389,7 @@ console.log( '!_scrollTimeline:', event )
     
     /*
      * Method to get week number as extension of Date object
+     * Note: added support for daylight savings time but needs improvement as performance has dropped
      *
      * @param mixed datetime (required; to be date object filtered by getCorrectDatetime method)
      *
@@ -3394,15 +3399,31 @@ console.log( '!_scrollTimeline:', event )
         if ( this.is_empty( datetime ) ) {
             return false
         }
-        let targetDate = this.getCorrectDatetime( datetime ),
-            _millisecInDay = 24 * 60 * 60 * 1000,
-            _onejan = this.getCorrectDatetime( `${targetDate.getFullYear()}/1/1` )
+        let firstDayIndex  = this._config.firstDayOfWeek,
+            targetDate     = this.getCorrectDatetime( datetime ),
+            firstDayOfYear = this.getCorrectDatetime( `${targetDate.getFullYear()}/1/1` ),
+            firstWeekday   = firstDayOfYear.getDay(),
+            targetDateStr  = targetDate.toDateString(),
+            _weekNumber    = 1,
+            _checkDate     = firstDayOfYear
         
-        return Math.ceil( ( ( ( targetDate - _onejan ) / _millisecInDay ) + _onejan.getDay() + 1 ) / 7 )
+        for ( let i = 0; i < 367; i++ ) {
+            if ( i > 0 ) {
+                _checkDate = this.modifyDate( firstDayOfYear, i, 'day' )
+            }
+            if ( _checkDate.getDay() == firstDayIndex ) {
+                _weekNumber++
+            }
+            if ( _checkDate.toDateString() === targetDateStr ) {
+                break
+            }
+        }
+        return _weekNumber
     }
     
     /*
      * Retrieve a first day of the week from week number
+     * Note: added support for daylight savings time but needs improvement as performance has dropped
      *
      * @param int week_number (required)
      * @param int year (optional; defaults to current year)
@@ -3414,12 +3435,38 @@ console.log( '!_scrollTimeline:', event )
             return false
         }
         year = this.is_empty( year ) ? new Date().getFullYear() : parseInt( year, 10 )
-        let firstDayOfYear = this.getCorrectDatetime( `${year}/1/1` ),
+        let firstDayIndex  = this._config.firstDayOfWeek,
+            firstDayOfYear = this.getCorrectDatetime( `${year}/1/1` ),
             _weekday       = firstDayOfYear.getDay(),
-            _millisecInDay = 24 * 60 * 60 * 1000,
-            _week_time     = (week_number - 1) * _millisecInDay * 7,
-            _day_offset, _tempDt, _time, _retDt
-        
+            //_millisecInDay = 24 * 60 * 60 * 1000,
+            //_week_time     = (week_number - 1) * _millisecInDay * 7,
+            //_day_offset, _tempDt, _time, _retDt
+            _keyDayOfWeek  = firstDayOfYear,
+            _offset        = _weekday > firstDayIndex ? _weekday - firstDayIndex : 0,
+            _weekNumber    = _offset <= 0 ? 0 : 1,
+            hitDate
+//console.log( `!getFirstDayOfWeek::${year}, ${week_number}:`, _keyDayOfWeek.toDateString(), `(${_weekday}) > ${firstDayIndex} ?`, _offset, _weekNumber )
+        if ( _weekNumber == week_number && _weekday == firstDayIndex ) {
+            hitDate = firstDayOfYear
+        } else {
+            for ( let i = _offset; i < _offset + 7; i++ ) {
+                if ( i > _offset ) {
+                    _keyDayOfWeek = this.modifyDate( firstDayOfYear, i, 'day' )
+                }
+                if ( _keyDayOfWeek.getDay() == firstDayIndex ) {
+                    _weekNumber++
+                    break
+                }
+            }
+            if ( _weekNumber == week_number ) {
+                hitDate = _keyDayOfWeek
+            } else {
+                hitDate = this.modifyDate( _keyDayOfWeek, (week_number - _weekNumber) * 7, 'day' )
+            }
+        }
+//console.log( `!!getFirstDayOfWeek::${year}, ${week_number}:`, hitDate.toDateString() )
+        return hitDate
+        /*
         _weekday = _weekday == 0 ? 7 : _weekday
         _day_offset = 1 - _weekday
         if ( 7 - _weekday + 1 < 4 ) {
@@ -3428,8 +3475,9 @@ console.log( '!_scrollTimeline:', event )
         _tempDt = new Date( firstDayOfYear.getTime() + _day_offset * _millisecInDay )
         _time   = _tempDt.getTime() + _week_time
         _retDt  = new Date( _tempDt.setTime( _time ) )
-//console.log( '!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
+console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
         return _retDt
+        */
     }
     
     /*
@@ -3832,8 +3880,6 @@ console.log( '!_scrollTimeline:', event )
      * @return mixed (boolean if no arguments are given after the first argument)
      */
     verifyScale( scale, begin = null, end = null, isVLS = false ) {
-        //let _opts   = this._config,
-        //    _props  = this._instanceProps,
         let _ms    = -1,
             isBool = this.is_empty( begin ) || this.is_empty( end ),
             retval = isVLS ? this.diffDate( begin, end, scale ) : false
@@ -3924,7 +3970,29 @@ console.log( '!_scrollTimeline:', event )
      * @return string as higher scale
      */
     getHigherScale( scale ) {
-        // let higher_scale = scale
+        return this.findScale( scale, 'higher' )
+    }
+    
+    /*
+     * Retrieve one lower scale
+     *
+     * @param string scale (required)
+     *
+     * @return string as lower scale
+     */
+    getLowerScale( scale ) {
+        return this.findScale( scale, 'lower' )
+    }
+    
+    /*
+     * Find scale matched the specified condition
+     *
+     * @param string base_scale (required)
+     * @param string condition (required)
+     *
+     * @return mixed matched scale(s)
+     */
+    findScale( base_scale, condition ) {
         let scalePatternMap = [
                 [ 'millisecond', '^millisec(|ond)s?$' ],
                 [ 'second', '^seconds?$' ],
@@ -3939,11 +4007,33 @@ console.log( '!_scrollTimeline:', event )
                 [ 'century', '^century$' ],
                 [ 'millennium', '^millenniums?|millennia$' ],
             ],
-            _idx = scalePatternMap.findIndex( ( elm ) => new RegExp( `${elm[1]}`, 'i' ).test( scale ) )
+            _idx = scalePatternMap.findIndex( ( elm ) => new RegExp( `${elm[1]}`, 'i' ).test( base_scale ) ),
+            _narrows
         
-        _idx = scalePatternMap[(_idx + 1)] ? _idx + 1 : _idx
-        
-        return scalePatternMap[_idx][0]
+        switch ( true ) {
+            case /^higher$/i.test( condition ):
+                _idx = scalePatternMap[(_idx + 1)] ? _idx + 1 : _idx
+                return scalePatternMap[_idx][0]
+            case /^higher\s?all$/i.test( condition ):
+                _narrows = scalePatternMap.slice( _idx + 1 )
+                _narrows = _narrows.reduce( ( acc, cur ) => acc.concat( cur[0] ), [] )
+                if ( _narrows.includes( 'day' ) ) {
+                    _narrows.push( 'weekday' )
+                }
+                return _narrows
+            case /^lower$/i.test( condition ):
+                _idx = scalePatternMap[(_idx - 1)] ? _idx - 1 : _idx
+                return scalePatternMap[_idx][0]
+            case /^lower\s?all$/i.test( condition ):
+                _narrows = scalePatternMap.slice( 0, _idx )
+                _narrows = _narrows.reduce( ( acc, cur ) => acc.concat( cur[0] ), [] )
+                if ( _narrows.includes( 'day' ) ) {
+                    _narrows.push( 'weekday' )
+                }
+                return _narrows
+            default:
+                return scalePatternMap[_idx][0]
+        }
     }
     
     /*
@@ -3968,7 +4058,8 @@ console.log( '!_scrollTimeline:', event )
         let is_toLocalString = toLocaleStringSupportsLocales(),
             locale_string    = '',
             _options         = {}, // options for built-in method only
-            _ext_opts        = {}, // options extended for this plugin
+            //_ext_opts        = {}, // options extended for this plugin
+            _has_options     = false,
             getOrdinal       = ( n ) => {
                 let s = [ 'th', 'st', 'nd', 'rd' ],
                     v = n % 100
@@ -3981,26 +4072,7 @@ console.log( '!_scrollTimeline:', event )
                 
                 return String( num ).length == digit ? String( num ) : ( zero + num ).substr( num * -1 )
             },
-            parseDatetime    = ( date_str ) => {
-                let [ _ymd, _his ] = date_str.split(' '),
-                    _parts         = []
-                
-                if ( /^\d{1,4}\/\d{1,2}\/\d{1,2}$/.test( _ymd ) ) {
-                    _str = _ymd.split('/')
-                    _parts.push( ..._str )
-                }
-                if ( /^\d{1,2}(|:\d{1,2}(|:\d{1,2}))$/.test( _his ) ) {
-                    _str = _his.split(':')
-                    _parts.push( ..._str )
-                }
-                if ( _parts.length > 0 ) {
-                    return new Date( ..._parts )
-                } else {
-                    return new Date( date_str )
-                }
-            },
-            _has_options     = false,
-            _prop, _temp, _str, _num, _year
+            _prop, _temp, _str, _num, _year, _month, _week, _day
         
         if ( this.is_empty( date_seed ) ) {
             return false
@@ -4068,132 +4140,174 @@ console.log( '!_scrollTimeline:', event )
                 locale_string = this.is_empty( locale_string ) ? _year : locale_string
                 break
             case /^months?$/i.test( scale ):
-console.log( `!getLocaleString::${scale}:`, date_seed, locales, options, _options, _has_options )
                 // Allowed value as format: 'numeric', '2-digit', 'narrow', 'short', 'long'
-                if ( is_toLocalString && options.hasOwnProperty( scale ) ) {
-                    if ( [ 'numeric', '2-digit', 'narrow', 'short', 'long' ].includes( options[scale] ) ) {
-                        _options.month = options[scale]
-                        locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
-                        //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
+                _temp  = this.getCorrectDatetime( date_seed )
+                _month = _temp.getMonth() + 1
+                if ( is_toLocalString ) {
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(numeric|2-digit|narrow|short|long)$/i.test( options[scale] ) ) {
+                            _options.month = options[scale]
+                            locale_string  = _temp.toLocaleString( locales, _options )
+                        } else {
+                            locale_string = _month
+                        }
+                    } else
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleDateString( locales, _options )
                     }
                 }
-                if ( this.is_empty( locale_string ) || isNaN( locale_string ) ) {
-                    if ( /^\d{1,2}\/\d{1,2}(|\/\d{1,2})$/.test( date_seed ) ) {
-                        _str = date_seed.split('/')
-                        _temp = new Date( _str[0], parseInt( _str[1] - 1 ), 1 )
-                        locale_string = _temp.toLocaleString( locales, _options )
-                    }
-                }
+                locale_string = this.is_empty( locale_string ) ? _month : locale_string
                 break
             case /^weeks?$/i.test( scale ):
                 // Allowed value as format: 'numeric', 'ordinal'
-                [ _str, _num ] = date_seed.split(',')
-//console.log( date_seed, _str, _num, new Date( _str ), parseDatetime( _str ), this.getCorrectDatetime( _str ) )
-                if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
-                    locale_string = getOrdinal( parseInt( _num, 10 ) )
+                if ( typeof date_seed === 'string' && /^(.*)+,\d{1,2}$/.test( date_seed ) ) {
+                    [ _str, _num ] = date_seed.split(',')
+                    _week = parseInt( _num, 10 )
                 } else {
-                    locale_string = _num
+                    _week = this.getWeek( this.getCorrectDatetime( date_seed ) )
+                }
+                if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
+                    locale_string = getOrdinal( _week )
+                } else {
+                    locale_string = _week
                 }
                 break
             case /^weekdays?$/i.test( scale ):
                 // Allowed value as format: 'narrow', 'short', 'long'
-                [ _str, _num ] = date_seed.split(',')
-                if ( /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))$/.test( _str ) ) {
-                    _str = _str.split('/')
-                    _temp = new Date( ..._str )
+                if ( typeof date_seed === 'string' && /^(.*)+,\d{1}$/.test( date_seed ) ) {
+                    [ _str, _num ] = date_seed.split(',')
+                    _temp = this.getCorrectDatetime( _str )
+                    _num  = parseInt( _num, 10 )
                 } else {
-                    _temp = new Date( _str )
+                    _temp = this.getCorrectDatetime( date_seed )
                 }
                 if ( is_toLocalString ) {
-                    _options.weekday = options.hasOwnProperty('weekday') ? options.weekday : 'narrow'
-                    locale_string = _temp.toLocaleString( locales, _options )
-                    //locale_string = this.getCorrectDatetime( _temp[0] ).toLocaleString( locales, _options )
-                } else {
-                    let _weekday = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ]
-                    locale_string = _weekday[parseInt( _num, 10 )]
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(narrow|short|long)$/i.test( options[scale] ) ) {
+                            _options.weekday = options[scale]
+                            locale_string = _temp.toLocaleString( locales, _options )
+                        }
+                    } else
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleDateString( locales, _options )
+                    }
+                }
+                if ( this.is_empty( locale_string ) ) {
+                    _str = _temp.toLocaleDateString( locales, { weekday: 'long' } )
+                    if ( /^short$/i.test( options[scale] ) ) {
+                        locale_string = _str.substring(0, 3)
+                    } else
+                    if ( /^long$/i.test( options[scale] ) ) {
+                        locale_string = _str
+                    } else {
+                        locale_string = _str.substring(0, 1)
+                    }
                 }
                 break
             case /^days?$/i.test( scale ):
                 // Allowed value as format: 'numeric', '2-digit', 'ordinal'
-                if ( /^\d{1,2}(|\/\d{1,2}(|\/\d{1,2}))$/.test( date_seed ) ) {
-                    _str = date_seed.split('/')
-                    _temp = new Date( ..._str )
-                } else {
-                    _temp = new Date( date_seed )
-                }
+                _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    _options.day = options.hasOwnProperty('day') ? options.day : 'numeric'
-                    if ( _options.day === 'ordinal' ) {
-                        locale_string = getOrdinal( parseInt( _temp.getDate(), 10 ) )
-                    } else {
-                        locales = options.hasOwnProperty('day') ? locales : 'en-US'
-                        locale_string = _temp.toLocaleString( locales, _options )
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
+                            _options.day = options[scale]
+                            locale_string = _temp.toLocaleString( locales, _options )
+                        } else
+                        if ( /^ordinal$/i.test( options[scale] ) ) {
+                            locale_string = getOrdinal( parseInt( _temp.getDate(), 10 ) )
+                        }
+                    } else
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleDateString( locales, _options )
                     }
-                    //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
-                } else {
-                    locale_string = _temp.getDate()
-                    //locale_string = this.getCorrectDatetime( date_seed ).getDate()
                 }
+                locale_string = this.is_empty( locale_string ) ? _temp.getDate() : locale_string
                 break
             case /^hours?$/i.test( scale ):
             case /^(half|quarter)-?hours?$/i.test( scale ):
                 // Allowed value as format: 'numeric', '2-digit', 'fulltime'
-                _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
+                _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    _options.hour = options.hasOwnProperty('hour') ? options.hour : 'numeric'
-                    if ( _options.hour === 'fulltime' ) {
-                        _options.hour   = 'numeric'
-                        _options.minute = 'numeric'
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
+                            _options.hour = options[scale]
+                        } else
+                        if ( /^fulltime$/i.test( options[scale] ) ) {
+                            _options.hour   = 'numeric'
+                            _options.minute = 'numeric'
+                        }
+                        locale_string = _temp.toLocaleString( locales, _options )
+                    } else
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleString( locales, _options )
                     }
-                    locale_string = _temp.toLocaleString( locales, _options )
-                    //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
-                } else {
-                    locale_string = _temp.getHours()
-                    //locale_string = this.getCorrectDatetime( date_seed ).getHours()
                 }
+                locale_string = this.is_empty( locale_string ) ? _temp.getHours() : locale_string
                 break
             case /^minutes?$/i.test( scale ):
                 // Allowed value as format: 'numeric', '2-digit', 'fulltime'
-                _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
+                _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    _options.minute = options.hasOwnProperty('minute') ? options.minute : 'numeric'
-                    if ( _options.minute === 'fulltime' ) {
-                        _options.hour   = 'numeric'
-                        _options.minute = 'numeric'
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
+                            _options.minute = options[scale]
+                        } else
+                        if ( /^fulltime$/i.test( options[scale] ) ) {
+                            _options.hour   = 'numeric'
+                            _options.minute = 'numeric'
+                        }
+                        locale_string = _temp.toLocaleString( locales, _options )
+                    } else
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleString( locales, _options )
                     }
-                    locale_string = _temp.toLocaleString( locales, _options )
-                    //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
-                } else {
-                    locale_string = _temp.getMinutes()
-                    //locale_string = this.getCorrectDatetime( date_seed ).getMinutes()
                 }
+                locale_string = this.is_empty( locale_string ) ? _temp.getMinutes() : locale_string
                 break
             case /^seconds?$/i.test( scale ):
                 // Allowed value as format: 'numeric', '2-digit', 'fulltime'
-                _temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
+                _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    _options.second = options.hasOwnProperty('second') ? options.second : 'numeric'
-                    if ( _options.second === 'fulltime' ) {
-                        _options.hour   = 'numeric'
-                        _options.minute = 'numeric'
-                        _options.second = 'numeric'
+                    if ( options.hasOwnProperty( scale ) ) {
+                        if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
+                            _options.second = options[scale]
+                        } else
+                        if ( /^fulltime$/i.test( options[scale] ) ) {
+                            _options.hour   = 'numeric'
+                            _options.minute = 'numeric'
+                            _options.second = 'numeric'
+                        }
+                        locale_string = _temp.toLocaleString( locales, _options )
+                    } else
+                    if ( _has_options ) {
+                        locale_string = _temp.toLocaleString( locales, _options )
                     }
-                    locale_string = _temp.toLocaleString( locales, _options )
-                    //locale_string = this.getCorrectDatetime( date_seed ).toLocaleString( locales, _options )
-                } else {
-                    locale_string = _temp.getSeconds()
-                    //locale_string = this.getCorrectDatetime( date_seed ).getSeconds()
                 }
-                break
-            case /^custom$/i.test( scale ):
-                // Custom format
-                _temp = this.getCorrectDatetime( date_seed )
-                
+                locale_string = this.is_empty( locale_string ) ? _temp.getSeconds() : locale_string
                 break
             case /^millisec(|ond)s?$/i.test( scale ):
+                // Allowed value as format: 'narrow', 'numeric'
+                _temp = this.getCorrectDatetime( date_seed )
+                if ( options.hasOwnProperty( scale ) ) {
+                    if ( /^numeric$/i.test( options[scale] ) ) {
+                        locale_string = parseInt( _temp.getMilliseconds(), 10 )
+                    } else {
+                        locale_string = getZerofill( parseInt( _temp.getMilliseconds(), 10 ), 3 )
+                    }
+                }
+                locale_string = this.is_empty( locale_string ) ? _temp.getMilliseconds() : locale_string
+                break
+            case /^custom$/i.test( scale ):
+//console.log( `!getLocaleString::${scale}:`, date_seed, locales, options, _options, _has_options )
+                // Custom format
+                _temp = this.getCorrectDatetime( date_seed )
+                if ( options.hasOwnProperty( scale ) ) {
+                    locale_string = this.datetimeFormat( _temp, options[scale], locales )
+                }
+                locale_string = this.is_empty( locale_string ) ? _temp.toString() : locale_string
+                break
             default:
                 // Allowed value as format: 'narrow'
-                //_temp = typeof date_seed === 'string' ? parseDatetime( date_seed ) : new Date( date_seed )
                 _temp = this.getCorrectDatetime( date_seed )
                 if ( _has_options ) {
                     locale_string = _temp.toLocaleString( locales, _options )
@@ -4204,6 +4318,137 @@ console.log( `!getLocaleString::${scale}:`, date_seed, locales, options, _option
         }
 //console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], locale_string )
         return locale_string.toString()
+    }
+    
+    /*
+     * Convert the date-time to custom formatting strings, as like ruby
+     *
+     * @param mixed baseDate (required; should be a Date object)
+     * @param string format (optional; defaults to '')
+     * @param string locales (optional; defaults to 'en-US')
+     *
+     * @return string
+     */
+    datetimeFormat( baseDate, format = '', locales = 'en-US' ) {
+        // let _baseDt = Object.prototype.toString.call( baseDate ) === '[object Date]' ? baseDate : this.getCorrectDatetime( baseDate ),
+        let _baseDt = baseDate instanceof Date ? baseDate : this.getCorrectDatetime( baseDate ),
+            _fmt    = format.toString().split(''),
+            _ptn    = 'YyZmBbdwWAaIHMSj'.split(''),
+            _cnvStr = '',
+            lastDayOfMonth = ( dateObj ) => {
+                let _tmp = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                
+                _tmp.setTime( _tmp.getTime() - 1 )
+                return _tmp.getDate()
+            }
+        
+        if ( this.is_empty( _fmt ) ) {
+            return _baseDt.toString()
+        }
+        _fmt.forEach( ( _str, _i, _orig ) => {
+            let _match  = false,
+                _repStr = ''
+            
+            if ( _ptn.includes( _str ) && ! this.is_empty( _orig[_i - 1] ) && _orig[_i - 1] === '%' ) {
+                _match = this.is_empty( _orig[_i - 2] ) || _orig[_i - 2] !== '\\'
+            }
+            if ( _match ) {
+                switch ( _str ) {
+                    case 'Y':
+                    case 'y':
+                    case 'Z': {
+                        // year
+                        let _year = _baseDt.getFullYear()
+                        
+                        if ( _str === 'Z' ) {
+                            _repStr = _year < 10 ? `000${_year}` : _year < 100 ? `00${_year}` : _year < 1000 ? `0${_year}` : _year
+                        } else {
+                            _repStr = _str === 'Y' ? _year : _year.toString().slice(-2)
+                        }
+                        break
+                    }
+                    case 'm':
+                    case 'B':
+                    case 'b': {
+                        // month
+                        if ( _str === 'm' ) {
+                            let _month = _baseDt.getMonth() + 1
+                            
+                            _repStr = _month < 10 ? `0${_month}` : _month
+                        } else {
+                            let _opts = { month: _str === 'B' ? 'long' : 'short' }
+                            
+                            _repStr = _baseDt.toLocaleDateString( locales, _opts )
+                        }
+                        break
+                    }
+                    case 'd': {
+                        // day
+                        let _day = _baseDt.getDate()
+                        
+                        _repStr = _day < 10 ? `0${_day}` : _day
+                        break
+                    }
+                    case 'w':
+                    case 'A':
+                    case 'a': {
+                        // weekday
+                        if ( _str === 'w' ) {
+                            let _wday = _baseDt.getDay()
+                            
+                            _repStr = _wday
+                        } else {
+                            let _opts = { weekday: _str === 'A' ? 'long' : 'short' }
+                            
+                            _repStr = _baseDt.toLocaleDateString( locales, _opts )
+                        }
+                        break
+                    }
+                    case 'W': {
+                        // week
+                        _repStr = this.getWeek( _baseDt )
+                        break
+                    }
+                    case 'I':
+                    case 'H': {
+                        // hour
+                        let _opts = { hour12: _str === 'I', hour: 'numeric' }
+                        
+                        _repStr = _baseDt.toLocaleTimeString( locales, _opts )
+                        break
+                    }
+                    case 'M': {
+                        // minute
+                        _repStr = _baseDt.toLocaleTimeString( locales, { minute: 'numeric' } )
+                        break
+                    }
+                    case 'S': {
+                        // second
+                        _repStr = _baseDt.toLocaleTimeString( locales, { second: 'numeric' } )
+                        break
+                    }
+                    case 'j': {
+                        // day of year
+                        let _fdy   = new Date( _baseDt.getFullYear(), 0, 1 ),
+                            _month = _baseDt.getMonth(),
+                            _days  = 0, _m
+                        
+                        for ( _m = 0; _m < _month; _m++ ) {
+                            _fdy.setMonth( _m )
+                            _days += lastDayOfMonth( _fdy )
+                        }
+                        _repStr = _days + _baseDt.getDate()
+                        _repStr = _repStr < 10 ? `00${_repStr}` : _repStr < 100 ? `0${_repStr}` : _repStr
+                        break
+                    }
+                }
+                _cnvStr = _cnvStr.substring(0, _cnvStr.length - 1) + _repStr.toString()
+            } else {
+                _cnvStr += _str
+            }
+        }, _cnvStr )
+        _cnvStr = _cnvStr.toString().replace( /\\/g, '' )
+        return _cnvStr
     }
     
     /*

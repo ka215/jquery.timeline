@@ -7,7 +7,7 @@ docs/imgs/*thumb*.png
 docs/css/*.map
 docs/js/*.map
 dist/*.map
-test/*.ico
+test/*.php
 
 # Numerous always-ignore extensions
 *.diff

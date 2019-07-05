@@ -1,9 +1,21 @@
 Change Log
 ---
 
-### v2.0.0b2 (May 28, 2019 GMT)
+### v2.0.0b2 (July 7, 2019 GMT)
 
-* [WIP] Supported to summer time (Daylight Savings Time) and timezone offset.
+* Added the "firstDayOfWeek" option to define a start day of one week on the timeline.
+* Added the "truncateLowers" property in the ruler option to ignore outputting lower ruler scale than global scale.
+* Fixed the bug when zooming the scale.
+* Changed the default preloading animation to indicator type from strings type.
+* Added the "loadingMessage" option for using the custom loader content (by @Guillaume-Bo , [PR#37](/ka215/jquery.timeline/pull/37))
+* Became to able to include the initial events to the plugin option by the "eventData" option.
+* Added the "mixed" type to be able to place the events of bar and point type together on the timeline.
+* Added some properties that "presentTime", "stripedGridRow", "horizontalGridStyle", "verticalGridStyle".
+* Added a property of "custom" to output the custom datetime format.
+* Added the events to be able to swipe the timeline container on the PC browser too.
+* Supported to summer time (Daylight Savings Time).
+* Fixed the bugs that broke some layouts.
+* Fixed some internal processing bugs and stabilized the operation of various methods.
 
 ### v2.0.0b1 (May 21, 2019 GMT)
 

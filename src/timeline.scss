@@ -81,24 +81,24 @@
 .jqtl-range-meta {
   align-self: center;
   font-size: 86%;
-  color: #777777;
+  color: #777;
 }
 
 .jqtl-range-span {
   position: relative;
   display: inline-block;
-  margin-left: 2px;
-  margin-right: -2px;
+  margin-left: calc(1em / 4);
+  margin-right: calc(1em / 4);
   width: 1em;
   height: 1em;
 
   &::before {
     content: "\2013";
     position: absolute;
-    left: 0;
-    top: 0.25rem;
+    left: 20%;
+    top: calc(50% - 0.5rem);
     font-size: 1rem;
-    color: #999999;
+    color: #bbb;
   }
 }
 
@@ -128,6 +128,7 @@
 
 .jqtl-main {
   position: relative;
+  cursor: ew-resize; /* all-scroll; move; */
 }
 
 /* ----------------------------------------------------------------------------
@@ -499,6 +500,40 @@
 }
 
 /* ----------------------------------------------------------------------------
+ * Present Time Marker
+ * ----------------------------------------------------------------------------
+ */
+.jqtl-present-time {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  border-left: dotted 1px #2c7cff;
+  z-index: 21;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    width: 5px;
+    height: 5px;
+    background-color: #2c7cff;
+    z-index: 22;
+  }
+
+  &::before {
+    top: calc(5px / -2);
+    left: -3px;
+  }
+
+  &::after {
+    bottom: calc(5px / -2);
+    left: -3px;
+  }
+}
+
+/* ----------------------------------------------------------------------------
  * Footer style
  * ----------------------------------------------------------------------------
  */
@@ -519,56 +554,126 @@
  */
 #jqtl-loader {
   position: absolute;
+  display: block;
   top: 0;
   left: 0;
   width: 100%;
-  height: 120px;
+  height: 100%;
   margin: auto;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: center;
-  align-items: center;
-  z-index: 99;
+  z-index: 30;
 }
 
+/* Wave Type */
 .jqtl-loading {
-  color: rgb(0,0,0);
-  font-family: "Courier New", monospace !important;
-  font-size: 48px;
-  text-decoration: none;
-  font-weight: normal;
-  font-style: normal;
-  float: left;
-  animation-name: bounce_jqtl-loading;
-  animation-duration: 2.09s;
-  animation-iteration-count: infinite;
-  animation-direction: normal;
-  transform: scale(0.5);
+  position: relative;
+  top: calc(50% - 27px);
+  left: calc(50% - 15px);
+  margin: auto;
+
+  span {
+    display: block;
+    bottom: 0px;
+    width: 9px;
+    height: 5px;
+    background: rgba(51, 51, 51, 0.15);
+    position: absolute;
+    animation: loader 1.5s infinite ease-in-out;
+
+    &:nth-child(2) {
+      left: 11px;
+      animation-delay: 0.2s;
+    }
+
+    &:nth-child(3) {
+      left: 22px;
+      animation-delay: 0.4s;
+    }
+
+    &:nth-child(4) {
+      left: 33px;
+      animation-delay: 0.6s;
+    }
+
+    &:nth-child(5) {
+      left: 44px;
+      animation-delay: 0.8s;
+    }
+  }
 }
 
-#jqtl-loading_1 { animation-delay: 0.75s; }
-#jqtl-loading_2 { animation-delay: 0.9s; }
-#jqtl-loading_3 { animation-delay: 1.05s; }
-#jqtl-loading_4 { animation-delay: 1.2s; }
-#jqtl-loading_5 { animation-delay: 1.35s; }
-#jqtl-loading_6 { animation-delay: 1.5s; }
-#jqtl-loading_7 { animation-delay: 1.64s; }
-#jqtl-loading_8 { animation-delay: 1.79s; }
-#jqtl-loading_9 { animation-delay: 1.94s; }
-#jqtl-loading_10 { animation-delay: 2.09s; }
-
-@keyframes bounce_jqtl-loading {
+@keyframes loader {
   0% {
-    transform: scale(1);
-    color: rgb(0, 0, 0);
+    height: 5px;
+    transform: translateY(0px);
+    background: rgba(51, 51, 51, 0.15);
   }
-
+  25% {
+    height: 30px;
+    transform: translateY(15px);
+    background: rgba(51, 51, 51, 0.3);
+  }
+  50% {
+    height: 5px;
+    transform: translateY(0px);
+    background: rgba(51, 51, 51, 0.15);
+  }
   100% {
-    transform: scale(0.5);
-    color: rgb(255, 255, 255);
+    height: 5px;
+    transform: translateY(0px);
+    background: rgba(51, 51, 51, 0.15);
   }
 }
+
+/* Spinner Type
+.jqtl-loading {
+  font-size: 10px;
+  margin: auto;
+  text-indent: -9999em;
+  width: 11em;
+  height: 11em;
+  border-radius: 50%;
+  background: #ddd;
+  background: linear-gradient(to right, #ddd 10%, rgba(255, 255, 255, 0) 42%);
+  position: relative;
+  top: calc(50% - 5em);
+  animation: loader 1.4s infinite linear;
+  transform: translateZ(0);
+
+  &::before {
+    width: 50%;
+    height: 50%;
+    background: #ddd;
+    border-radius: 100% 0 0 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+  }
+
+  &::after {
+    background: #fff;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: '';
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+  }
+}
+
+@keyframes loader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+*/
 
 /* ----------------------------------------------------------------------------
  * Others
