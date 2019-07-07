@@ -3010,8 +3010,8 @@ class Timeline {
             _opts       = this._config,
             _props      = this._instanceProps,
             _container  = $elem.find( Selector.TIMELINE_CONTAINER ),
-            _min_width  = _props.scaleSize * _props.grids,  //_container.length > 0 ? _container.offsetWidth : $(_elem).width(),
-            _min_height = _props.rowSize * _props.rows, //( _container.length > 0 ? _container.offsetHeight : $(_elem).height() ) || 120,
+            _min_width  = _props.scaleSize * _props.grids,
+            _min_height = _props.rowSize * _props.rows,
             _loaderContainer = $('<div></div>', { id: 'jqtl-loader', style: `min-width:${_min_width}px;min-height:${_min_height}px;` }),
             _loaderContent   = null,
             _innerContent    = ''
@@ -3024,10 +3024,8 @@ class Timeline {
             _container = _container.prevObject
         }
         
-//console.log( '!showLoader::', _min_width, _min_height, _container.length, $elem.find( Selector.LOADER ).length )
         if ( $elem.find( Selector.LOADER ).length == 0 ) {
             // Generate loader container
-//console.log( `!!showLoader::GenerateLoader:`, $(_opts.loader).length )
             if ( $(_opts.loader).length == 0 ) {
                 // Set built-in loader content
                 _innerContent = this.is_empty( _opts.loadingMessage ) ? '<span></span><span></span><span></span><span></span><span></span>' : _opts.loadingMessage
@@ -3038,13 +3036,9 @@ class Timeline {
             }
             _loaderContainer.append( _loaderContent )
             _container.append( _loaderContainer )
-//console.log( `!!!showLoader::GenerateLoader:`, $elem, Selector.TIMELINE_CONTAINER, $elem.find( Selector.TIMELINE_CONTAINER ) )
         } else {
             $elem.find( Selector.LOADER ).css('width', '100%').css('height', '100%')
-//console.log( `!!showLoader::AdjustLoader:`, $elem.find( Selector.LOADER ) )
         }
-//console.log( '!!!!showLoader::', $elem.find( Selector.LOADER ).length )
-        this.exit()
         // Show loader
         $elem.find( Selector.LOADER ).show()
     }
