@@ -116,6 +116,13 @@
   overflow-x: auto;
   overflow-y: hidden;
   background-color: #FFFFFF;
+  box-sizing: content-box;
+  
+  *,
+  ::after,
+  ::before {
+    box-sizing: inherit !important;
+  }
 }
 
 .jqtl-hide-scrollbar {
