@@ -3,8 +3,9 @@
 
   <table border="0">
     <tr>
-    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_bar.png" width="99%" alt="Bar Type" /></td>
-    <td width="50%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_point.png" width="99%" alt="Point Type" /></td>
+    <td width="33%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_bar.png" width="100%" alt="Bar Type" /></td>
+    <td width="33%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_point.png" width="100%" alt="Point Type" /></td>
+    <td width="33%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_mixed.png" width="100%" alt="Mixed Type" /></td>
     </tr>
   </table>
 
@@ -140,6 +141,7 @@ jQuery.Timeline's documentation, included in this repository in the root directo
 ## Example as demonstration
 
 - [jQuery.Timeline Tester](https://ka2.org/jqtl-v2/)
+- [Version 2.x Point Type Timeline DEMO](https://ka2.org/jqtl-v2/demo1.php)
 - [Version 1.x demo](https://ka2.org/jqtl-v1/)
 
 ## Contributions
