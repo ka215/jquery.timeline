@@ -1,22 +1,43 @@
-const expect = chai.expect
-const assert = chai.assert
-//const stub = sinon.stub
+"use strict"
 
-const $timeline = $.fn.Timeline
+const isBrowser = typeof require === "undefined"
+const expect = isBrowser ? chai.expect : require( 'chai' ).expect
+const assert = isBrowser ? chai.assert : require( 'chai' ).assert
+
+if ( ! isBrowser ) {
+    try {
+        const { JSDOM }    = require('jsdom')
+        const jsdom        = new JSDOM('<!doctype html><html><body></body></html>')
+        const { window }   = jsdom
+        const { document } = window
+        global.window      = window
+        global.document    = document
+        const $ = global.$ = require('jquery')(window)
+        $.fn = { 'Timeline': {} }
+        require( '../dist/jquery.timeline.min.js' )
+        //require( '../src/timeline' )
+    } catch ( err ) {
+        console.warn( err )
+    }
+}
+let $timeline = $.fn.Timeline,
+    timelineMethods = $timeline.Constructor.prototype,
+    defaultOptions  = $timeline.Constructor.Default
 
 describe( 'jQuery.Timeline Unit Tests', () => {
-    let $el = $('<div id="myTimeline"><ul class="timeline-events"></ul></div>'),
-        timelineMethods = $timeline.Constructor.prototype,
-        defaultOptions  = $timeline.Constructor.Default,
-        timezoneOffset  = -1 * new Date().getTimezoneOffset(), // minutes
+    let timezoneOffset  = -1 * new Date().getTimezoneOffset(), // minutes
         tzo_ms          = timezoneOffset * 60 * 1000, // milliseconds
         isDST           = timezoneOffset != 0 && /(Summer|Daylight)\sTime/.test( new Date().toString() ),
         isGMT           = timezoneOffset == 0 || (isDST && Math.abs( timezoneOffset ) == 60),
         forFF           = window.navigator.userAgent.toLowerCase().indexOf( 'firefox' ) !== -1
     
     before(() => {
-        $('#notifications').append( `<label>DateString</label> ${new Date().toLocaleString( 'en-US', { timeZone: 'UTC', hour12: false, timeZoneName: 'short' } )}, <label>GMT</label> ${isGMT ? 'true' : 'false'}, <label>DST</label> ${isDST ? 'true' : 'false'}, <label>TimezoneOffset</label> ${timezoneOffset} min, <label>TimezoneName</label> ${new Date().toLocaleDateString( 'en-US', { timeZoneName: 'long' } ).split(',')[1]}` )
-        //$('#main-content').css('display', 'block');
+        if ( isBrowser ) {
+            $('#notifications').append( `<label>DateString</label> ${new Date().toLocaleString( 'en-US', { timeZone: 'UTC', hour12: false, timeZoneName: 'short' } )}, <label>GMT</label> ${isGMT ? 'true' : 'false'}, <label>DST</label> ${isDST ? 'true' : 'false'}, <label>TimezoneOffset</label> ${timezoneOffset} min, <label>TimezoneName</label> ${new Date().toLocaleDateString( 'en-US', { timeZoneName: 'long' } ).split(',')[1]}` )
+            //$('#main-content').css('display', 'block');
+        } else {
+            console.log( `DateString: ${new Date().toLocaleString( 'en-US', { timeZone: 'UTC', hour12: false, timeZoneName: 'short' } )}, GMT: ${isGMT ? 'true' : 'false'}, DST: ${isDST ? 'true' : 'false'}, TimezoneOffset: ${timezoneOffset} min, TimezoneName: ${new Date().toLocaleDateString( 'en-US', { timeZoneName: 'long' } ).split(',')[1]}` )
+        }
     })
     
     beforeEach(() => {
@@ -133,8 +154,8 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         if ( isGMT ) {
             expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:01:59').toString() )
         } else {
-            if ( ! forFF ) {
-                expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:00:59').toString() )
+            if ( ! forFF && isBrowser ) {
+                expect( new Date( getPluggableDatetime( '1847/12/1 0:0:0', 'last', { scale: 'minute', range: 3 } ) ).toString() ).to.be.equal( getCorrectDatetime('1847/12/1 0:00:59').toString(), 'notice!' )
             }
         }
         // general purpose case (because this case is equal to "getCorrectDatetime" method, should use that method)
@@ -261,8 +282,13 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( timelineMethods.getFirstDayOfWeek(28, 2019).toDateString() ).to.be.equal('Sun Jul 07 2019')
         expect( timelineMethods.getFirstDayOfWeek(54, 2019).toDateString() ).to.be.equal('Sun Jan 05 2020')
         expect( timelineMethods.getFirstDayOfWeek(1, 1).toDateString() ).to.be.equal('Sun Dec 31 0000')
-        expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Sun Jan 03 -0012', 'invalid?')
-        expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Sun Jan 03 -0001', 'invalid?')
+        if ( isBrowser ) {
+            expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Sun Jan 03 -0012', 'invalid?')
+            expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Sun Jan 03 -0001', 'invalid?')
+        } else {
+            expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Sun Jan 03 -012', 'notice!')
+            expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Sun Jan 03 -001', 'notice!')
+        }
         // firstDayOfWeek = 1 : Monday
         timelineMethods._config = Object.assign( defaultOptions, { firstDayOfWeek: 1 } )
         expect( timelineMethods.getFirstDayOfWeek(1, 0).toDateString() ).to.be.equal('Mon Dec 31 2018')
@@ -270,8 +296,13 @@ describe( 'jQuery.Timeline Unit Tests', () => {
         expect( timelineMethods.getFirstDayOfWeek(28, 2019).toDateString() ).to.be.equal('Mon Jul 08 2019')
         expect( timelineMethods.getFirstDayOfWeek(54, 2019).toDateString() ).to.be.equal('Mon Jan 06 2020')
         expect( timelineMethods.getFirstDayOfWeek(1, 1).toDateString() ).to.be.equal('Mon Jan 01 0001')
-        expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Mon Jan 04 -0012', 'invalid?')
-        expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Mon Jan 04 -0001', 'invalid?')
+        if ( isBrowser ) {
+            expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Mon Jan 04 -0012', 'invalid?')
+            expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Mon Jan 04 -0001', 'invalid?')
+        } else {
+            expect( timelineMethods.getFirstDayOfWeek(1, -12).toDateString() ).to.be.equal('Mon Jan 04 -012', 'notice!')
+            expect( timelineMethods.getFirstDayOfWeek(1, -1).toDateString() ).to.be.equal('Mon Jan 04 -001', 'notice!')
+        }
         // firstDayOfWeek = 2 : Tuesday
         timelineMethods._config = Object.assign( defaultOptions, { firstDayOfWeek: 2 } )
         expect( timelineMethods.getFirstDayOfWeek(2, 2019).toDateString() ).to.be.equal('Tue Jan 08 2019')
@@ -347,7 +378,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( timelineMethods.modifyDate('1847/12/1',-1,'year') ).to.be.eql( gCD('1846-12-1 0:01:15'), 'notice!' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('1847/12/1',-1,'year') ).to.be.eql( gCD('1846-12-1 0:00:00') )
             }
         }
@@ -363,7 +394,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( timelineMethods.modifyDate('1847/12/1',-1,'month') ).to.be.eql( gCD('1847/11/1 0:01:15'), 'notice!' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('1847/12/1',-1,'month') ).to.be.eql( gCD('1847/11/1 0:00:00') )
             }
         }
@@ -379,7 +410,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( timelineMethods.modifyDate('1847/12/1',-1,'week') ).to.be.eql( gCD('1847/11/24 0:01:15'), 'notice!' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('1847/12/1',-1,'week') ).to.be.eql( gCD('1847/11/24 0:00:00') )
             }
         }
@@ -403,7 +434,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
             expect( timelineMethods.modifyDate('2019/10/27',24,'hour') ).to.be.eql( gCD('2019/10/27 23:00:00'), 'DST' )
             expect( timelineMethods.modifyDate('2019-3-31', 24,'hour') ).to.be.eql( gCD('2019/4/01 01:00:00'), 'DST' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('2019/10/27',24,'hour') ).to.be.eql( gCD('2019/10/28 0:00:00') )
                 expect( timelineMethods.modifyDate('2019-3-31', 24,'hour') ).to.be.eql( gCD('2019/4/1 0:00:00') )
             }
@@ -421,7 +452,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( timelineMethods.modifyDate('2019-3-31 0:00:00', 120,'minute') ).to.be.eql( gCD('2019/3/31 03:00:00'), 'DST' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('2019-3-31 0:00:00', 120,'minute') ).to.be.eql( gCD('2019/3/31 02:00:00') )
             }
         }
@@ -437,7 +468,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
             expect( timelineMethods.modifyDate('2019/10/27 1:59:59',  1,'second') ).to.be.eql( gCD('2019/10/27 1:00:00'), 'DST' )
             expect( timelineMethods.modifyDate('2019-3-31 0:59:59',  +1,'second') ).to.be.eql( gCD('2019/3/31 2:00:00'), 'DST' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('2019/10/27 1:59:59',  1,'second') ).to.be.eql( gCD('2019/10/27 2:00:00') )
                 expect( timelineMethods.modifyDate('2019-3-31 0:59:59',  +1,'second') ).to.be.eql( gCD('2019/3/31 1:00:00') )
             }
@@ -461,7 +492,7 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( timelineMethods.modifyDate('2019-3-31 2:00:00', -100,'millisecond') ).to.be.eql( gCD('2019/3/31 0:59:59.900'), 'DST' )
         } else {
-            if ( ! forFF ) {
+            if ( ! forFF && isBrowser ) {
                 expect( timelineMethods.modifyDate('2019-3-31 2:00:00', -100,'millisecond') ).to.be.eql( gCD('2019/3/31 1:59:59.900') )
             }
         }
@@ -523,7 +554,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 167, '2019,44': 169})
         } else {
-            expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 168, '2019,44': 168})
+            if ( isBrowser ) {
+                expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 168, '2019,44': 168})
+            } else {
+                expect( timelineMethods.diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'week') ).to.be.an('object').that.to.include({'2019,14': 167, '2019,44': 169})
+            }
         }
         // when case "day"
         expect( diffDate(gCD('169/12/30'), gCD('170/1/3'),'day') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
@@ -532,7 +567,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
         } else {
-            expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 24, '2019/10/27': 24})
+            if ( isBrowser ) {
+                expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 24, '2019/10/27': 24})
+            } else {
+                expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'day') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+            }
         }
         // when case "weekday"
         expect( diffDate(gCD('169/12/30'), gCD('170/1/3'),'weekday') ).to.be.an('object').that.to.eql({'169/12/30': 24, '169/12/31': 24, '170/1/1': 24, '170/1/2': 24, '170/1/3': 24})
@@ -541,7 +580,11 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
         if ( isGMT ) {
             expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
         } else {
-            expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 24, '2019/10/27': 24})
+            if ( isBrowser ) {
+                expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 24, '2019/10/27': 24})
+            } else {
+                expect( diffDate(gCD('2019/3/24'), gCD('2019/11/9'),'weekday') ).to.be.an('object').that.to.include({'2019/3/31': 23, '2019/10/27': 25})
+            }
         }
         // when case "hour"
         expect( diffDate(gCD('169/12/31'), gCD('170/1/1'),'hour') ).to.be.an('object').that.to.include({'169/12/31 0': 60, '170/1/1 0': 60})
@@ -557,8 +600,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
             expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
             expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
         } else {
-            expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 1': 60, '2019/3/31 2': 60})
-            expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 0': 60, '2019/10/27 1': 60})
+            if ( isBrowser ) {
+                expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 1': 60, '2019/3/31 2': 60})
+                expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 0': 60, '2019/10/27 1': 60})
+            } else {
+                expect( diffDate(gCD('2019/3/31 0:00'), gCD('2019/3/31 2:00'),'hour') ).to.be.an('object').that.to.eql({'2019/3/31 0': 60, '2019/3/31 2': 60})
+                expect( diffDate(gCD('2019/10/27 0:00'), gCD('2019/10/27 2:00'),'hour') ).to.be.an('object').that.to.include({'2019/10/27 1': 120})
+            }
         }
         // when case "half-hour"
         
@@ -575,8 +623,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
             expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.eql({'2019/3/31 0:59': 60, '2019/3/31 2:0': 60})
             expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 3660})
         } else {
-            expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/3/31 0:59': 60, '2019/3/31 1:0': 60, '2019/3/31 1:59': 60, '2019/3/31 2:0': 60})
-            expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 60})
+            if ( isBrowser ) {
+                expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/3/31 0:59': 60, '2019/3/31 1:0': 60, '2019/3/31 1:59': 60, '2019/3/31 2:0': 60})
+                expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 60})
+            } else {
+                expect( diffDate(gCD('2019/3/31 0:59'), gCD('2019/3/31 2:00'),'minute') ).to.be.an('object').that.to.eql({'2019/3/31 0:59': 60, '2019/3/31 2:0': 60})
+                expect( diffDate(gCD('2019/10/27 0:59'), gCD('2019/10/27 2:00'),'minute') ).to.be.an('object').that.to.include({'2019/10/27 1:59': 3660})
+            }
         }
         // when case "second"
         expect( diffDate(gCD('169/12/31 23:59:00'), gCD('170/1/1 0:01:00'),'second') ).to.be.a('object').that.to.include({'169/12/31 23:59:0': 1000, '169/12/31 23:59:59': 1000, '170/1/1 0:0:0': 1000, '170/1/1 0:1:0': 1000})
@@ -589,8 +642,13 @@ console.log( timelineMethods.modifyDate('1847/12/1 1:00:00', -1,'hour').toString
             expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.eql({'2019/3/31 0:59:59': 1000, '2019/3/31 2:0:0': 1000})
             expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 3601000})
         } else {
-            expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.include({'2019/3/31 0:59:59': 1000, '2019/3/31 1:0:0': 1000, '2019/3/31 1:59:59': 1000, '2019/3/31 2:0:0': 1000})
-            expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 1000})
+            if ( isBrowser ) {
+                expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.include({'2019/3/31 0:59:59': 1000, '2019/3/31 1:0:0': 1000, '2019/3/31 1:59:59': 1000, '2019/3/31 2:0:0': 1000})
+                expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 1000})
+            } else {
+                expect( diffDate(gCD('2019/3/31 0:59:59'), gCD('2019/3/31 2:00:00'),'second') ).to.be.an('object').that.to.eql({'2019/3/31 0:59:59': 1000, '2019/3/31 2:0:0': 1000})
+                expect( diffDate(gCD('2019/10/27 1:59:58'), gCD('2019/10/27 2:00:01'),'second') ).to.be.a('object').that.to.include({'2019/10/27 1:59:59': 3601000})
+            }
         }
         // when case "other"
         expect( diffDate(gCD('1970/1/1 0:00'), gCD('1970/1/1 23:00'),'quarterHour') ).to.be.a('number').that.to.equal( 23 * 60 * 60 * 1000 )
@@ -837,8 +895,13 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.getLocaleString( _nowDt.getTime() ) ).to.be.equal( _nowDt.toString() )
         expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', '', { era: 'narrow' } ) ).to.be.equal( '7 4, 2019 A, 4:51:13 PM' )
         expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', null, null, { era: 'short' } ) ).to.be.equal( '7 4, 2019 AD, 4:51:13 PM' )
-        expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'en-GB', { era: 'short' } ) ).to.be.equal( '4 7 2019 AD, 16:51:13' )
-        expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'ja-JP-u-ca-japanese', { era: 'long' } ) ).to.be.equal( '令和1年7月4日 16:51:13' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'en-GB', { era: 'short' } ) ).to.be.equal( '4 7 2019 AD, 16:51:13' )
+            expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'ja-JP-u-ca-japanese', { era: 'long' } ) ).to.be.equal( '令和1年7月4日 16:51:13' )
+        } else {
+            expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'en-GB', { era: 'short' } ) ).to.be.equal( '7 4, 2019 AD, 4:51:13 PM' )
+            expect( timelineMethods.getLocaleString( '2019/7/4 16:51:13', '', 'ja-JP-u-ca-japanese', { era: 'long' } ) ).to.be.equal( 'CE 2019 7 4 16:51:13' )
+        }
         // millennium
         expect( timelineMethods.getLocaleString( _nowDt, 'millennium', null, { millennium: 'ordinal' } ) ).to.be.equal( '3rd' )
         expect( timelineMethods.getLocaleString( '1974', 'millenniums', '', { millenniums: 'numeric' } ) ).to.be.equal( '2' )
@@ -863,28 +926,49 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.getLocaleString( '79', 'year', '', { year: 'zerofill' } ) ).to.be.equal( '0079' )
         expect( timelineMethods.getLocaleString( '123', 'years', '', { years: 'zerofill' } ) ).to.be.equal( '0123' )
         expect( timelineMethods.getLocaleString( '2001', 'years', '', { years: 'zerofill' } ) ).to.be.equal( '2001' )
-        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow' } ) ).to.be.equal( '公元2019年7月4日' )
-        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow', year: '2-digit' } ) ).to.be.equal( '公元19年' )
-        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long' } ) ).to.be.equal( '西暦2019年7月4日' )
-        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long', year: 'numeric' } ) ).to.be.equal( '西暦2019年' )
-        expect( timelineMethods.getLocaleString( '8/7/6', 'year', 'ja-JP', { era: 'long', year: 'zerofill' } ) ).to.be.equal( '西暦0008年7月6日' )
-        expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'de-DE', { era: 'short' } ) ).to.be.equal( '4. 7 2019 n. Chr.' )
-        expect( timelineMethods.getLocaleString( '19/7/4', 'year', 'de-DE', { era: 'short', year: 'zerofill' } ) ).to.be.equal( '4. 7 0019 n. Chr.' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow' } ) ).to.be.equal( '公元2019年7月4日' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow', year: '2-digit' } ) ).to.be.equal( '公元19年' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long' } ) ).to.be.equal( '西暦2019年7月4日' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long', year: 'numeric' } ) ).to.be.equal( '西暦2019年' )
+            expect( timelineMethods.getLocaleString( '8/7/6', 'year', 'ja-JP', { era: 'long', year: 'zerofill' } ) ).to.be.equal( '西暦0008年7月6日' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'de-DE', { era: 'short' } ) ).to.be.equal( '4. 7 2019 n. Chr.' )
+            expect( timelineMethods.getLocaleString( '19/7/4', 'year', 'de-DE', { era: 'short', year: 'zerofill' } ) ).to.be.equal( '4. 7 0019 n. Chr.' )
+        } else {
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow' } ) ).to.be.equal( 'CE 2019 7 4' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'zh-Hans-CN', { era: 'narrow', year: '2-digit' } ) ).to.be.equal( 'CE 19' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long' } ) ).to.be.equal( 'CE 2019 7 4' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'ja-JP', { era: 'long', year: 'numeric' } ) ).to.be.equal( 'CE 2019' )
+            expect( timelineMethods.getLocaleString( '8/7/6', 'year', 'ja-JP', { era: 'long', year: 'zerofill' } ) ).to.be.equal( 'CE 0008 7 6' )
+            expect( timelineMethods.getLocaleString( '2019/7/4', 'year', 'de-DE', { era: 'short' } ) ).to.be.equal( 'CE 2019 7 4' )
+            expect( timelineMethods.getLocaleString( '19/7/4', 'year', 'de-DE', { era: 'short', year: 'zerofill' } ) ).to.be.equal( 'CE 0019 7 4' )
+        }
         // month
         expect( timelineMethods.getLocaleString( _nowDt, 'month' ) ).to.be.equal( (_nowDt.getMonth() + 1).toString() )
         expect( timelineMethods.getLocaleString( _nowDt, 'month', null, { month: 'numeric' } ) ).to.be.equal( (_nowDt.getMonth() + 1).toString() )
         expect( timelineMethods.getLocaleString( '2019/7', 'month', '', { month: '2-digit' } ) ).to.be.equal( '07' )
         expect( timelineMethods.getLocaleString( '14/3', 'month', '', { month: 'narrow' } ) ).to.be.equal( 'M' )
-        expect( timelineMethods.getLocaleString( '123/4', 'month', 'ja-JP', { month: 'narrow' } ) ).to.be.equal( '4月' )
         expect( timelineMethods.getLocaleString( '1847/4/30', 'month', '', { month: 'short' } ) ).to.be.equal( 'Apr' )
-        expect( timelineMethods.getLocaleString( '1974/2/15', 'month', 'zh-Hans-CN', { month: 'short' } ) ).to.be.equal( '2月' )
-        expect( timelineMethods.getLocaleString( '2001/8/31', 'month', 'ar-EG', { month: 'short' } ) ).to.be.equal( 'أغسطس' )
-        expect( timelineMethods.getLocaleString( '2008/12/26', 'month', 'de-DE', { month: 'short' } ) ).to.be.equal( 'Dez' )
         expect( timelineMethods.getLocaleString( '1847/12/1', 'month', '', { month: 'long' } ) ).to.be.equal( 'December' )
-        expect( timelineMethods.getLocaleString( '1974/2/15', 'month', 'zh-Hans-CN', { month: 'long' } ) ).to.be.equal( '二月' )
-        expect( timelineMethods.getLocaleString( '2001/5/31', 'month', 'ar-EG', { month: 'long' } ) ).to.be.equal( 'مايو' )
-        expect( timelineMethods.getLocaleString( '2008/10/26', 'month', 'de-DE', { month: 'long' } ) ).to.be.equal( 'Oktober' )
-        expect( timelineMethods.getLocaleString( '2019/1/1', 'month', 'ja-JP-u-ca-japanese', { era: 'long', year: 'numeric', month: 'long' } ) ).to.be.equal( '平成 (月: 1月)' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '123/4', 'month', 'ja-JP', { month: 'narrow' } ) ).to.be.equal( '4月' )
+            expect( timelineMethods.getLocaleString( '1974/2/15', 'month', 'zh-Hans-CN', { month: 'short' } ) ).to.be.equal( '2月' )
+            expect( timelineMethods.getLocaleString( '2001/8/31', 'month', 'ar-EG', { month: 'short' } ) ).to.be.equal( 'أغسطس' )
+            expect( timelineMethods.getLocaleString( '2008/12/26', 'month', 'de-DE', { month: 'short' } ) ).to.be.equal( 'Dez' )
+            expect( timelineMethods.getLocaleString( '1974/2/15', 'month', 'zh-Hans-CN', { month: 'long' } ) ).to.be.equal( '二月' )
+            expect( timelineMethods.getLocaleString( '2001/5/31', 'month', 'ar-EG', { month: 'long' } ) ).to.be.equal( 'مايو' )
+            expect( timelineMethods.getLocaleString( '2008/10/26', 'month', 'de-DE', { month: 'long' } ) ).to.be.equal( 'Oktober' )
+            expect( timelineMethods.getLocaleString( '2019/1/1', 'month', 'ja-JP-u-ca-japanese', { era: 'long', year: 'numeric', month: 'long' } ) ).to.be.equal( '平成 (月: 1月)' )
+        } else {
+            expect( timelineMethods.getLocaleString( '123/4', 'month', 'ja-JP', { month: 'narrow' } ) ).to.be.equal( '4' )
+            expect( timelineMethods.getLocaleString( '1974/2/15', 'month', 'zh-Hans-CN', { month: 'short' } ) ).to.be.equal( 'M02' )
+            expect( timelineMethods.getLocaleString( '2001/8/31', 'month', 'ar-EG', { month: 'short' } ) ).to.be.equal( 'M08' )
+            expect( timelineMethods.getLocaleString( '2008/12/26', 'month', 'de-DE', { month: 'short' } ) ).to.be.equal( 'M12' )
+            expect( timelineMethods.getLocaleString( '1974/2/15', 'month', 'zh-Hans-CN', { month: 'long' } ) ).to.be.equal( 'M02' )
+            expect( timelineMethods.getLocaleString( '2001/5/31', 'month', 'ar-EG', { month: 'long' } ) ).to.be.equal( 'M05' )
+            expect( timelineMethods.getLocaleString( '2008/10/26', 'month', 'de-DE', { month: 'long' } ) ).to.be.equal( 'M10' )
+            expect( timelineMethods.getLocaleString( '2019/1/1', 'month', 'ja-JP-u-ca-japanese', { era: 'long', year: 'numeric', month: 'long' } ) ).to.be.equal( 'CE (F3: M01)' )
+        }
         // week
         expect( timelineMethods.getLocaleString( _nowDt, 'week' ) ).to.be.equal( timelineMethods.getWeek( _nowDt ).toString() )
         expect( timelineMethods.getLocaleString( _nowDt, 'weeks', null, { weeks: 'numeric' } ) ).to.be.equal( timelineMethods.getWeek( _nowDt ).toString() )
@@ -897,50 +981,87 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.getLocaleString( _nowDt, 'weekdays', null, { weekdays: 'narrow' } ) ).to.be.equal( _nowDt.toLocaleDateString( 'en-US', {weekday: 'narrow'} ) )
         expect( timelineMethods.getLocaleString( '2019/7/5', 'weekdays', '', { weekdays: 'narrow' } ) ).to.be.equal( 'F' )
         expect( timelineMethods.getLocaleString( '12/3', 'weekdays', '', { weekdays: 'short' } ) ).to.be.equal( 'Thu' )
-        expect( timelineMethods.getLocaleString( '123/4/5', 'weekdays', 'zh-Hans-CN', { weekdays: 'short' } ) ).to.be.equal( '周一' )
-        expect( timelineMethods.getLocaleString( '1234/5/6', 'weekdays', 'ja-JP', { weekdays: 'short' } ) ).to.be.equal( '土' )
-        expect( timelineMethods.getLocaleString( '2020/8/16,0', 'weekdays', 'de-DE', { weekdays: 'short' } ) ).to.be.equal( 'So' )
         expect( timelineMethods.getLocaleString( '12/3', 'weekdays', '', { weekdays: 'long' } ) ).to.be.equal( 'Thursday' )
-        expect( timelineMethods.getLocaleString( '123/4/5', 'weekdays', 'zh-Hans-CN', { weekdays: 'long' } ) ).to.be.equal( '星期一' )
-        expect( timelineMethods.getLocaleString( '1234/5/6', 'weekdays', 'ja-JP', { weekdays: 'long' } ) ).to.be.equal( '土曜日' )
-        expect( timelineMethods.getLocaleString( '2020/8/16,0', 'weekdays', 'de-DE', { weekdays: 'long' } ) ).to.be.equal( 'Sonntag' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '123/4/5', 'weekdays', 'zh-Hans-CN', { weekdays: 'short' } ) ).to.be.equal( '周一' )
+            expect( timelineMethods.getLocaleString( '1234/5/6', 'weekdays', 'ja-JP', { weekdays: 'short' } ) ).to.be.equal( '土' )
+            expect( timelineMethods.getLocaleString( '2020/8/16,0', 'weekdays', 'de-DE', { weekdays: 'short' } ) ).to.be.equal( 'So' )
+            expect( timelineMethods.getLocaleString( '123/4/5', 'weekdays', 'zh-Hans-CN', { weekdays: 'long' } ) ).to.be.equal( '星期一' )
+            expect( timelineMethods.getLocaleString( '1234/5/6', 'weekdays', 'ja-JP', { weekdays: 'long' } ) ).to.be.equal( '土曜日' )
+            expect( timelineMethods.getLocaleString( '2020/8/16,0', 'weekdays', 'de-DE', { weekdays: 'long' } ) ).to.be.equal( 'Sonntag' )
+        } else {
+            expect( timelineMethods.getLocaleString( '123/4/5', 'weekdays', 'zh-Hans-CN', { weekdays: 'short' } ) ).to.be.equal( 'Mon' )
+            expect( timelineMethods.getLocaleString( '1234/5/6', 'weekdays', 'ja-JP', { weekdays: 'short' } ) ).to.be.equal( 'Sat' )
+            expect( timelineMethods.getLocaleString( '2020/8/16,0', 'weekdays', 'de-DE', { weekdays: 'short' } ) ).to.be.equal( 'Sun' )
+            expect( timelineMethods.getLocaleString( '123/4/5', 'weekdays', 'zh-Hans-CN', { weekdays: 'long' } ) ).to.be.equal( 'Mon' )
+            expect( timelineMethods.getLocaleString( '1234/5/6', 'weekdays', 'ja-JP', { weekdays: 'long' } ) ).to.be.equal( 'Sat' )
+            expect( timelineMethods.getLocaleString( '2020/8/16,0', 'weekdays', 'de-DE', { weekdays: 'long' } ) ).to.be.equal( 'Sun' )
+        }
         // day
         expect( timelineMethods.getLocaleString( _nowDt, 'day' ) ).to.be.equal( _nowDt.getDate().toString() )
         expect( timelineMethods.getLocaleString( _nowDt, 'days', null, { days: 'numeric' } ) ).to.be.equal( _nowDt.getDate().toString() )
         expect( timelineMethods.getLocaleString( '1/2/3', 'day', '', { day: '2-digit' } ) ).to.be.equal( '03' )
         expect( timelineMethods.getLocaleString( '12/3/4', 'day', '', { day: 'ordinal' } ) ).to.be.equal( '4th' )
-        expect( timelineMethods.getLocaleString( '2020/8/16', 'days', 'ar-EG', { days: 'numeric' } ) ).to.be.equal( '١٦' )
-        expect( timelineMethods.getLocaleString( '123/4/5', 'days', 'zh-Hans-CN', { days: '2-digit' } ) ).to.be.equal( '05日' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '2020/8/16', 'days', 'ar-EG', { days: 'numeric' } ) ).to.be.equal( '١٦' )
+            expect( timelineMethods.getLocaleString( '123/4/5', 'days', 'zh-Hans-CN', { days: '2-digit' } ) ).to.be.equal( '05日' )
+        } else {
+            expect( timelineMethods.getLocaleString( '2020/8/16', 'days', 'ar-EG', { days: 'numeric' } ) ).to.be.equal( '16' )
+            expect( timelineMethods.getLocaleString( '123/4/5', 'days', 'zh-Hans-CN', { days: '2-digit' } ) ).to.be.equal( '05' )
+        }
         expect( timelineMethods.getLocaleString( '1234/5/6', 'days', 'ja-JP', { days: 'ordinal' } ) ).to.be.equal( '6th' )
         // hour
         expect( timelineMethods.getLocaleString( _nowDt, 'hour' ) ).to.be.equal( _nowDt.getHours().toString() )
         expect( timelineMethods.getLocaleString( '2019-7-5 1:2', 'hour', '', { hour12: true, hour: 'numeric' } ) ).to.be.equal( '1 AM' )
-        expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'hours', '', { hour12: true, hours: '2-digit' } ) ).to.be.equal( '01 AM' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'hours', '', { hour12: true, hours: '2-digit' } ) ).to.be.equal( '01 AM' )
+            expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'zh-Hans-CN', { hour: 'numeric' } ) ).to.be.equal( '上午5时' )
+            expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'zh-Hans-CN', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '上午05时' )
+            expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'de-DE', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '05 Uhr AM' )
+            expect( timelineMethods.getLocaleString( '123/4/5 6:7:8', 'hour', 'ja-JP', { hour: 'numeric' } ) ).to.be.equal( '6時' )
+            expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'hour', 'ja-JP', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '午後04時' )
+            expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'hour', 'de-DE', { hour12: true, hour: 'numeric' } ) ).to.be.equal( '4 Uhr PM' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'zh-Hans-CN', { hour: 'fulltime' } ) ).to.be.equal( '上午7:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour: 'fulltime' } ) ).to.be.equal( '7:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour: 'fulltime' } ) ).to.be.equal( '7:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour12: true, hour: 'fulltime' } ) ).to.be.equal( '午前7:08' )
+        } else {
+            expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'hours', '', { hour12: true, hours: '2-digit' } ) ).to.be.equal( '1 AM' )
+            expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'zh-Hans-CN', { hour: 'numeric' } ) ).to.be.equal( '5' )
+            expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'zh-Hans-CN', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '5 AM' )
+            expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'de-DE', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '5 AM' )
+            expect( timelineMethods.getLocaleString( '123/4/5 6:7:8', 'hour', 'ja-JP', { hour: 'numeric' } ) ).to.be.equal( '6' )
+            expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'hour', 'ja-JP', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '4 PM' )
+            expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'hour', 'de-DE', { hour12: true, hour: 'numeric' } ) ).to.be.equal( '4 PM' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'zh-Hans-CN', { hour: 'fulltime' } ) ).to.be.equal( '07:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour: 'fulltime' } ) ).to.be.equal( '07:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour: 'fulltime' } ) ).to.be.equal( '07:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour12: true, hour: 'fulltime' } ) ).to.be.equal( '7:08 AM' )
+        }
         expect( timelineMethods.getLocaleString( '2019-7-5 1:2', 'hours', null, { hour12: false, hours: 'numeric' } ) ).to.be.equal( '01' )
         expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'hour', null, { hour12: false, hour: '2-digit' } ) ).to.be.equal( '01' )
         expect( timelineMethods.getLocaleString( '1/2/3 4:5:6', 'hour', '', { hour: 'numeric' } ) ).to.be.equal( '4 AM' )
-        expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'zh-Hans-CN', { hour: 'numeric' } ) ).to.be.equal( '上午5时' )
-        expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'zh-Hans-CN', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '上午05时' )
-        expect( timelineMethods.getLocaleString( '12/3/4 5:6:7', 'hour', 'de-DE', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '05 Uhr AM' )
-        expect( timelineMethods.getLocaleString( '123/4/5 6:7:8', 'hour', 'ja-JP', { hour: 'numeric' } ) ).to.be.equal( '6時' )
-        expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'hour', 'ja-JP', { hour12: true, hour: '2-digit' } ) ).to.be.equal( '午後04時' )
-        expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'hour', 'de-DE', { hour12: true, hour: 'numeric' } ) ).to.be.equal( '4 Uhr PM' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', '', { hour: 'fulltime' } ) ).to.be.equal( '7:08 AM' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', '', { hour12: false, hour: 'fulltime' } ) ).to.be.equal( '07:08' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'zh-Hans-CN', { hour: 'fulltime' } ) ).to.be.equal( '上午7:08' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'zh-Hans-CN', { hour12: false, hour: 'fulltime' } ) ).to.be.equal( '07:08' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour: 'fulltime' } ) ).to.be.equal( '7:08' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'ja-JP', { hour12: true, hour: 'fulltime' } ) ).to.be.equal( '午前7:08' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'de-DE', { hour: 'fulltime' } ) ).to.be.equal( '07:08' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'hour', 'de-DE', { hour12: true, hour: 'fulltime' } ) ).to.be.equal( '7:08 AM' )
         // half-hour
         expect( timelineMethods.getLocaleString( _nowDt, 'half-hour' ) ).to.be.equal( _nowDt.getHours().toString() )
-        expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'half-hours', '', { hour12: true, 'half-hours': '2-digit' } ) ).to.be.equal( '01 AM' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'half-hours', '', { hour12: true, 'half-hours': '2-digit' } ) ).to.be.equal( '01 AM' )
+        } else {
+            expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'half-hours', '', { hour12: true, 'half-hours': '2-digit' } ) ).to.be.equal( '1 AM' )
+        }
         expect( timelineMethods.getLocaleString( '123/4/5 6:7:8', 'halfhour', '', { halfhour: 'fulltime' } ) ).to.be.equal( '6:07 AM' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'halfhours', '', { hour12: false, halfhours: 'fulltime' } ) ).to.be.equal( '07:08' )
         // quarter-hour
         expect( timelineMethods.getLocaleString( _nowDt, 'quarter-hour' ) ).to.be.equal( _nowDt.getHours().toString() )
-        expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'quarter-hours', '', { hour12: true, 'quarter-hours': '2-digit' } ) ).to.be.equal( '01 AM' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'quarter-hours', '', { hour12: true, 'quarter-hours': '2-digit' } ) ).to.be.equal( '01 AM' )
+        } else {
+            expect( timelineMethods.getLocaleString( '2019/7/5 1:2', 'quarter-hours', '', { hour12: true, 'quarter-hours': '2-digit' } ) ).to.be.equal( '1 AM' )
+        }
         expect( timelineMethods.getLocaleString( '123/4/5 6:7:8', 'quarterhour', '', { quarterhour: 'fulltime' } ) ).to.be.equal( '6:07 AM' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'quarterhours', '', { hour12: false, quarterhours: 'fulltime' } ) ).to.be.equal( '07:08' )
         // minute
@@ -957,10 +1078,16 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.getLocaleString( '123/4/5 16:7:8', 'minute', 'de-DE', { hour12: true, minute: 'numeric' } ) ).to.be.equal( '7' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', '', { minute: 'fulltime' } ) ).to.be.equal( '7:08 AM' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', '', { hour12: false, minute: 'fulltime' } ) ).to.be.equal( '07:08' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'zh-Hans-CN', { minute: 'fulltime' } ) ).to.be.equal( '上午7:08' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'zh-Hans-CN', { minute: 'fulltime' } ) ).to.be.equal( '上午7:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'ja-JP', { minute: 'fulltime' } ) ).to.be.equal( '7:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'ja-JP', { hour12: true, minute: 'fulltime' } ) ).to.be.equal( '午前7:08' )
+        } else {
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'zh-Hans-CN', { minute: 'fulltime' } ) ).to.be.equal( '07:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'ja-JP', { minute: 'fulltime' } ) ).to.be.equal( '07:08' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'ja-JP', { hour12: true, minute: 'fulltime' } ) ).to.be.equal( '7:08 AM' )
+        }
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'zh-Hans-CN', { hour12: false, minute: 'fulltime' } ) ).to.be.equal( '07:08' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'ja-JP', { minute: 'fulltime' } ) ).to.be.equal( '7:08' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'ja-JP', { hour12: true, minute: 'fulltime' } ) ).to.be.equal( '午前7:08' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'de-DE', { minute: 'fulltime' } ) ).to.be.equal( '07:08' )
         expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'minute', 'de-DE', { hour12: true, minute: 'fulltime' } ) ).to.be.equal( '7:08 AM' )
         // second
@@ -977,12 +1104,19 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.getLocaleString( '123/4/5 12:34:60', 'second', 'de-DE', { hour12: true, second: 'numeric' } ) ).to.be.equal( '0' )
         expect( timelineMethods.getLocaleString( '1234/5/6 12:34:56', 'second', '', { second: 'fulltime' } ) ).to.be.equal( '12:34:56 PM' )
         expect( timelineMethods.getLocaleString( '1234/5/6 12:34:56', 'second', '', { hour12: false, second: 'fulltime' } ) ).to.be.equal( '12:34:56' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 23:45:60', 'second', 'zh-Hans-CN', { second: 'fulltime' } ) ).to.be.equal( '下午11:46:00' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '1234/5/6 23:45:60', 'second', 'zh-Hans-CN', { second: 'fulltime' } ) ).to.be.equal( '下午11:46:00' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'second', 'ja-JP', { second: 'fulltime' } ) ).to.be.equal( '7:08:09' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 8:9:10', 'second', 'ja-JP', { hour12: true, second: 'fulltime' } ) ).to.be.equal( '午前8:09:10' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 12:34:56.789', 'second', 'ar-EG', { hour12: true, second: 'fulltime' } ) ).to.be.equal( '١٢:٣٤:٥٦ م' )
+        } else {
+            expect( timelineMethods.getLocaleString( '1234/5/6 23:45:60', 'second', 'zh-Hans-CN', { second: 'fulltime' } ) ).to.be.equal( '23:46:00' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'second', 'ja-JP', { second: 'fulltime' } ) ).to.be.equal( '07:08:09' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 8:9:10', 'second', 'ja-JP', { hour12: true, second: 'fulltime' } ) ).to.be.equal( '8:09:10 AM' )
+            expect( timelineMethods.getLocaleString( '1234/5/6 12:34:56.789', 'second', 'ar-EG', { hour12: true, second: 'fulltime' } ) ).to.be.equal( '12:34:56 PM' )
+        }
         expect( timelineMethods.getLocaleString( '1234/5/6 23:45:67', 'second', 'zh-Hans-CN', { hour12: false, second: 'fulltime' } ) ).to.be.equal( '23:46:07' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 7:8:9', 'second', 'ja-JP', { second: 'fulltime' } ) ).to.be.equal( '7:08:09' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 8:9:10', 'second', 'ja-JP', { hour12: true, second: 'fulltime' } ) ).to.be.equal( '午前8:09:10' )
         expect( timelineMethods.getLocaleString( '1234/5/6 0:0:0', 'second', 'de-DE', { second: 'fulltime' } ) ).to.be.equal( '00:00:00' )
-        expect( timelineMethods.getLocaleString( '1234/5/6 12:34:56.789', 'second', 'ar-EG', { hour12: true, second: 'fulltime' } ) ).to.be.equal( '١٢:٣٤:٥٦ م' )
         // millisecond
         expect( timelineMethods.getLocaleString( _nowDt, 'millisecond' ) ).to.be.equal( _nowDt.getMilliseconds().toString() )
         expect( timelineMethods.getLocaleString( _nowDt, 'milliseconds', '', { milliseconds: 'numeric' } ) ).to.be.equal( _nowDt.getMilliseconds().toString() )
@@ -993,25 +1127,45 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         expect( timelineMethods.getLocaleString( _nowDt, 'custom', '', { custom: '%y \\%Y' } ) ).to.be.equal( `${_nowDt.getFullYear().toString().slice(-2)} %Y` )
         expect( timelineMethods.getLocaleString( '2019/7/5 20:30:45', 'custom', '', { custom: '%Y-%m-%d,%w %Wth %H:%M:%S' } ) ).to.be.equal( '2019-07-05,5 27th 20:30:45' )
         expect( timelineMethods.getLocaleString( '123/4/5 12:34:56', 'custom', '', { custom: '%b %d %a, %y' } ) ).to.be.equal( 'Apr 05 Mon, 23' )
-        expect( timelineMethods.getLocaleString( '1234/5/6', 'custom', 'zh-Hans-CN', { custom: '%B %b %A %a %w' } ) ).to.be.equal( '五月 5月 星期六 周六 6' )
-        expect( timelineMethods.getLocaleString( '1470/6/7', 'custom', 'ja-JP', { custom: '%B %b %A %a %w' } ) ).to.be.equal( '6月 6月 火曜日 火 2' )
-        expect( timelineMethods.getLocaleString( '1901/7/8', 'custom', 'de-DE', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'Juli Jul Montag Mo 1' )
-        expect( timelineMethods.getLocaleString( '2018/8/9', 'custom', 'ar-EG', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'أغسطس أغسطس الخميس الخميس 4' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '1234/5/6', 'custom', 'zh-Hans-CN', { custom: '%B %b %A %a %w' } ) ).to.be.equal( '五月 5月 星期六 周六 6' )
+            expect( timelineMethods.getLocaleString( '1470/6/7', 'custom', 'ja-JP', { custom: '%B %b %A %a %w' } ) ).to.be.equal( '6月 6月 火曜日 火 2' )
+            expect( timelineMethods.getLocaleString( '1901/7/8', 'custom', 'de-DE', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'Juli Jul Montag Mo 1' )
+            expect( timelineMethods.getLocaleString( '2018/8/9', 'custom', 'ar-EG', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'أغسطس أغسطس الخميس الخميس 4' )
+        } else {
+            expect( timelineMethods.getLocaleString( '1234/5/6', 'custom', 'zh-Hans-CN', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'M05 M05 Sat Sat 6' )
+            expect( timelineMethods.getLocaleString( '1470/6/7', 'custom', 'ja-JP', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'M06 M06 Tue Tue 2' )
+            expect( timelineMethods.getLocaleString( '1901/7/8', 'custom', 'de-DE', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'M07 M07 Mon Mon 1' )
+            expect( timelineMethods.getLocaleString( '2018/8/9', 'custom', 'ar-EG', { custom: '%B %b %A %a %w' } ) ).to.be.equal( 'M08 M08 Thu Thu 4' )
+        }
         expect( timelineMethods.getLocaleString( '2012/3/4 17:6:7', 'custom', '', { custom: '%I' } ) ).to.be.equal( '5 PM' )
         expect( timelineMethods.getLocaleString( '2012/3/4 17:6:7', 'custom', '', { custom: '%H' } ) ).to.be.equal( '17' )
         expect( timelineMethods.getLocaleString( '1847/1/1 0:00:00', 'custom', '', { custom: '%j' } ) ).to.be.equal( '001' )
         expect( timelineMethods.getLocaleString( '1848/12/31 0:00:00', 'custom', '', { custom: '%j' } ) ).to.be.equal( '366' )
-        expect( timelineMethods.getLocaleString( '79/1/3 7:20', 'custom', 'ja-JP', { custom: '宇宙世紀%Z年%B%d日（%a）第%W週目 %H%M分' } ) ).to.be.equal( '宇宙世紀0079年1月03日（火）第2週目 7時20分' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '79/1/3 7:20', 'custom', 'ja-JP', { custom: '宇宙世紀%Z年%B%d日（%a）第%W週目 %H%M分' } ) ).to.be.equal( '宇宙世紀0079年1月03日（火）第2週目 7時20分' )
+        } else {
+            expect( timelineMethods.getLocaleString( '79/1/3 7:20', 'custom', 'ja-JP', { custom: '宇宙世紀%Z年%B%d日（%a）第%W週目 %H%M分' } ) ).to.be.equal( '宇宙世紀0079年M0103日（Tue）第2週目 720分' )
+        }
         // other
         expect( timelineMethods.getLocaleString( _nowDt, 'other' ) ).to.be.equal( _nowDt.toString() )
-        expect( timelineMethods.getLocaleString( '1998/7/9 1:23:45.678', 'invalid', 'zh-Hans-CN', { hour12: true, era: 'long' } ) ).to.be.equal( '公元1998年7月9日 上午1:23:45' )
-        expect( timelineMethods.getLocaleString( '1582/6/14 1:23:45', '', 'ja-JP-u-ca-japanese', { hour12: false, era: 'long' } ) ).to.be.equal( '天正10年6月4日 1:23:45' )
+        if ( isBrowser ) {
+            expect( timelineMethods.getLocaleString( '1998/7/9 1:23:45.678', 'invalid', 'zh-Hans-CN', { hour12: true, era: 'long' } ) ).to.be.equal( '公元1998年7月9日 上午1:23:45' )
+            expect( timelineMethods.getLocaleString( '1582/6/14 1:23:45', '', 'ja-JP-u-ca-japanese', { hour12: false, era: 'long' } ) ).to.be.equal( '天正10年6月4日 1:23:45' )
+        } else {
+            expect( timelineMethods.getLocaleString( '1998/7/9 1:23:45.678', 'invalid', 'zh-Hans-CN', { hour12: true, era: 'long' } ) ).to.be.equal( 'CE 1998 7 9 1:23:45 AM' )
+            expect( timelineMethods.getLocaleString( '1582/6/14 1:23:45', '', 'ja-JP-u-ca-japanese', { hour12: false, era: 'long' } ) ).to.be.equal( 'CE 1582 6 14 01:23:45' )
+        }
     })
     
     // public methods
     /* */
     it ( 'bind timeline object:', () => {
-        let _beginToday = new Date( new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0 ),
+        if ( ! isBrowser ) {
+            return
+        }
+        let $el = $('<div id="myTimeline"><ul class="timeline-events"></ul></div>'),
+            _beginToday = new Date( new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0 ),
             dateset = {
                 // Checke auto range (default range: 3)
                 'normal-year': [ 'currently', 'auto', 'year' ], // -> 2019 - 2034 (5 * 3 + 1 = 16 years); Ok

@@ -26,6 +26,7 @@
     "esdoc": "./node_modules/.bin/esdoc; open ./docs/index.html",
     "test": "mocha ./test/timeline-spec.js"
   },
+  "browser": "dist/jquery.timeline.min.js",
   "style": "dist/jquery.timeline.min.css",
   "sass": "src/timeline.scss",
   "main": "src/timeline.js",
@@ -45,6 +46,22 @@
     "env": {
       "test": {
         "plugins": []
+      },
+      "current": {
+        "presets": [
+          [
+            "@babel/preset-env",
+            {
+              "targets": {
+                "node": "current"
+              },
+              "useBuiltIns": "usage"
+            }
+          ]
+        ],
+        "plugins": [
+          "@babel/plugin-transform-runtime"
+        ]
       }
     }
   },
@@ -56,6 +73,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
+    "@babel/plugin-transform-runtime": "^7.5.0",
     "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/register": "^7.0.0",
@@ -75,13 +93,14 @@
     "gulp-sass": "^4.0.2",
     "gulp-sourcemaps": "^2.6.4",
     "gulp-uglify": "^3.0.1",
+    "jsdom": "^15.1.1",
     "mocha": "^5.2.0",
     "sinon": "^7.3.2",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
   },
   "engines": {
-    "node": ">=6"
+    "node": ">=7"
   },
   "files": [
     "dist/",
