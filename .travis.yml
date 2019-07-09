@@ -1,8 +1,6 @@
 language: node_js
 
 node_js:
-  - "7"
-  - "8"
   - "10"
 
 # dist: trusty
@@ -17,6 +15,9 @@ cache:
   directories:
     - node_modules
 #   yarn: true
+
+install:
+  - nvm install --lts
 
 before_script:
   - npm install
