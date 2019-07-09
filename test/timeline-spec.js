@@ -27,13 +27,14 @@ let $timeline = $.fn.Timeline,
 describe( 'jQuery.Timeline Unit Tests', () => {
     let timezoneOffset  = -1 * new Date().getTimezoneOffset(), // minutes
         tzo_ms          = timezoneOffset * 60 * 1000, // milliseconds
+        timezoneName    = new Date().toLocaleDateString( 'en-US', { timeZoneName: 'long' } ).split(',')[1],
         isDST           = timezoneOffset != 0 && /(Summer|Daylight)\sTime/.test( new Date().toString() ),
-        isGMT           = timezoneOffset == 0 || (isDST && Math.abs( timezoneOffset ) == 60),
+        isGMT           = (timezoneOffset == 0 && timezoneName !== 'Coordinated Universal Time') || (isDST && Math.abs( timezoneOffset ) == 60),
         forFF           = window.navigator.userAgent.toLowerCase().indexOf( 'firefox' ) !== -1
     
     before(() => {
         if ( isBrowser ) {
-            $('#notifications').append( `<label>DateString</label> ${new Date().toLocaleString( 'en-US', { timeZone: 'UTC', hour12: false, timeZoneName: 'short' } )}, <label>GMT</label> ${isGMT ? 'true' : 'false'}, <label>DST</label> ${isDST ? 'true' : 'false'}, <label>TimezoneOffset</label> ${timezoneOffset} min, <label>TimezoneName</label> ${new Date().toLocaleDateString( 'en-US', { timeZoneName: 'long' } ).split(',')[1]}` )
+            $('#notifications').append( `<label>DateString</label> ${new Date().toLocaleString( 'en-US', { timeZone: 'UTC', hour12: false, timeZoneName: 'short' } )}, <label>GMT</label> ${isGMT ? 'true' : 'false'}, <label>DST</label> ${isDST ? 'true' : 'false'}, <label>TimezoneOffset</label> ${timezoneOffset} min, <label>TimezoneName</label> ${timezoneName}` )
             //$('#main-content').css('display', 'block');
         } else {
             console.log( `DateString: ${new Date().toLocaleString( 'en-US', { timeZone: 'UTC', hour12: false, timeZoneName: 'short' } )}, GMT: ${isGMT ? 'true' : 'false'}, DST: ${isDST ? 'true' : 'false'}, TimezoneOffset: ${timezoneOffset} min, TimezoneName: ${new Date().toLocaleDateString( 'en-US', { timeZoneName: 'long' } ).split(',')[1]}` )
