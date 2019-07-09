@@ -3,9 +3,9 @@
 
   <table border="0">
     <tr>
-    <td width="33%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_bar.png" width="100%" alt="Bar Type" /></td>
-    <td width="33%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_point.png" width="100%" alt="Point Type" /></td>
-    <td width="33%" align="center"><img src="https://ka215.github.io/jquery.timeline/imgs/jquery.timeline_v2_mixed.png" width="100%" alt="Mixed Type" /></td>
+    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_bar.png" width="100%" alt="Bar Type" /></td>
+    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_point.png" width="100%" alt="Point Type" /></td>
+    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_mixed.png" width="100%" alt="Mixed Type" /></td>
     </tr>
   </table>
 
