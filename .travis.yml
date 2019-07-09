@@ -5,18 +5,18 @@ node_js:
   - "8"
   - "10"
 
-# dist: trusty
-# sudo: false
+dist: trusty
+sudo: false
 
 branches:
   only:
     - master
     - develop
 
-# cache:
-#   directories:
-#     - node_modules
-#   yarn: true
+cache:
+  directories:
+    - node_modules
+  yarn: true
 
 install:
   - nvm install --lts
@@ -25,7 +25,9 @@ before_script:
   - npm install
 
 script:
-  - npm gulp prod
+  - npx gulp prod
+  - npm run gulp prod
+  - yarn run gulp prod
   - npm test
 
 # deploy:
