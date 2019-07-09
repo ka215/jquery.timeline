@@ -22,13 +22,14 @@ install:
   - nvm install --lts
 
 before_script:
-  - npm install
+#  - npm install
+  - yarn install
 
 script:
-  - npx gulp prod
-  - npm run gulp prod
+#  - npx gulp prod
+#  - npm run gulp prod
   - yarn run gulp prod
-  - npm test
+#  - npm test
 
 # deploy:
 #   provider: script
