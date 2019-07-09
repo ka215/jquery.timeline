@@ -21,6 +21,10 @@
   </p>
 </p>
 
+[![Build Status](https://travis-ci.org/ka215/jquery.timeline.svg?branch=master)](https://travis-ci.org/ka215/jquery.timeline)
+![David](https://img.shields.io/david/ka215/jquery.timeline.svg)
+![GitHub release](https://img.shields.io/github/release/ka215/jquery.timeline.svg)
+![GitHub All Releases](https://img.shields.io/github/downloads/ka215/jquery.timeline/total.svg)
 [![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE)
 
 <br>
@@ -42,10 +46,10 @@
 
 Several quick start options are available:
 
-<!-- - npm: `npm i jquery-timeline` -->
-<!-- - bower: `bower install jquery-timeline` -->
+<!-- - npm: `npm i jq-timeline` -->
+<!-- - bower: `bower install jq-timeline` -->
 
-- [Download the latest release](https://github.com/ka215/jquery.timeline/releases/download/v2.0.0b1/jquery.timeline.v2.0.0b1.zip).
+- [Download the latest release](https://github.com/ka215/jquery.timeline/releases/download/v2.0.0b2/jquery.timeline.v2.0.0b2.zip).
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
 
 
