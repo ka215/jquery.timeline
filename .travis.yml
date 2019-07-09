@@ -1,16 +1,39 @@
 language: node_js
-sudo: false
+
 node_js:
   - "7"
   - "8"
   - "10"
-# env:
-#   matrix:
-#     - 
-# before_script:
-#   - npm install
-script: npm test
+
+# dist: trusty
+# sudo: false
+
 branches:
   only:
     - master
     - develop
+
+cache:
+  directories:
+    - node_modules
+#   yarn: true
+
+before_script:
+  - npm install
+
+script:
+  - npm gulp prod
+  - npm test
+
+# deploy:
+#   provider: script
+#   script: bash ./bin/deploy.sh
+#   skip_cleanup: true
+#   on:
+#     branch: master
+#     node_js:
+#       - "7"
+
+env:
+  global:
+    - secure: "c527cd6b11db8ba1ebea17e7285a739f0e9b6136"
