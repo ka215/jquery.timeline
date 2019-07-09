@@ -1,0 +1,32 @@
+{
+  presets: [
+    [
+      "@babel/preset-env",
+      {
+        useBuiltIns: "usage",
+        corejs: 3
+      }
+    ]
+  ],
+  plugins: [
+  ],
+  env: {
+    test: {
+      "plugins": []
+    },
+    current: {
+      presets: [
+        [
+          "@babel/preset-env",
+          {
+            targets: {
+              node: "current"
+            },
+            useBuiltIns: "usage",
+            corejs: 3
+          }
+        ]
+      ]
+    }
+  }
+}
