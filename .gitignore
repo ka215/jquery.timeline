@@ -20,7 +20,8 @@ test/*.php
 *.vi
 *.zip
 *~
-*.lock
+package-lock.json
+yarn.lock
 
 # OS or Editor folders
 ._*
