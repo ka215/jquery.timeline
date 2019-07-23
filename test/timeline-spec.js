@@ -1193,7 +1193,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                 'static-day': [ '2019/6/30', '2019/8/4', 'day', 24 * 2 ],
                 'today': [ _beginToday, new Date(_beginToday.getTime() + (24 * 60 * 60 * 1000 - 1)), 'hour', 60 ],
             },
-            datesetKey = 'DSTe',
+            datesetKey = 'today',
             _begin = dateset[datesetKey].length > 0 ? dateset[datesetKey][0] : 'currently',
             _end   = dateset[datesetKey].length > 1 ? dateset[datesetKey][1] : 'auto',
             _scale = dateset[datesetKey].length > 2 ? dateset[datesetKey][2] : 'day',
@@ -1342,6 +1342,10 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     { start: '2019/10/27 1:00', end: '2019/10/27 2:00', row: 3, label: 'DST End 3', content: '10/27 1:00 - 10/27 2:00' }, // 24
                     { start: '2019/10/27 1:15', end: '2019/10/27 1:45', row: 4, label: 'DST End 4', content: '10/27 1:15 - 10/27 1:45' }, // 25
                     { start: '2019/10/27 22:00', end: '2019/10/28 0:30', row: 5, label: 'DST End 5', content: '10/27 22:00 - 10/28 0:30' }, // 26
+                    // PR#37
+                    { start: '2019-7-23 10:8:40', end: '2019-7-23 11:21:15', row: 1, label: 'Test-27' }, // 27
+                    { start: '2019-7-23 10:8:40', end: '2019-7-23 11:21:15', row: 1, label: 'Test-28' }, // 28
+                    { start: '2019-7-23 10:8:40', end: '2019-7-23 11:21:15', row: 1, label: 'Test-29' }, // 29
 
                 ],
                 rangeAlign: 'center',

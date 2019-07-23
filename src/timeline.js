@@ -82,10 +82,10 @@ const Default = {
         horizontalGridStyle : 'dotted',
         verticalGridStyle : 'solid',
     },
-    startHour       : 0, // since v2.0.0
-    endHour         : 23, // since v2.0.0
-    setColorEvent   : function(event) {return null}, // since v2.0.0
-    onOpenEvent     : function(event) {}, // since v2.0.0
+    startHour       : 0, // Merge PR#37 since v2.0.0
+    endHour         : 23, // Merge PR#37 since v2.0.0
+    setColorEvent   : () => null, // Merge PR#37 since v2.0.0; (event) => null
+    onOpenEvent     : () => null, // Merge PR#37 since v2.0.0; (event) => null
     rangeAlign      : "latest",
     loader          : "default",
     loadingMessage  : "",
@@ -161,9 +161,9 @@ const Event = {
     CLICK_EVENT        : `click.open${EVENT_KEY}`,
     FOCUSIN_EVENT      : `focusin.event${EVENT_KEY}`,
     FOCUSOUT_EVENT     : `focusout.event${EVENT_KEY}`,
-    TOUCHSTART_TIMELINE: `mousedown.timeline${EVENT_KEY}`, // ignore touchstart.timeline${EVENT_KEY} since v2.0.0
-    TOUCHMOVE_TIMELINE : `mousemove.timeline${EVENT_KEY}`, // ignore touchmove.timeline${EVENT_KEY} since v2.0.0
-    TOUCHEND_TIMELINE  : `mouseup.timeline${EVENT_KEY}`, // ignore touchend.timeline${EVENT_KEY} since v2.0.0
+    TOUCHSTART_TIMELINE: `mousedown.timeline${EVENT_KEY}`, // Deleted touchstart.timeline${EVENT_KEY} because never work the openEvent on touch device; since v2.0.0
+    TOUCHMOVE_TIMELINE : `mousemove.timeline${EVENT_KEY}`, // Deleted touchmove.timeline${EVENT_KEY} because never work the openEvent on touch device; since v2.0.0
+    TOUCHEND_TIMELINE  : `mouseup.timeline${EVENT_KEY}`, // Deleted touchend.timeline${EVENT_KEY} because never work the openEvent on touch device; since v2.0.0
     MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
     MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
     ZOOMIN_SCALE       : `dblclick.zoom${EVENT_KEY}`
@@ -385,8 +385,7 @@ class Timeline {
         this._debug( '_init' )
         
         let _elem       = this._element,
-            _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`,
-            _sleep      = this._config.debug ? DEBUG_SLEEP : 1
+            _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`
         
         this._selector = _selector.toLowerCase()
         
@@ -509,7 +508,7 @@ class Timeline {
         _props.rowSize    = this.supplement( null, _opts.rowHeight, this.validateNumeric ) // The height of one row on the timeline container (:> タイムラインコンテナの1行の高さ
         _props.width      = this.supplement( null, _opts.width, this.validateNumeric ) // ?
         _props.height     = this.supplement( null, _opts.height, this.validateNumeric ) // ?
-        _props.isVLS      = true // Whether is the variable length scale, defaults to true (:> 設定スケールが可変長スケールかどうか (※原則、すべて可変長スケールとして扱う)
+        _props.isVLS      = true // Whether is the variable length scale, fixed as constraint value of the "true" since v2.0.0b2
         // _props.scale         // The basic millisecond of one base grid on the setting scale (:> 設定スケールにおける起点グリッド1目盛の基準ミリ秒
         // _props.grids         // Number of base grids on the setting scale (= number of grids displayed) (:> 設定スケールにおける起点グリッド数（=表示されるグリッド数）
         // _props.variableScale // An object that referable as the width of the base grid on the setting scale (:> 設定スケールにおける起点グリッド幅の幅員基準値となるオブジェクト
@@ -524,7 +523,8 @@ class Timeline {
         
         // get all scales on ruler
         let _rulers = _opts.ruler.top.lines.reduce( _callback, [])
-        if ( _opts.ruler.hasOwnProperty('bottom') && _opts.ruler.bottom.hasOwnProperty('lines') ) {
+        
+        if ( Object.hasOwnProperty.call( _opts.ruler, 'bottom' ) && Object.hasOwnProperty.call( _opts.ruler.bottom, 'lines' ) ) {
             _rulers = [..._rulers, ..._opts.ruler.bottom.lines].reduce( _callback, [] )
         }
         _props.rulers = _rulers
@@ -583,13 +583,7 @@ class Timeline {
             _props.variableScale = _temp
             _props.fullwidth     = _totalWidth
         } else {
-            /*
-            // Deprecated: In case of fixed length scale (:> 固定長スケールの場合 (廃止予定)
-            _props.scale         = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS )
-            _props.grids         = Math.ceil( ( _props.end - _props.begin ) / _props.scale )
-            _props.variableScale = null
-            _props.fullwidth     = _props.grids * _props.scaleSize
-            */
+            // Deprecated since v2.0.0 stable; in case of fixed length scale
         }
         _props.fullheight = _props.rows * _props.rowSize // Provisional value as theoretical value
         // Define visible size according to full size of timeline (:> タイムラインのフルサイズに準じた可視サイズを定義
@@ -708,8 +702,7 @@ class Timeline {
                 _date = new Date()
                 break
             case /^auto$/i.test( key ): {
-                let _ms          = null,
-                    _auto_range  = _opts.range && _opts.range > 0 ? parseInt( _opts.range, 10 ) : 3,
+                let _auto_range  = _opts.range && _opts.range > 0 ? parseInt( _opts.range, 10 ) : 3,
                     _higherScale = /^(|week)days?$/i.test( _opts.scale ) ? 'month' : this.getHigherScale( _opts.scale )
                 
                 if ( /^current(|ly)$/i.test( _opts.startDatetime ) ) {
@@ -748,7 +741,7 @@ class Timeline {
         if ( typeof str_like_params === 'string' && str_like_params ) {
             try {
                 params = JSON.parse( JSON.stringify( ( new Function( `return ${str_like_params}` ) )() ) )
-                if ( params.hasOwnProperty( 'extend' ) && typeof params.extend === 'string' ) {
+                if ( Object.hasOwnProperty.call( params, 'extend' ) && typeof params.extend === 'string' ) {
                     params.extend = JSON.parse( JSON.stringify( ( new Function( `return ${params.extend}` ) )() ) )
                 }
             } catch( e ) {
@@ -859,7 +852,7 @@ class Timeline {
         }
         if ( _range ) {
             if ( _begin && _end ) {
-                if ( _format.hasOwnProperty('custom') ) {
+                if ( Object.hasOwnProperty.call( _format, 'custom' ) ) {
                     _scale = 'custom'
                 }
                 let _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
@@ -951,10 +944,10 @@ class Timeline {
                 ctx_grid.stroke()
             }
         
-        if ( _opts.effects.hasOwnProperty( 'horizontalGridStyle' ) ) {
+        if ( Object.hasOwnProperty.call( _opts.effects, 'horizontalGridStyle' ) ) {
             _grid_style.horizontal = _opts.effects.horizontalGridStyle
         }
-        if ( _opts.effects.hasOwnProperty( 'verticalGridStyle' ) ) {
+        if ( Object.hasOwnProperty.call( _opts.effects, 'verticalGridStyle' ) ) {
             _grid_style.vertical = _opts.effects.verticalGridStyle
         }
         
@@ -964,7 +957,7 @@ class Timeline {
             let _pos_y = ( i * _props.rowSize ) + _cy,
                 _color = '#FEFEFE'
             
-            if ( _opts.effects.hasOwnProperty( 'stripedGridRow' ) && _opts.effects.stripedGridRow ) {
+            if ( Object.hasOwnProperty.call( _opts.effects, 'stripedGridRow' ) && _opts.effects.stripedGridRow ) {
                 _color = i % 2 == 0 ? '#FEFEFE' : '#F8F8F8'
             }
             drawRowRect( _pos_y, _color )
@@ -1035,7 +1028,7 @@ class Timeline {
             _props      = this._instanceProps,
             ruler_line  = this.supplement( [ _opts.scale ], _opts.ruler[position].lines, ( def, val ) => {
                 if ( Array.isArray( val ) && val.length > 0 ) {
-                    if ( _opts.ruler.hasOwnProperty( 'truncateLowers' ) && _opts.ruler.truncateLowers ) {
+                    if ( Object.hasOwnProperty.call( _opts.ruler, 'truncateLowers' ) && _opts.ruler.truncateLowers ) {
                         let _ignore_scales = this.findScale( _opts.scale, 'lower all' ),
                             _filter_scales = val.filter( ( scl ) => ! _ignore_scales.includes( this._filterScaleKeyName( scl ) ) )
 //console.log( '!_createRuler::truncateLowers:', _opts.scale, _ignore_scales, val, _filter_scales )
@@ -1238,7 +1231,7 @@ class Timeline {
                     break
             }
 //console.log( `!!!_filterVariableScale::${target_scale}:`, _dt, _newKey, grid_size )
-            if ( retObj.hasOwnProperty( _newKey ) ) {
+            if ( Object.hasOwnProperty.call( retObj, _newKey ) ) {
                 retObj[_newKey] += grid_size
             } else {
                 retObj[_newKey] = grid_size
@@ -1254,9 +1247,7 @@ class Timeline {
      * @private: Create the content of ruler of the timeline (:> タイムラインの目盛本文を作成する
      */
     _createRulerContent( _line_grids, line_scale, ruler ) {
-        let _opts        = this._config,
-            _props       = this._instanceProps,
-            line_height  = this.supplement( Default.ruler.top.height, ruler.height ),
+        let line_height  = this.supplement( Default.ruler.top.height, ruler.height ),
             font_size    = this.supplement( Default.ruler.top.fontSize, ruler.fontSize ),
             text_color   = this.supplement( Default.ruler.top.color, ruler.color ),
             locale       = this.supplement( Default.ruler.top.locale, ruler.locale, this.validateString ),
@@ -1267,8 +1258,7 @@ class Timeline {
             let _item_width      = _line_grids[_key],
                 _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
                 _ruler_string    = this.getLocaleString( _key, this._filterScaleKeyName( line_scale ), locale, format ),
-                _data_ruler_item = '',
-                _temp
+                _data_ruler_item = ''
             
             _data_ruler_item = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
             _line.attr( 'data-ruler-item', _data_ruler_item ).html( `<span>${_ruler_string}</span>` )
@@ -1353,7 +1343,7 @@ class Timeline {
         
         if ( _range ) {
             if ( _begin && _end ) {
-                if ( _format.hasOwnProperty('custom') ) {
+                if ( Object.hasOwnProperty.call( _format, 'custom' ) ) {
                     _scale = 'custom'
                 }
                 let _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
@@ -1456,16 +1446,16 @@ class Timeline {
             _x, _w, _row, _c //, _pointSize
 //console.log( '!_registerEventData:', _opts, params )
         
-        if ( params.hasOwnProperty( 'start' ) && ! this.is_empty( params.start ) ) {
+        if ( Object.hasOwnProperty.call( params, 'start' ) && ! this.is_empty( params.start ) ) {
             _x = this._getCoordinateX( params.start )
             new_event.x = this.numRound( _x, 2 )
-            if ( params.hasOwnProperty( 'end' ) && ! this.is_empty( params.end ) ) {
+            if ( Object.hasOwnProperty.call( params, 'end' ) && ! this.is_empty( params.end ) ) {
                 _x = this._getCoordinateX( params.end )
                 _w = _x - new_event.x
                 new_event.width = this.numRound( _w, 2 )
                 
                 if ( _opts.eventMeta.display ) {
-                    if ( this.is_empty( _opts.eventMeta.content ) && ! params.hasOwnProperty( 'rangeMeta' ) ) {
+                    if ( this.is_empty( _opts.eventMeta.content ) && ! Object.hasOwnProperty.call( params, 'rangeMeta' ) ) {
 //console.log( '!_registerEventData::', _opts.eventMeta.locale, _opts.eventMeta.format, _opts.scale, params )
                         
                         new_event.rangeMeta += this.getLocaleString( params.start, _opts.eventMeta.scale, _opts.eventMeta.locale, _opts.eventMeta.format )
@@ -1477,7 +1467,7 @@ class Timeline {
             } else {
                 new_event.width = 0
             }
-            _row = params.hasOwnProperty( 'row' ) ? parseInt( params.row, 10 ) : 1
+            _row = Object.hasOwnProperty.call( params, 'row' ) ? parseInt( params.row, 10 ) : 1
             _c = Math.floor( _row / 2 )
             new_event.y = ( _row - 1 ) * _opts.rowHeight + new_event.margin + _c
 //console.log( '!!_registerEventData::', new_event, 'C:', _c )
@@ -1485,14 +1475,14 @@ class Timeline {
             Object.keys( new_event ).forEach( ( _prop ) => {
                 switch( true ) {
                     case /^eventId$/i.test( _prop ):
-                        if ( params.hasOwnProperty( 'id' ) && this.is_empty( new_event.eventId ) ) {
+                    if ( Object.hasOwnProperty.call( params, 'id' ) && this.is_empty( new_event.eventId ) ) {
                             new_event.eventId = parseInt( params.id, 10 )
                         } else {
                             new_event.eventId = parseInt( params[_prop], 10 ) || 0
                         }
                         break
                     case /^(label|content)$/i.test( _prop ):
-                        if ( params.hasOwnProperty( _prop ) && ! this.is_empty( params[_prop] ) ) {
+                        if ( Object.hasOwnProperty.call( params, _prop ) && ! this.is_empty( params[_prop] ) ) {
                             new_event[_prop] = params[_prop]
                         }
                         // Override the children element to label or content setting
@@ -1517,7 +1507,7 @@ class Timeline {
                         }
                         break
                     default:
-                        if ( params.hasOwnProperty( _prop ) && ! this.is_empty( params[_prop] ) ) {
+                        if ( Object.hasOwnProperty.call( params, _prop ) && ! this.is_empty( params[_prop] ) ) {
                             new_event[_prop] = params[_prop]
                         }
                         break
@@ -1533,12 +1523,14 @@ class Timeline {
      */
     _getCoordinateX( date ) {
         // add new since v2.0.0 : start
-        if(this._config.scale=="day") {
-            var dateAdjust = new Date(date);
-            if(dateAdjust.getHours()<=this._config.startHour) {
-                date = dateAdjust.getFullYear() + "-" + (dateAdjust.getMonth()+1) + "-" + dateAdjust.getDate() + " 00:00";
-            } else if(dateAdjust.getHours()>=this._config.endHour) {
-                date = dateAdjust.getFullYear() + "-" + (dateAdjust.getMonth()+1) + "-" + dateAdjust.getDate() + " 23:59";
+        if ( this._config.scale === "day" ) {
+            let dateAdjust = new Date( date )
+            
+            if ( dateAdjust.getHours() <= this._config.startHour ) {
+                date = `${dateAdjust.getFullYear()}-${(dateAdjust.getMonth() + 1)}-${dateAdjust.getDate()} 00:00:00`
+            } else
+            if ( dateAdjust.getHours() >= this._config.endHour ) {
+                date = `${dateAdjust.getFullYear()}-${(dateAdjust.getMonth() + 1)}-${dateAdjust.getDate()} 23:59:59`
             }
         }
         // add new since v2.0.0 : end
@@ -1639,9 +1631,7 @@ class Timeline {
         if ( events.length > 0 ) {
             _evt_container.empty()
             // add new since v2.0.0 : start
-            events = events.sort(function (a, b){
-                return (a.width) < (b.width) ? 1 : -1;    
-            }); // sort elements
+            events = events.sort( (a, b) => a.width < b.width ? 1 : -1 ) // sort elements
             // add new since v2.0.0 : end
             events.forEach( ( _evt ) => {
                 let _evt_elem = this._createEventNode( _evt )
@@ -1656,7 +1646,7 @@ class Timeline {
             this._drawRelationLine( events )
         }
         
-        if ( _opts.effects.hasOwnProperty( 'presentTime' ) && _opts.effects.presentTime ) {
+        if ( Object.hasOwnProperty.call( _opts.effects, 'presentTime' ) && _opts.effects.presentTime ) {
             this._viewPresentTime()
         }
         
@@ -1674,13 +1664,13 @@ class Timeline {
      * @private: Create an event element on the timeline (:> タイムライン上にイベント要素を作成する
      */
     _createEventNode( params ) {
-        // add new since v2.0.0 : start
-        let colorEvt = this._config.setColorEvent(params);
-        if(colorEvt!=null) {
-            params.color = colorEvt['color'];
-            params.bgColor = colorEvt['bgcolor'];
+        // Merge PR#37 since v2.0.0 : Add setColorEvent for defined color with function
+        let colorEvt = this._config.setColorEvent( params )
+        if ( colorEvt != null ) {
+            params.color = colorEvt['color']
+            params.bgColor = colorEvt['bgcolor']
         }
-        // add new since v2.0.0 : end
+        
         let _opts     = this._config,
             _props    = this._instanceProps,
             _evt_elem = $('<div></div>', {
@@ -1726,7 +1716,7 @@ class Timeline {
                     // The event end datetime is after the timeline end datetime (event exceeded end datetime) (:> イベント終点がタイムラインの終点より後（終点超過イベント）
                     params.width = _props.fullwidth - params.x
                     // add new since v2.0.0 : start
-                    _evt_elem.append("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-next glyphicon glyphicon-search glyphicon-chevron-right\" aria-hidden=\"true\"></span>");
+                    _evt_elem.append( `<span class="${ClassName.TIMELINE_EVENT_NODE}-next glyphicon glyphicon-search glyphicon-chevron-right" aria-hidden="true"></span>` )
                     // add new since v2.0.0 : end
                 }
             } else {
@@ -1749,15 +1739,15 @@ class Timeline {
                         // The event end datetime is less than or equal the timeline end datetime (event exceeded start datetime) (:> イベント終点がタイムラインの終点以下（始点超過イベント）
                         params.width = Math.abs( params.x + params.width )
                         // add new since v2.0.0 : start
-                        _evt_elem.prepend("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-before glyphicon glyphicon-search glyphicon-chevron-left\" aria-hidden=\"true\"></span>");
+                        _evt_elem.prepend( `<span class="${ClassName.TIMELINE_EVENT_NODE}-before glyphicon glyphicon-search glyphicon-chevron-left" aria-hidden="true"></span>` )
                         // add new since v2.0.0 : end
                         params.x = 0
                     } else {
                         // The event end datetime is after the timeline end datetime (event exceeded both start and end datetime) (:> イベント終点がタイムラインの終点より後（始点・終点ともに超過イベント）
                         params.width = _props.fullwidth
                         // add new since v2.0.0 : start
-                        _evt_elem.append("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-next glyphicon glyphicon-search glyphicon-chevron-right\" aria-hidden=\"true\"></span>");
-                        _evt_elem.prepend("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-before glyphicon glyphicon-search glyphicon-chevron-left\" aria-hidden=\"true\"></span>");
+                        _evt_elem.append( `<span class="${ClassName.TIMELINE_EVENT_NODE}-next glyphicon glyphicon-search glyphicon-chevron-right" aria-hidden="true"></span>` )
+                        _evt_elem.prepend( `<span class="${ClassName.TIMELINE_EVENT_NODE}-before glyphicon glyphicon-search glyphicon-chevron-left" aria-hidden="true"></span>` )
                         // add new since v2.0.0 : end
                         params.x = 0
                     }
@@ -1786,175 +1776,152 @@ class Timeline {
             }
             // add new since v2.0.0 : start
             // _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
-            if ( params.width < 15) {
+            if ( params.width < 15 ) {
                 // Create Event info on bullet point
-                let date_start = new Date(params.start);
-                let date_start_grid, correction_x, correction_y;
+                let date_start = new Date( params.start ),
+                    date_start_grid, correction_x, correction_y
                 
+                switch ( true ) {
+                    case /^months?$/i.test( _opts.scale ):
+                        correction_x = 6
+                        date_start_grid = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-1`
+                        
+                        _evt_elem.html( `<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getDate()} : ${params.label}</div>` )
+                        break
+                    case /^(|week)days?$/i.test( _opts.scale ):
+                        correction_x = 0
+                        date_start_grid = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-${date_start.getDate()} 00:00`
+                        
+                        _evt_elem.html( `<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getHours()}:${date_start.getMinutes()} : ${params.label}</div>` )
+                        break
+                    case /^hours?$/i.test( _opts.scale ):
+                        correction_x = 0
+                        date_start_grid = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-${date_start.getDate()} ${date_start.getHours()}:00`
+                        
+                        _evt_elem.html( `<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getHours()}:${date_start.getMinutes()} : ${params.label}</div>` )
+                        break
+                }
+                if ( this._countEventinCell[params.row] == null ) {
+                    this._countEventinCell[params.row] = {}
+                }
+                if ( this._countEventinCell[params.row][date_start_grid] == null ) {
+                    this._countEventinCell[params.row][date_start_grid] = 0
+                }
+                correction_y = this._countEventinCell[params.row][date_start_grid] * EventParams.height
+                this._countEventinCell[params.row][date_start_grid]++
                 
-                switch(this._config.scale) {
-                    case "month":
-                        correction_x = 6;
-                        date_start_grid = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-1";
-                        
-                        _evt_elem.html(`<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getDate()} : ${params.label}</div>`);
-                        break;
-                    case "day":
-                        correction_x = 0;
-                        date_start_grid = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate()+" 00:00";
-                        _evt_elem.html(`<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getHours()}:${date_start.getMinutes()} : ${params.label}</div>`);
-                        
-                        break;
-                    case "hour":
-                        correction_x = 0;
-                        date_start_grid = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate()+" "+date_start.getHours()+":00";
-                        _evt_elem.html(`<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getHours()}:${date_start.getMinutes()} : ${params.label}</div>`);
-                        
-                        break;
-                        
-                }
-                if(this._countEventinCell[params.row]==null) {
-                    this._countEventinCell[params.row] = {};
-                }
-                if(this._countEventinCell[params.row][date_start_grid]==null) {
-                    this._countEventinCell[params.row][date_start_grid] = 0;
-                }
-                correction_y = this._countEventinCell[params.row][date_start_grid]*EventParams.height;
-                this._countEventinCell[params.row][date_start_grid]++;
-                
-                if((this._countEventinCell[params.row][date_start_grid]*EventParams.height)> this._config.rowHeight) {
-                     this._config.rowHeight = this._countEventinCell[params.row][date_start_grid]*EventParams.height;
-                     this.reload(this._config);
+                if ( (this._countEventinCell[params.row][date_start_grid] * EventParams.height) > this._config.rowHeight ) {
+                     this._config.rowHeight = this._countEventinCell[params.row][date_start_grid] * EventParams.height
+                     this.reload( this._config )
                      //console.log("Reload : " + this._config.rowHeight);
                 }
                 
-                params.x = this._getCoordinateX(date_start_grid);
-                _evt_elem.css('top', `${this.numRound( params.y+correction_y, 2 )}px`);
-                _evt_elem.css('backgroundColor','transparent');
-                _evt_elem.css('color','black');
-                //_evt_elem.css('height', `12px`);
-                _evt_elem.css('left', `${this.numRound( params.x+correction_x, 2 )}px`);
-                _evt_elem.css('width', `${this._config.minGridSize}px`);
-                
+                params.x = this._getCoordinateX( date_start_grid )
+                _evt_elem.css( 'top', `${this.numRound( params.y+correction_y, 2 )}px` ).css( 'backgroundColor', 'transparent' )
+                .css( 'color', 'black' ).css( 'left', `${this.numRound( params.x+correction_x, 2 )}px` )
+                .css( 'width', `${this._config.minGridSize}px` )/* .css('height', `12px`) */
                 //return null
             } else {
+                let date_start = new Date( params.start ),
+                    date_end   = new Date( params.end ),
+                    date_test_grid, correction_y, date_test_grid_index
                 
-                let date_start = new Date(params.start);
-                let date_end = new Date(params.end);
-                let date_test_grid, correction_y, date_test_grid_index;
-                
-                
-                
-                
-                switch(this._config.scale) {
-                    case "month":
-                        date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-1";
-                        break;
-                    case "day":
-                        date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate() + " 00:00";
-
-                        break;
-                    case "hour":
-                        date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate() + " " + date_start.getHours()+":00";
-
-                        break;
+                switch ( true ) {
+                    case /^months?$/i.test( _opts.scale ):
+                        date_test_grid_index = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-1`
+                        break
+                    case /^(|week)days?$/i.test( _opts.scale ):
+                        date_test_grid_index = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-${date_start.getDate()} 00:00`
+                        break
+                    case /^hours?$/i.test( _opts.scale ):
+                        date_test_grid_index = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-${date_start.getDate()} ${date_start.getHours()}:00`
+                        break
                 }
-                if(this._countEventinCell[params.row]==null) {
-                    this._countEventinCell[params.row] = {};
+                if ( this._countEventinCell[params.row] == null ) {
+                    this._countEventinCell[params.row] = {}
                 }
-                if(this._countEventinCell[params.row][date_test_grid_index]==null) {
-                    this._countEventinCell[params.row][date_test_grid_index] = 0;
+                if ( this._countEventinCell[params.row][date_test_grid_index] == null ) {
+                    this._countEventinCell[params.row][date_test_grid_index] = 0
                 }
-                correction_y = this._countEventinCell[params.row][date_test_grid_index];
+                correction_y = this._countEventinCell[params.row][date_test_grid_index]
                 
                 // For all grid between start / end, search max Position Y
-                date_test_grid = date_start;
-                while(date_test_grid<=date_end) {
-                    
-                    switch(this._config.scale) {
-                        case "month":
-                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth()+1,1); 
-                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-1";
+                date_test_grid = date_start
+                while ( date_test_grid <= date_end ) {
+                    switch ( true ) {
+                        case /^months?$/i.test( _opts.scale ):
+                            date_test_grid = new Date( date_test_grid.getFullYear(), date_test_grid.getMonth() + 1, 1 )
+                            date_test_grid_index = `${date_test_grid.getFullYear()}-${(date_test_grid.getMonth() + 1)}-1`
                             break;
-                        case "day":
-                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate()+1); 
-                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate()  + " 00:00";
-                            
+                        case /^(|week)days?$/i.test( _opts.scale ):
+                            date_test_grid = new Date( date_test_grid.getFullYear(), date_test_grid.getMonth(), date_test_grid.getDate() + 1 )
+                            date_test_grid_index = `${date_test_grid.getFullYear()}-${(date_test_grid.getMonth() + 1)}-${date_test_grid.getDate()} 00:00`
                             break;
-                        case "hour":
-                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate(), date_test_grid.getHours()+1); 
-                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate() + " " + date_test_grid.getHours()+":00";
-                            
+                        case /^hours?$/i.test( _opts.scale ):
+                            date_test_grid = new Date( date_test_grid.getFullYear(), date_test_grid.getMonth(), date_test_grid.getDate(), date_test_grid.getHours() + 1 )
+                            date_test_grid_index = `${date_test_grid.getFullYear()}-${(date_test_grid.getMonth() + 1)}-${date_test_grid.getDate()} ${date_test_grid.getHours()}:00`
                             break;
                     }
                     
-                    if(this._countEventinCell[params.row]==null) {
-                        this._countEventinCell[params.row] = {};
+                    if ( this._countEventinCell[params.row] == null ) {
+                        this._countEventinCell[params.row] = {}
                     }
-                    if(this._countEventinCell[params.row][date_test_grid_index]==null) {
-                        this._countEventinCell[params.row][date_test_grid_index] = 0;
+                    if ( this._countEventinCell[params.row][date_test_grid_index] == null ) {
+                        this._countEventinCell[params.row][date_test_grid_index] = 0
                     }
-                    correction_y = Math.max(this._countEventinCell[params.row][date_test_grid_index],correction_y);
-                    
+                    correction_y = Math.max( this._countEventinCell[params.row][date_test_grid_index], correction_y )
                 }
                 
                 // set new position
-                correction_y++;
+                correction_y++
                 
-                switch(this._config.scale) {
-                        case "month":
-                            date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-1";
-                            break;
-                        case "day":
-                            date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate()+" 00:00";
-                            
-                            break;
-                        case "hour":
-                            date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate() + " " + date_start.getHours()+":00";
-                            
-                            break;
-                    }
+                switch ( true ) {
+                    case /^months?$/i.test( _opts.scale ):
+                        date_test_grid_index = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-1`
+                        break;
+                    case /^(|week)days?$/i.test( _opts.scale ):
+                        date_test_grid_index = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-${date_start.getDate()} 00:00`
+                        break;
+                    case /^hours?$/i.test( _opts.scale ):
+                        date_test_grid_index = `${date_start.getFullYear()}-${(date_start.getMonth() + 1)}-${date_start.getDate()} ${date_start.getHours()}:00`
+                        break;
+                }
                 this._countEventinCell[params.row][date_test_grid_index] = correction_y;
                 
                 // For all grid between start / end, set new Position Y
                 date_test_grid = date_start;
-                while(date_test_grid<=date_end) {
-                    
-                    switch(this._config.scale) {
-                        case "month":
-                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth()+1,1); 
-                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-1";
-                            break;
-                        case "day":
-                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate()+1); 
-                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate() + " 00:00";
-                            
-                            break;
-                        case "hour":
-                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate(), date_test_grid.getHours()+1); 
-                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate() + " " + date_test_grid.getHours()+":00";
-                            
-                            break;
+                while ( date_test_grid <= date_end ) {
+                    switch ( true ) {
+                        case /^months?$/i.test( _opts.scale ):
+                            date_test_grid = new Date( date_test_grid.getFullYear(), date_test_grid.getMonth() + 1, 1 )
+                            date_test_grid_index = `${date_test_grid.getFullYear()}-${(date_test_grid.getMonth() + 1)}-1`
+                            break
+                        case /^(|week)days?$/i.test( _opts.scale ):
+                            date_test_grid = new Date( date_test_grid.getFullYear(), date_test_grid.getMonth(), date_test_grid.getDate() + 1 )
+                            date_test_grid_index = `${date_test_grid.getFullYear()}-${(date_test_grid.getMonth() + 1)}-${date_test_grid.getDate()} 00:00`
+                            break
+                        case /^hours?$/i.test( _opts.scale ):
+                            date_test_grid = new Date( date_test_grid.getFullYear(), date_test_grid.getMonth(), date_test_grid.getDate(), date_test_grid.getHours() + 1 )
+                            date_test_grid_index = `${date_test_grid.getFullYear()}-${(date_test_grid.getMonth() + 1)}-${date_test_grid.getDate()} ${date_test_grid.getHours()}:00`
+                            break
                     }
                     
-                    if(this._countEventinCell[params.row]==null) {
-                        this._countEventinCell[params.row] = {};
+                    if ( this._countEventinCell[params.row] == null ) {
+                        this._countEventinCell[params.row] = {}
                     }
-                    if(this._countEventinCell[params.row][date_test_grid_index]==null) {
-                        this._countEventinCell[params.row][date_test_grid_index] = 0;
+                    if ( this._countEventinCell[params.row][date_test_grid_index] == null ) {
+                        this._countEventinCell[params.row][date_test_grid_index] = 0
                     }
                     
-                    this._countEventinCell[params.row][date_test_grid_index] = correction_y;
-                    
+                    this._countEventinCell[params.row][date_test_grid_index] = correction_y
                 }
                 
-                if(((correction_y)*EventParams.height)> this._config.rowHeight) {
-                     this._config.rowHeight = (correction_y)*EventParams.height;
-                     this.reload(this._config);
+                if ( ( correction_y * EventParams.height ) > this._config.rowHeight ) {
+                     this._config.rowHeight = correction_y * EventParams.height
+                     this.reload( this._config )
                 }
-                _evt_elem.css('top', `${this.numRound( params.y+((correction_y-1)*EventParams.height), 2 )}px`);
-                _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
-                _evt_elem.css("border", "1px solid " + EventParams.bdColor);
+                _evt_elem.css( 'top', `${this.numRound( params.y + ( (correction_y - 1) * EventParams.height ), 2 )}px` )
+                .css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` ).css( 'border', `1px solid ${EventParams.bdColor}` )
             }
             // add new since v2.0.0 : end
             
@@ -1985,7 +1952,7 @@ class Timeline {
                 if ( _prop === 'toggle' && [ 'popover', 'tooltip' ].includes( params.extend[_prop] ) ) {
                     // for bootstrap's popover or tooltip
                     _evt_elem.attr( 'title', params.label )
-                    if ( ! params.extend.hasOwnProperty( 'content' ) ) {
+                    if ( ! Object.hasOwnProperty.call( params.extend, 'content' ) ) {
                         _evt_elem.attr( 'data-content', params.content )
                     }
                 }
@@ -2031,14 +1998,14 @@ class Timeline {
      * @private: Draw the relational lines
      */
     _drawRelationLine( events ) {
-        let _opts         = this._config,
-            _props        = this._instanceProps,
+        // let _opts         = this._config,
+        let _props        = this._instanceProps,
             _canvas       = $(this._element).find( Selector.TIMELINE_RELATION_LINES ),
             ctx_relations = _canvas[0].getContext('2d'),
             drawLine      = ( _sx, _sy, _ex, _ey, evt, _ba ) => {
                 let _curveType = {},
-                    _radius    = this.numRound( Math.min( _props.scaleSize, _props.rowSize ) / 2, 2 ),
-                    _subRadius = this.numRound( this._getPointerSize( evt.size, _opts.marginHeight ) / 2, 2 )
+                    _radius    = this.numRound( Math.min( _props.scaleSize, _props.rowSize ) / 2, 2 )//,
+                    // _subRadius = this.numRound( this._getPointerSize( evt.size, _opts.marginHeight ) / 2, 2 )
                 
                 // Defaults
                 ctx_relations.strokeStyle = EventParams.bdColor
@@ -2228,7 +2195,7 @@ class Timeline {
                 _sx, _sy, _ex, _ey, 
                 _targetId, _targetEvent
             
-            if ( _rel.hasOwnProperty( 'before' ) ) {
+            if ( Object.hasOwnProperty.call( _rel, 'before' ) ) {
                 // before: targetEvent[ _ex, _ey ] <---- selfEvent[ _sx, _sy ]
                 // (:> before: 自分を起点（ _sx, _sy ）として左方向の連結点（ _ex, _ey ）へ向かう描画方式
                 _sx = _rel.x + this.numRound( evt.margin / 2, 2 )
@@ -2248,7 +2215,7 @@ class Timeline {
                     drawLine( _sx, _sy, _ex, _ey, evt, 'before' )
                 }
             }
-            if ( _rel.hasOwnProperty( 'after' ) ) {
+            if ( Object.hasOwnProperty.call( _rel, 'after' ) ) {
                 // after: selfEvent[ _sx, _sy ] ----> targetEvent[ _ex, _ey ]
                 // (:> after: 自分を起点（ _sx, _sy ）として右方向の連結点（ _ex, _ey ）へ向かう描画方式
                 _sx = _rel.x + this.numRound( evt.margin / 2, 2 )
@@ -2344,7 +2311,7 @@ class Timeline {
      */
     _scrollTimeline( event ) {
         this._debug( '_scrollTimeline@Event' )
-        let _elem = event.target
+        // let _elem = event.target
         
 //console.log( '!_scrollTimeline:', _elem.scrollLeft )
         
@@ -2382,7 +2349,7 @@ class Timeline {
     /*
      * @private: Event when touchend or mouseup from the timeline container
      */
-    _swipeEnd( event ) {
+    _swipeEnd() {
         if ( ! this._isTouched ) {
             return
         }
@@ -2551,17 +2518,17 @@ class Timeline {
         if ( this.is_empty( moveOpts ) ) {
             moveOpts = { scale: _opts.scale, range: _opts.range, shift: true }
         } else {
-            if ( ! moveOpts.hasOwnProperty('shift') || moveOpts.shift !== false ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'shift' ) || moveOpts.shift !== false ) {
                 moveOpts.shift = true
             }
-            if ( ! moveOpts.hasOwnProperty('scale') || ! this.verifyScale( moveOpts.scale ) ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'scale' ) || ! this.verifyScale( moveOpts.scale ) ) {
                 moveOpts.scale = _opts.scale
             }
-            if ( ! moveOpts.hasOwnProperty('range') || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'range' ) || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
                 moveOpts.range = _opts.range
             }
         }
-        _tmpDate   = new Date( _opts.startDatetime )
+        _tmpDate = new Date( _opts.startDatetime )
         switch ( true ) {
             case /^years?$/i.test( moveOpts.scale ):
                 begin_date = new Date( _tmpDate.setFullYear( _tmpDate.getFullYear() - parseInt( moveOpts.range, 10 ) ) )
@@ -2620,13 +2587,13 @@ class Timeline {
         if ( this.is_empty( moveOpts ) ) {
             moveOpts = { scale: _opts.scale, range: _opts.range, shift: true }
         } else {
-            if ( ! moveOpts.hasOwnProperty('shift') || moveOpts.shift !== false ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'shift' ) || moveOpts.shift !== false ) {
                 moveOpts.shift = true
             }
-            if ( ! moveOpts.hasOwnProperty('scale') || ! this.verifyScale( moveOpts.scale ) ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'scale' ) || ! this.verifyScale( moveOpts.scale ) ) {
                 moveOpts.scale = _opts.scale
             }
-            if ( ! moveOpts.hasOwnProperty('range') || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'range' ) || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
                 moveOpts.range = _opts.range
             }
         }
@@ -2869,7 +2836,7 @@ class Timeline {
                     condition.value = new RegExp( cond )
                     break
             }
-            _cacheEvents.forEach( ( evt, _idx ) => {
+            _cacheEvents.forEach( ( evt ) => {
                 let is_remove = false
                 
                 switch ( condition.type ) {
@@ -2951,7 +2918,7 @@ class Timeline {
                 _new_event = {}
             
             if ( ! this.is_empty( _old_event ) && ! this.is_empty( _upc_event ) ) {
-                if ( _upc_event.hasOwnProperty( 'uid' ) ) {
+                if ( Object.hasOwnProperty.call( _upc_event, 'uid' ) ) {
                     delete _upc_event.uid
                 }
                 _new_event = Object.assign( _new_event, _old_event, _upc_event )
@@ -3002,6 +2969,7 @@ class Timeline {
         this._isCached      = false
         this._isCompleted   = false
         this._instanceProps = {}
+        this._countEventinCell = {}
         
         $(_elem).empty().append( $default_evt )
         
@@ -3009,7 +2977,7 @@ class Timeline {
         
         this.showLoader()
         
-        if ( this._config.hasOwnProperty( 'moveScale' ) ) {
+        if ( Object.hasOwnProperty.call( this._config, 'moveScale' ) ) {
             _chk_scale = this._config.moveScale
             delete this._config.moveScale
         } else {
@@ -3064,23 +3032,23 @@ class Timeline {
     openEvent( event ) {
         this._debug( 'openEvent' )
         
-        let _that     = this,
-            _self     = event.target,
-            $viewer   = $(document).find( Selector.EVENT_VIEW ),
-            //eventId   = parseInt( $(_self).attr( 'id' ).replace( 'evt-', '' ), 10 ),
-            uid       = $(_self).data( 'uid' ),
-            //meta      = this.supplement( null, $(_self).data( 'meta' ) ),
-            callback  = this.supplement( null, $(_self).data( 'callback' ) )
-//console.log( '!openEvent:', _self, $viewer, eventId, uid, meta, callback )
+        let _that        = this,
+            _self        = event.target,
+            $viewer      = $(document).find( Selector.EVENT_VIEW ),
+            //eventId    = parseInt( $(_self).attr( 'id' ).replace( 'evt-', '' ), 10 ),
+            uid          = $(_self).data( 'uid' ),
+            //meta       = this.supplement( null, $(_self).data( 'meta' ) ),
+            callback     = this.supplement( null, $(_self).data( 'callback' ) ),
+            _cacheEvents = _that._loadToCache(),
+            _eventData   = _cacheEvents.find( ( event ) => event.uid === uid )
         
+//console.log( '!openEvent:', _self, $viewer, eventId, uid, meta, callback )
         if ( $viewer.length > 0 ) {
             $viewer.each(function() {
-                let _cacheEvents = _that._loadToCache(),
-                    _eventData   = _cacheEvents.find( ( event ) => event.uid === uid ),
-                    _label       = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
-                    _content     = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
-                    _meta        = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
-                    _image       = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER })
+                let _label   = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
+                    _content = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
+                    _meta    = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
+                    _image   = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER })
                 
 //console.log( '!openEvent:', $(this), $(_self).html(), _eventData.label )
                 
@@ -3113,6 +3081,8 @@ class Timeline {
             } catch ( e ) {
                 throw new TypeError( e )
             }
+        } else {
+            this._config.onOpenEvent( _eventData )
         }
     }
     
@@ -3144,7 +3114,7 @@ class Timeline {
                 let [ _scl, date_seed ] = ruler_item.split('-'),
                     scale                = this._filterScaleKeyName( _scl ),
                     min_grids            = scaleMap[scale].minGrids,
-                    begin_date, end_date, base_year, base_month, week_num, base_day, is_remapping, _tmpDate
+                    begin_date, end_date, base_year, week_num
 //console.log( '!zoomScale::getZoomScale:', ruler_item, '->', scale, ', ', date_seed, ', minGrid:', min_grids )
                 
                 switch ( true ) {
@@ -3163,12 +3133,11 @@ class Timeline {
                         begin_date = this.getCorrectDatetime( date_seed ).toString()
                         end_date   = new Date( this.modifyDate( begin_date, 1, 'month' ).getTime() - 1 ).toString()
                         break
-                    case /^week$/i.test( scale ): {
+                    case /^week$/i.test( scale ):
                         [ base_year, week_num ] = date_seed.split(',')
                         begin_date = this.getFirstDayOfWeek( week_num, base_year ).toString(),
                         end_date = new Date( this.modifyDate( begin_date, 7, 'day' ).getTime() - 1 ).toString()
                         break
-                    }
                     case /^day$/i.test( scale ):
                     case /^weekday$/i.test( scale ):
                         date_seed = 'weekday' === scale ? date_seed.substring( 0, date_seed.indexOf(',') ) : date_seed
@@ -3185,7 +3154,7 @@ class Timeline {
                         break
                 }
                 
-                scale = scaleMap.hasOwnProperty( scale ) ? scaleMap[scale].lower : scale
+                scale = Object.hasOwnProperty.call( scaleMap, scale ) ? scaleMap[scale].lower : scale
 //console.log( '!zoomScale::getZoomScale:', date_seed, ', to:', scale, ', beginDate:', begin_date, ', endDate:', end_date, ', minGrids:', min_grids )
                 return [ scale, begin_date, end_date, min_grids ]
             },
@@ -3203,7 +3172,7 @@ class Timeline {
             let _wrap = Math.ceil( ( $(this._element).find(Selector.TIMELINE_CONTAINER).width() - $(this._element).find(Selector.TIMELINE_SIDEBAR).width() ) / min_grids ),
                 _originMinGridSize
             
-            if ( ! this._config.hasOwnProperty( 'originMinGridSize' ) ) {
+            if ( ! Object.hasOwnProperty.call( this._config, 'originMinGridSize' ) ) {
                 // Keep an original minGridSize as cache
                 this._config.originMinGridSize = this._config.minGridSize
             }
@@ -3611,7 +3580,7 @@ class Timeline {
         let firstDayIndex  = this._config.firstDayOfWeek,
             targetDate     = this.getCorrectDatetime( datetime ),
             firstDayOfYear = this.getCorrectDatetime( `${targetDate.getFullYear()}/1/1` ),
-            firstWeekday   = firstDayOfYear.getDay(),
+            //firstWeekday   = firstDayOfYear.getDay(),
             targetDateStr  = targetDate.toDateString(),
             _weekNumber    = 1,
             _checkDate     = firstDayOfYear
@@ -3886,7 +3855,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 while ( _cy <= _ey ) {
                     _days = isLeapYear( new Date( _cy, 0, 1 ) ) ? 366 : 365
                     _cd = Math.ceil( _cy / 10 ) // decade of first ordinal
-                    if ( _m.hasOwnProperty( _cd ) ) {
+                    if ( Object.hasOwnProperty.call( _m, _cd ) ) {
                         _m[_cd] += _days
                     } else {
                         _m[_cd] = _days
@@ -3908,7 +3877,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 while ( _cy <= _ey ) {
                     _days = isLeapYear( new Date( _cy, 0, 1 ) ) ? 366 : 365
                     _cl = Math.ceil( _cy / 5 ) // lustrum of first ordinal
-                    if ( _m.hasOwnProperty( _cl ) ) {
+                    if ( Object.hasOwnProperty.call( _m, _cl ) ) {
                         _m[_cl] += _days
                     } else {
                         _m[_cl] = _days
@@ -3976,7 +3945,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _cw = this.getWeek( _cd )
                     let _newWeekKey = `${_cd.getFullYear()},${_cw}`
                     
-                    if ( _m.hasOwnProperty( _newWeekKey ) ) {
+                    if ( Object.hasOwnProperty.call( _m, _newWeekKey ) ) {
                         _m[_newWeekKey] += ( _nd - _cd ) / ( 60 * 60 * 1000 )
                     } else {
                         _m[_newWeekKey] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
@@ -3989,8 +3958,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // return { "year/month/day": hours,... }
                 let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
                     _nd = new Date( _cd ),
-                    _pd = new Date( _cd ),
-                    _id = 0
+                    _pd = new Date( _cd )
                 
                 _nd.setDate( _nd.getDate() + 1 )
                 _pd.setDate( _pd.getDate() - 1 )
@@ -3999,7 +3967,6 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _nd.setDate( _nd.getDate() + 1 )
                     _cd.setDate( _cd.getDate() + 1 )
                     _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
-                    _id++
                 }
                 retval = _m
                 break
@@ -4008,8 +3975,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // return { "year/month/day hour": minutes,... }
                 let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours() ),
                     _nd = new Date( _cd ),
-                    _pd = new Date( _cd ),
-                    _total = 0
+                    _pd = new Date( _cd )
                 
                 _nd.setHours( _nd.getHours() + 1 )
                 _pd.setHours( _pd.getHours() - 1 )
@@ -4018,19 +3984,15 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _nd.setHours( _nd.getHours() + 1 )
                     _cd.setHours( _cd.getHours() + 1 )
                     _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}`] = ( _nd - _cd ) / ( 60 * 1000 )
-                    _total += _nd - _cd // nearly equal diffMS
                 }
                 retval = _m
-                // return number of hours
-                // retval = Math.ceil( diffMS / ( 60 * 60 * 1000 ) )
                 break
             }
             case /^minutes?$/i.test( scale ): {
                 // return { "year/month/day hour:minute": seconds,... }
                 let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours(), _bd.getMinutes() ),
                     _nd = new Date( _cd ),
-                    _pd = new Date( _cd ),
-                    _total = 0
+                    _pd = new Date( _cd )
                 
                 _nd.setMinutes( _nd.getMinutes() + 1 )
                 _pd.setMinutes( _pd.getMinutes() - 1 )
@@ -4039,19 +4001,15 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _nd.setMinutes( _nd.getMinutes() + 1 )
                     _cd.setMinutes( _cd.getMinutes() + 1 )
                     _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}`] = ( _nd - _cd ) / 1000
-                    _total += _nd - _cd // nearly equal diffMS
                 }
                 retval = _m
-                // return number of minutes
-                // retval = Math.ceil( diffMS / ( 60 * 1000 ) )
                 break
             }
             case /^seconds?$/i.test( scale ): {
                 // return { "year/month/day hour:minute:second": milliseconds,... }
                 let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours(), _bd.getMinutes(), _bd.getSeconds() ),
                     _nd = new Date( _cd ),
-                    _pd = new Date( _cd ),
-                    _total = 0
+                    _pd = new Date( _cd )
                 
                 _nd.setSeconds( _nd.getSeconds() + 1 )
                 _pd.setSeconds( _pd.getSeconds() - 1 )
@@ -4060,11 +4018,8 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _nd.setSeconds( _nd.getSeconds() + 1 )
                     _cd.setSeconds( _cd.getSeconds() + 1 )
                     _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}:${_cd.getSeconds()}`] = _nd - _cd
-                    _total += _nd - _cd // nearly equal diffMS
                 }
                 retval = _m
-                // return number of seconds
-                //retval = Math.ceil( diffMS / 1000 )
                 break
             }
             default:
@@ -4281,7 +4236,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 
                 return String( num ).length == digit ? String( num ) : ( zero + num ).substr( num * -1 )
             },
-            _prop, _temp, _str, _num, _year, _month, _week, _day
+            _prop, _temp, _str, _num, _year, _month, _week
         
         if ( this.is_empty( date_seed ) ) {
             return false
@@ -4317,7 +4272,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _temp = 5
                 }
                 _num = this.numRound( _year / _temp, 0, 'ceil' )
-                if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
+                if ( Object.hasOwnProperty.call( options, scale ) && options[scale] === 'ordinal' ) {
                     locale_string = getOrdinal( _num )
                 } else {
                     locale_string = _num
@@ -4328,7 +4283,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 _temp = this.getCorrectDatetime( date_seed )
                 _year = _temp.getFullYear()
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
                             _options.year = options[scale]
                             locale_string = _temp.toLocaleString( locales, _options )
@@ -4353,7 +4308,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 _temp  = this.getCorrectDatetime( date_seed )
                 _month = _temp.getMonth() + 1
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit|narrow|short|long)$/i.test( options[scale] ) ) {
                             _options.month = options[scale]
                             locale_string  = _temp.toLocaleString( locales, _options )
@@ -4375,7 +4330,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 } else {
                     _week = this.getWeek( this.getCorrectDatetime( date_seed ) )
                 }
-                if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
+                if ( Object.hasOwnProperty.call( options, scale ) && options[scale] === 'ordinal' ) {
                     locale_string = getOrdinal( _week )
                 } else {
                     locale_string = _week
@@ -4391,7 +4346,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     _temp = this.getCorrectDatetime( date_seed )
                 }
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(narrow|short|long)$/i.test( options[scale] ) ) {
                             _options.weekday = options[scale]
                             locale_string = _temp.toLocaleString( locales, _options )
@@ -4417,7 +4372,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // Allowed value as format: 'numeric', '2-digit', 'ordinal'
                 _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
                             _options.day = options[scale]
                             locale_string = _temp.toLocaleString( locales, _options )
@@ -4437,7 +4392,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // Allowed value as format: 'numeric', '2-digit', 'fulltime'
                 _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
                             _options.hour = options[scale]
                         } else
@@ -4457,7 +4412,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // Allowed value as format: 'numeric', '2-digit', 'fulltime'
                 _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
                             _options.minute = options[scale]
                         } else
@@ -4477,7 +4432,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // Allowed value as format: 'numeric', '2-digit', 'fulltime'
                 _temp  = this.getCorrectDatetime( date_seed )
                 if ( is_toLocalString ) {
-                    if ( options.hasOwnProperty( scale ) ) {
+                    if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {
                             _options.second = options[scale]
                         } else
@@ -4497,7 +4452,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
             case /^millisec(|ond)s?$/i.test( scale ):
                 // Allowed value as format: 'narrow', 'numeric'
                 _temp = this.getCorrectDatetime( date_seed )
-                if ( options.hasOwnProperty( scale ) ) {
+                if ( Object.hasOwnProperty.call( options, scale ) ) {
                     if ( /^numeric$/i.test( options[scale] ) ) {
                         locale_string = parseInt( _temp.getMilliseconds(), 10 )
                     } else {
@@ -4510,7 +4465,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
 //console.log( `!getLocaleString::${scale}:`, date_seed, locales, options, _options, _has_options )
                 // Custom format
                 _temp = this.getCorrectDatetime( date_seed )
-                if ( options.hasOwnProperty( scale ) ) {
+                if ( Object.hasOwnProperty.call( options, scale ) ) {
                     locale_string = this.datetimeFormat( _temp, options[scale], locales )
                 }
                 locale_string = this.is_empty( locale_string ) ? _temp.toString() : locale_string
@@ -4689,7 +4644,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
      */
     compareValues( key, order = 'asc' ) {
         return ( a, b ) => {
-            if ( ! a.hasOwnProperty( key ) || ! b.hasOwnProperty( key ) ) {
+            if ( ! Object.hasOwnProperty.call( a, key ) || ! Object.hasOwnProperty.call( b, key ) ) {
                 return 0
             }
             
