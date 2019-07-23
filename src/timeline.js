@@ -3,10 +3,11 @@
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0b2
+ * Version: 2.0.0
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
+ * @contributor : Guillaume Bonnaire www.gbonnaire.fr
  */
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -14,7 +15,7 @@
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0b2"
+const VERSION            = "2.0.0"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -81,6 +82,10 @@ const Default = {
         horizontalGridStyle : 'dotted',
         verticalGridStyle : 'solid',
     },
+    startHour       : 0, // since v2.0.0
+    endHour         : 23, // since v2.0.0
+    setColorEvent   : function(event) {return null}, // since v2.0.0
+    onOpenEvent     : function(event) {}, // since v2.0.0
     rangeAlign      : "latest",
     loader          : "default",
     loadingMessage  : "",
@@ -128,15 +133,16 @@ const EventParams = {
     x         : 0,
     y         : Default.marginHeight,
     width     : Default.minGridSize,
-    height    : Default.rowHeight - Default.marginHeight * 2,
+    height    : Math.min( 20, Default.rowHeight - Default.marginHeight * 2 ), // since v2.0.0
     start     : '',
     end       : '',
     row       : 1,
     bgColor   : '#E7E7E7',
     color     : '#343A40',
-    bdColor   : '#6C757D',
+    bdColor   : '#D3D3D3', // since v2.0.0: orig #6C757D
     label     : '',
     content   : '',
+    category  : '', // since v2.0.0
     image     : '',
     margin    : Default.marginHeight,
     rangeMeta : '',
@@ -155,9 +161,9 @@ const Event = {
     CLICK_EVENT        : `click.open${EVENT_KEY}`,
     FOCUSIN_EVENT      : `focusin.event${EVENT_KEY}`,
     FOCUSOUT_EVENT     : `focusout.event${EVENT_KEY}`,
-    TOUCHSTART_TIMELINE: `touchstart.timeline${EVENT_KEY} mousedown.timeline${EVENT_KEY}`,
-    TOUCHMOVE_TIMELINE : `touchmove.timeline${EVENT_KEY} mousemove.timeline${EVENT_KEY}`,
-    TOUCHEND_TIMELINE  : `touchend.timeline${EVENT_KEY} mouseup.timeline${EVENT_KEY}`,
+    TOUCHSTART_TIMELINE: `mousedown.timeline${EVENT_KEY}`, // ignore touchstart.timeline${EVENT_KEY} since v2.0.0
+    TOUCHMOVE_TIMELINE : `mousemove.timeline${EVENT_KEY}`, // ignore touchmove.timeline${EVENT_KEY} since v2.0.0
+    TOUCHEND_TIMELINE  : `mouseup.timeline${EVENT_KEY}`, // ignore touchend.timeline${EVENT_KEY} since v2.0.0
     MOUSEENTER_POINTER : `mouseenter.pointer${EVENT_KEY}`,
     MOUSELEAVE_POINTER : `mouseleave.pointer${EVENT_KEY}`,
     ZOOMIN_SCALE       : `dblclick.zoom${EVENT_KEY}`
@@ -278,15 +284,16 @@ const Data = {
  */
 class Timeline {
     constructor( element, config ) {
-        this._config        = this._getConfig( config )
-        this._element       = element
-        this._selector      = null
-        this._isInitialized = false
-        this._isCached      = false
-        this._isCompleted   = false
-        this._isShown       = false
-        this._isTouched     = false
-        this._instanceProps = {}
+        this._config           = this._getConfig( config )
+        this._element          = element
+        this._selector         = null
+        this._isInitialized    = false
+        this._isCached         = false
+        this._isCompleted      = false
+        this._isShown          = false
+        this._isTouched        = false
+        this._instanceProps    = {}
+        this._countEventinCell = {} // since v2.0.0
         Data.setData( element, DATA_KEY, this )
     }
     
@@ -1414,8 +1421,8 @@ class Timeline {
                 lastEventId = Math.max( lastEventId, parseInt( _one_event.eventId, 10 ) )
             }
         })
-        // Set event id with auto increment (:> イベントIDを自動採番
-        let cacheIds = [] // for checking duplication of id (:> IDの重複チェック用
+        // Set event id with auto increment
+        let cacheIds = [] // for checking duplication of id
         events.forEach( ( _evt, _i, _this ) => {
             let _chkId = parseInt( _this[_i].eventId, 10 )
             
@@ -1525,6 +1532,16 @@ class Timeline {
      * @private: Get the coordinate X on the timeline of any date
      */
     _getCoordinateX( date ) {
+        // add new since v2.0.0 : start
+        if(this._config.scale=="day") {
+            var dateAdjust = new Date(date);
+            if(dateAdjust.getHours()<=this._config.startHour) {
+                date = dateAdjust.getFullYear() + "-" + (dateAdjust.getMonth()+1) + "-" + dateAdjust.getDate() + " 00:00";
+            } else if(dateAdjust.getHours()>=this._config.endHour) {
+                date = dateAdjust.getFullYear() + "-" + (dateAdjust.getMonth()+1) + "-" + dateAdjust.getDate() + " 23:59";
+            }
+        }
+        // add new since v2.0.0 : end
         let _props = this._instanceProps,
             _date  = this.supplement( null, this._getPluggableDatetime( date ) ),
             coordinate_x = 0
@@ -1621,6 +1638,11 @@ class Timeline {
         
         if ( events.length > 0 ) {
             _evt_container.empty()
+            // add new since v2.0.0 : start
+            events = events.sort(function (a, b){
+                return (a.width) < (b.width) ? 1 : -1;    
+            }); // sort elements
+            // add new since v2.0.0 : end
             events.forEach( ( _evt ) => {
                 let _evt_elem = this._createEventNode( _evt )
                 
@@ -1652,6 +1674,13 @@ class Timeline {
      * @private: Create an event element on the timeline (:> タイムライン上にイベント要素を作成する
      */
     _createEventNode( params ) {
+        // add new since v2.0.0 : start
+        let colorEvt = this._config.setColorEvent(params);
+        if(colorEvt!=null) {
+            params.color = colorEvt['color'];
+            params.bgColor = colorEvt['bgcolor'];
+        }
+        // add new since v2.0.0 : end
         let _opts     = this._config,
             _props    = this._instanceProps,
             _evt_elem = $('<div></div>', {
@@ -1696,6 +1725,9 @@ class Timeline {
                 } else {
                     // The event end datetime is after the timeline end datetime (event exceeded end datetime) (:> イベント終点がタイムラインの終点より後（終点超過イベント）
                     params.width = _props.fullwidth - params.x
+                    // add new since v2.0.0 : start
+                    _evt_elem.append("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-next glyphicon glyphicon-search glyphicon-chevron-right\" aria-hidden=\"true\"></span>");
+                    // add new since v2.0.0 : end
                 }
             } else {
                 // The event start datetime is after the timeline end datetime (exclude event) (:> イベント始点がタイムラインの終点より後（除外イベント）
@@ -1716,10 +1748,17 @@ class Timeline {
                     if ( params.x + params.width <= _props.fullwidth ) {
                         // The event end datetime is less than or equal the timeline end datetime (event exceeded start datetime) (:> イベント終点がタイムラインの終点以下（始点超過イベント）
                         params.width = Math.abs( params.x + params.width )
+                        // add new since v2.0.0 : start
+                        _evt_elem.prepend("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-before glyphicon glyphicon-search glyphicon-chevron-left\" aria-hidden=\"true\"></span>");
+                        // add new since v2.0.0 : end
                         params.x = 0
                     } else {
                         // The event end datetime is after the timeline end datetime (event exceeded both start and end datetime) (:> イベント終点がタイムラインの終点より後（始点・終点ともに超過イベント）
                         params.width = _props.fullwidth
+                        // add new since v2.0.0 : start
+                        _evt_elem.append("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-next glyphicon glyphicon-search glyphicon-chevron-right\" aria-hidden=\"true\"></span>");
+                        _evt_elem.prepend("<span class=\""+ClassName.TIMELINE_EVENT_NODE+"-before glyphicon glyphicon-search glyphicon-chevron-left\" aria-hidden=\"true\"></span>");
+                        // add new since v2.0.0 : end
                         params.x = 0
                     }
                 }
@@ -1745,10 +1784,186 @@ class Timeline {
             if ( params.width < 1 ) {
                 return null
             }
-            _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
+            // add new since v2.0.0 : start
+            // _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
+            if ( params.width < 15) {
+                // Create Event info on bullet point
+                let date_start = new Date(params.start);
+                let date_start_grid, correction_x, correction_y;
+                
+                
+                switch(this._config.scale) {
+                    case "month":
+                        correction_x = 6;
+                        date_start_grid = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-1";
+                        
+                        _evt_elem.html(`<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getDate()} : ${params.label}</div>`);
+                        break;
+                    case "day":
+                        correction_x = 0;
+                        date_start_grid = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate()+" 00:00";
+                        _evt_elem.html(`<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getHours()}:${date_start.getMinutes()} : ${params.label}</div>`);
+                        
+                        break;
+                    case "hour":
+                        correction_x = 0;
+                        date_start_grid = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate()+" "+date_start.getHours()+":00";
+                        _evt_elem.html(`<div class="${ClassName.TIMELINE_EVENT_LABEL}"><span style="border-radius:50%;background-color:${this.hexToRgbA( params.bgColor )}"> &nbsp; </span> ${date_start.getHours()}:${date_start.getMinutes()} : ${params.label}</div>`);
+                        
+                        break;
+                        
+                }
+                if(this._countEventinCell[params.row]==null) {
+                    this._countEventinCell[params.row] = {};
+                }
+                if(this._countEventinCell[params.row][date_start_grid]==null) {
+                    this._countEventinCell[params.row][date_start_grid] = 0;
+                }
+                correction_y = this._countEventinCell[params.row][date_start_grid]*EventParams.height;
+                this._countEventinCell[params.row][date_start_grid]++;
+                
+                if((this._countEventinCell[params.row][date_start_grid]*EventParams.height)> this._config.rowHeight) {
+                     this._config.rowHeight = this._countEventinCell[params.row][date_start_grid]*EventParams.height;
+                     this.reload(this._config);
+                     //console.log("Reload : " + this._config.rowHeight);
+                }
+                
+                params.x = this._getCoordinateX(date_start_grid);
+                _evt_elem.css('top', `${this.numRound( params.y+correction_y, 2 )}px`);
+                _evt_elem.css('backgroundColor','transparent');
+                _evt_elem.css('color','black');
+                //_evt_elem.css('height', `12px`);
+                _evt_elem.css('left', `${this.numRound( params.x+correction_x, 2 )}px`);
+                _evt_elem.css('width', `${this._config.minGridSize}px`);
+                
+                //return null
+            } else {
+                
+                let date_start = new Date(params.start);
+                let date_end = new Date(params.end);
+                let date_test_grid, correction_y, date_test_grid_index;
+                
+                
+                
+                
+                switch(this._config.scale) {
+                    case "month":
+                        date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-1";
+                        break;
+                    case "day":
+                        date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate() + " 00:00";
+
+                        break;
+                    case "hour":
+                        date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate() + " " + date_start.getHours()+":00";
+
+                        break;
+                }
+                if(this._countEventinCell[params.row]==null) {
+                    this._countEventinCell[params.row] = {};
+                }
+                if(this._countEventinCell[params.row][date_test_grid_index]==null) {
+                    this._countEventinCell[params.row][date_test_grid_index] = 0;
+                }
+                correction_y = this._countEventinCell[params.row][date_test_grid_index];
+                
+                // For all grid between start / end, search max Position Y
+                date_test_grid = date_start;
+                while(date_test_grid<=date_end) {
+                    
+                    switch(this._config.scale) {
+                        case "month":
+                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth()+1,1); 
+                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-1";
+                            break;
+                        case "day":
+                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate()+1); 
+                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate()  + " 00:00";
+                            
+                            break;
+                        case "hour":
+                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate(), date_test_grid.getHours()+1); 
+                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate() + " " + date_test_grid.getHours()+":00";
+                            
+                            break;
+                    }
+                    
+                    if(this._countEventinCell[params.row]==null) {
+                        this._countEventinCell[params.row] = {};
+                    }
+                    if(this._countEventinCell[params.row][date_test_grid_index]==null) {
+                        this._countEventinCell[params.row][date_test_grid_index] = 0;
+                    }
+                    correction_y = Math.max(this._countEventinCell[params.row][date_test_grid_index],correction_y);
+                    
+                }
+                
+                // set new position
+                correction_y++;
+                
+                switch(this._config.scale) {
+                        case "month":
+                            date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-1";
+                            break;
+                        case "day":
+                            date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate()+" 00:00";
+                            
+                            break;
+                        case "hour":
+                            date_test_grid_index = date_start.getFullYear()+"-"+(date_start.getMonth()+1)+"-"+date_start.getDate() + " " + date_start.getHours()+":00";
+                            
+                            break;
+                    }
+                this._countEventinCell[params.row][date_test_grid_index] = correction_y;
+                
+                // For all grid between start / end, set new Position Y
+                date_test_grid = date_start;
+                while(date_test_grid<=date_end) {
+                    
+                    switch(this._config.scale) {
+                        case "month":
+                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth()+1,1); 
+                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-1";
+                            break;
+                        case "day":
+                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate()+1); 
+                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate() + " 00:00";
+                            
+                            break;
+                        case "hour":
+                            date_test_grid = new Date(date_test_grid.getFullYear(),date_test_grid.getMonth(),date_test_grid.getDate(), date_test_grid.getHours()+1); 
+                            date_test_grid_index = date_test_grid.getFullYear()+"-"+(date_test_grid.getMonth()+1)+"-"+date_test_grid.getDate() + " " + date_test_grid.getHours()+":00";
+                            
+                            break;
+                    }
+                    
+                    if(this._countEventinCell[params.row]==null) {
+                        this._countEventinCell[params.row] = {};
+                    }
+                    if(this._countEventinCell[params.row][date_test_grid_index]==null) {
+                        this._countEventinCell[params.row][date_test_grid_index] = 0;
+                    }
+                    
+                    this._countEventinCell[params.row][date_test_grid_index] = correction_y;
+                    
+                }
+                
+                if(((correction_y)*EventParams.height)> this._config.rowHeight) {
+                     this._config.rowHeight = (correction_y)*EventParams.height;
+                     this.reload(this._config);
+                }
+                _evt_elem.css('top', `${this.numRound( params.y+((correction_y-1)*EventParams.height), 2 )}px`);
+                _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
+                _evt_elem.css("border", "1px solid " + EventParams.bdColor);
+            }
+            // add new since v2.0.0 : end
+            
         }
         
         _evt_elem.attr( 'data-uid', params.uid )
+        // add new since v2.0.0 : start
+        _evt_elem.attr( 'data-category', params.category);
+        // add new since v2.0.0 : end
         
         if ( ! this.is_empty( params.image ) ) {
             if ( ! _is_bar ) {
