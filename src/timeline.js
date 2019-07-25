@@ -1,5 +1,6 @@
-//import "core-js/stable";
-//import "regenerator-runtime/runtime";
+import "core-js/stable"
+import "regenerator-runtime/runtime"
+
 /*!
  * jQuery Timeline
  * ------------------------
@@ -1771,9 +1772,11 @@ class Timeline {
             .attr( 'data-base-size', _pointSize ).attr( 'data-base-left', _shiftX ).attr( 'data-base-top', _shiftY )
         } else {
             // If this event is the bar type
+            /*
             if ( params.width < 1 ) {
                 return null
             }
+            */
             // add new since v2.0.0 : start
             // _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
             if ( params.width < 15 ) {
