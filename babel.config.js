@@ -18,7 +18,7 @@ module.exports = function(api) {
                 },
                 useBuiltIns: 'usage',
                 corejs: { version: 3, proposals: true },
-                debug: true
+                debug: false
             }
         ]
     ];

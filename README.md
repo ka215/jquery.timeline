@@ -161,6 +161,12 @@ Donate URL: <https://ka215.github.io/jquery.timeline/donation.html>
 
 - <https://ka2.org/>
 
+## Contributors
+
+- Guillaume Bonnaire [www.gbonnaire.fr](https://www.gbonnaire.fr/)
+
+
+
 ## Copyright and license
 
 Code and documentation copyright 2011-2019 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).

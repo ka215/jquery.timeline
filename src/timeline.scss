@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 2.0.0b2
+ * Version: 2.0.0
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -559,7 +559,7 @@
  * Builtin Loader style
  * ----------------------------------------------------------------------------
  */
-#jqtl-loader {
+.jqtl-loader {
   position: absolute;
   display: block;
   top: 0;
@@ -573,8 +573,8 @@
 /* Wave Type */
 .jqtl-loading {
   position: relative;
-  top: calc(50% - 27px);
-  left: calc(50% - 15px);
+  top: 50%;
+  left: 50%;
   margin: auto;
 
   span {
@@ -630,57 +630,6 @@
     background: rgba(51, 51, 51, 0.15);
   }
 }
-
-/* Spinner Type
-.jqtl-loading {
-  font-size: 10px;
-  margin: auto;
-  text-indent: -9999em;
-  width: 11em;
-  height: 11em;
-  border-radius: 50%;
-  background: #ddd;
-  background: linear-gradient(to right, #ddd 10%, rgba(255, 255, 255, 0) 42%);
-  position: relative;
-  top: calc(50% - 5em);
-  animation: loader 1.4s infinite linear;
-  transform: translateZ(0);
-
-  &::before {
-    width: 50%;
-    height: 50%;
-    background: #ddd;
-    border-radius: 100% 0 0 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-    content: '';
-  }
-
-  &::after {
-    background: #fff;
-    width: 75%;
-    height: 75%;
-    border-radius: 50%;
-    content: '';
-    margin: auto;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-  }
-}
-
-@keyframes loader {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-*/
 
 /* ----------------------------------------------------------------------------
  * Others

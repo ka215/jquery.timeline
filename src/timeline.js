@@ -8,7 +8,6 @@ import "regenerator-runtime/runtime"
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
- * @contributor : Guillaume Bonnaire www.gbonnaire.fr
  */
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -22,7 +21,6 @@ const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
 const IS_TOUCH           = 'ontouchstart' in window
 const MIN_POINTER_SIZE   = 12
-const DEBUG_SLEEP        = 1500
 const JQUERY_NO_CONFLICT = $.fn[NAME]
 
 const Default = {
@@ -80,11 +78,20 @@ const Default = {
         presentTime : true,
         hoverEvent  : true,
         stripedGridRow : true,
-        horizontalGridStyle : 'dotted',
-        verticalGridStyle : 'solid',
+        horizontalGridStyle : "dotted",
+        verticalGridStyle : "solid",
     },
-    startHour       : 0, // Merge PR#37 since v2.0.0
-    endHour         : 23, // Merge PR#37 since v2.0.0
+    //startHour       : 0, // Merge PR#37 since v2.0.0
+    //endHour         : 23, // Merge PR#37 since v2.0.0
+    hourPeriod      : { // Added new option inspired from PR#37 since v2.0.0; Available only if the scale is "day"( or "week")
+        start       : 0,
+        end         : 23,
+    },
+    colorScheme     : { // Added new option since v2.0.0
+        eventText   : "#343A40",
+        eventBorder : "#6C757D",
+        eventBackground: "#E7E7E7",
+    },
     setColorEvent   : () => null, // Merge PR#37 since v2.0.0; (event) => null
     onOpenEvent     : () => null, // Merge PR#37 since v2.0.0; (event) => null
     rangeAlign      : "latest",
@@ -129,26 +136,26 @@ const LimitScaleGrids = {
 }
 
 const EventParams = {
-    uid       : '',
-    eventId   : '',
+    uid       : "",
+    eventId   : "",
     x         : 0,
     y         : Default.marginHeight,
     width     : Default.minGridSize,
-    height    : Math.min( 20, Default.rowHeight - Default.marginHeight * 2 ), // since v2.0.0
-    start     : '',
-    end       : '',
+    height    : Math.min( 20, Default.rowHeight - Default.marginHeight * 2 ), // Modified since v2.0.0
+    start     : "",
+    end       : "",
     row       : 1,
-    bgColor   : '#E7E7E7',
-    color     : '#343A40',
-    bdColor   : '#D3D3D3', // since v2.0.0: orig #6C757D
-    label     : '',
-    content   : '',
-    category  : '', // since v2.0.0
-    image     : '',
+    bgColor   : Default.colorScheme.eventBackground, // Modified since v2.0.0
+    color     : Default.colorScheme.eventText, // Modified since v2.0.0
+    bdColor   : Default.colorScheme.eventBorder, // Modified since v2.0.0
+    label     : "",
+    content   : "",
+    category  : "", // Added new option since v2.0.0
+    image     : "",
     margin    : Default.marginHeight,
-    rangeMeta : '',
-    size      : 'normal',
-    type      : '',
+    rangeMeta : "",
+    size      : "normal",
+    type      : "",
     extend    : {},
     remote    : false,
     relation  : {},
@@ -205,6 +212,7 @@ const ClassName = {
     OVERLAY                    : `${PREFIX}overlay`,
     ALIGN_SELF_RIGHT           : `${PREFIX}align-self-right`,
     PRESENT_TIME_MARKER        : `${PREFIX}present-time`,
+    LOADER_CONTAINER           : `${PREFIX}loader`,
     LOADER_ITEM                : `${PREFIX}loading`
 }
 
@@ -225,7 +233,7 @@ const Selector = {
     TIMELINE_SIDEBAR_ITEM     : `.${ClassName.TIMELINE_SIDEBAR_ITEM}`,
     TIMELINE_EVENT_NODE       : `.${ClassName.TIMELINE_EVENT_NODE}`,
     VIEWER_EVENT_TYPE_POINTER : `.${ClassName.VIEWER_EVENT_TYPE_POINTER}`,
-    LOADER                    : `#${PREFIX}loader`,
+    LOADER                    : `.${ClassName.LOADER_CONTAINER}`,
     DEFAULT_EVENTS            : ".timeline-events"
 }
 
@@ -294,6 +302,15 @@ class Timeline {
         this._isShown          = false
         this._isTouched        = false
         this._instanceProps    = {}
+        this._observer         = null // Added new since v2.0.0
+        /* c.f. https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+        this._observer = new MutationObserver(( mutations ) => {
+            mutations.forEach((mutation) => {
+                if ( mutation.type === 'childList' ) {
+                    do something...
+                }
+            })
+        }) */
         this._countEventinCell = {} // since v2.0.0
         Data.setData( element, DATA_KEY, this )
     }
@@ -528,6 +545,10 @@ class Timeline {
         if ( Object.hasOwnProperty.call( _opts.ruler, 'bottom' ) && Object.hasOwnProperty.call( _opts.ruler.bottom, 'lines' ) ) {
             _rulers = [..._rulers, ..._opts.ruler.bottom.lines].reduce( _callback, [] )
         }
+        if ( this.is_empty( _rulers ) ) {
+            _opts.ruler.top.lines.push( _opts.scale )
+            _rulers.push( _opts.scale )
+        }
         _props.rulers = _rulers
         
         this._instanceProps = _props // pre-cache
@@ -697,6 +718,7 @@ class Timeline {
                 return new Date( _tmpDate.getTime() + _offset )
             }
         
+console.log( '!_getPluggableDatetime::return:', key )
         switch ( true ) {
             case /^current(|ly)$/i.test( key ):
                 // now date
@@ -729,7 +751,7 @@ class Timeline {
             }
         }
         
-//console.log( '!_getPluggableDatetime::return:', _date )
+console.log( '!!_getPluggableDatetime::return:', _date )
         return _date.getTime()
     }
     
@@ -804,10 +826,10 @@ class Timeline {
         _tl_main.append( this._createEventContainer() )
         
         // Create the timeline ruler (:> タイムラインの目盛を生成
-        if ( ! this.is_empty( _opts.ruler.top ) ) {
+        if ( Object.hasOwnProperty.call( _opts.ruler, 'top' ) && Object.hasOwnProperty.call( _opts.ruler.top, 'lines' ) && ! this.is_empty( _opts.ruler.top.lines ) ) {
             _tl_main.prepend( this._createRuler( 'top' ) )
         }
-        if ( ! this.is_empty( _opts.ruler.bottom ) ) {
+        if ( Object.hasOwnProperty.call( _opts.ruler, 'bottom' ) && Object.hasOwnProperty.call( _opts.ruler.bottom, 'lines' ) && ! this.is_empty( _opts.ruler.bottom.lines ) ) {
             _tl_main.append( this._createRuler( 'bottom' ) )
         }
         
@@ -1626,8 +1648,19 @@ class Timeline {
             _opts           = this._config,
             _evt_container  = $(_elem).find( Selector.TIMELINE_EVENTS ),
             _relation_lines = $(_elem).find( Selector.TIMELINE_RELATION_LINES ),
-            events          = this._loadToCache(),
-            _sleep          = _opts.debug ? DEBUG_SLEEP : 1
+            events          = this._loadToCache()
+        
+        this._observer = new MutationObserver(( mutations ) => { // add since v2.0.0
+            mutations.forEach((mutation) => {
+                if ( mutation.type === 'attributes' && mutation.attributeName === 'data-state' ) {
+                    if ( $(mutation.target).attr('data-state') === 'done' ) {
+                        this.hideLoader()
+                        this._observer.disconnect()
+                    }
+                }
+            })
+        })
+        this._observer.observe( _evt_container.get(0), { attributes: true, subtree: true, attributeOldValue: true } )
         
         if ( events.length > 0 ) {
             _evt_container.empty()
@@ -1652,11 +1685,9 @@ class Timeline {
         }
         
 //console.log( '!_placeEvent:', _opts )
-        this.sleep( _sleep ).then(() => {
-            this.hideLoader()
-            _evt_container.fadeIn( 'fast', () => {
-                _relation_lines.fadeIn( 'fast' )
-            })
+        _evt_container.fadeIn( 'fast', () => {
+            _relation_lines.fadeIn( 'fast' )
+            _evt_container.attr('data-state', 'done')
         })
         
     }
@@ -2314,9 +2345,9 @@ class Timeline {
      */
     _scrollTimeline( event ) {
         this._debug( '_scrollTimeline@Event' )
-        // let _elem = event.target
+        let _elem = event.target
         
-//console.log( '!_scrollTimeline:', _elem.scrollLeft )
+console.log( '!_scrollTimeline:', _elem.scrollLeft )
         
     }
     
@@ -3197,9 +3228,9 @@ class Timeline {
             _opts       = this._config,
             _props      = this._instanceProps,
             _container  = $elem.find( Selector.TIMELINE_CONTAINER ),
-            _min_width  = _props.scaleSize * _props.grids,
+            _max_width  = _props.scaleSize * _props.grids,
             _min_height = _props.rowSize * _props.rows,
-            _loaderContainer = $('<div></div>', { id: 'jqtl-loader', style: `min-width:${_min_width}px;min-height:${_min_height}px;` }),
+            _loaderContainer = $('<div></div>', { class: 'jqtl-loader', style: `max-width:${_max_width}px;min-height:${_min_height}px;` }),
             _loaderContent   = null,
             _innerContent    = ''
         
@@ -3224,10 +3255,12 @@ class Timeline {
             _loaderContainer.append( _loaderContent )
             _container.append( _loaderContainer )
         } else {
-            $elem.find( Selector.LOADER ).css('width', '100%').css('height', '100%')
+            $elem.find( Selector.LOADER ).css({ width: '100%', height: '100%' })
         }
         // Show loader
-        $elem.find( Selector.LOADER ).show()
+        $elem.find( Selector.LOADER ).show('fast', () => {
+            $elem.find( Selector.LOADER ).attr('data-state', 'shown')
+        })
     }
     
     /*
@@ -3236,7 +3269,12 @@ class Timeline {
     hideLoader() {
         this._debug( 'hideLoader' )
         
-        $(this._element).find( Selector.LOADER ).hide()
+        let $elem   = $(this._element),
+            _loader = $elem.find( Selector.LOADER )
+        
+        _loader.hide('fast', () => {
+            _loader.attr('data-state', 'hidden')
+        })
     }
     
     
@@ -3369,36 +3407,6 @@ class Timeline {
         }
         
         return obj
-    }
-    
-    /*
-     * Await until next process at specific millisec
-     *
-     * @param int msec (optional; defaults to 1)
-     *
-     * @return void
-     */
-    sleep( msec = 1 ) {
-        return new Promise( ( resolve ) => {
-            setTimeout( resolve, msec )
-        })
-    }
-    
-    /*
-     * Exit the script
-     *
-     * @param bool exec (optional)
-     *
-     * @return void
-     */
-    exit( exec = true ) {
-        try {
-            if ( exec ) {
-                throw new Error( 'Exit the script.' )
-            }
-        } catch ( e ) {
-            console.warn( e.message )
-        }
     }
     
     /*

@@ -1192,13 +1192,14 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                 // Check others
                 'static-day': [ '2019/6/30', '2019/8/4', 'day', 24 * 2 ],
                 'today': [ _beginToday, new Date(_beginToday.getTime() + (24 * 60 * 60 * 1000 - 1)), 'hour', 60 ],
+                'period': [ '2019/8/2 9:00', '2019/8/2 18:00', 'hour', 60 ],
             },
-            datesetKey = 'today',
+            datesetKey = 'period',
             _begin = dateset[datesetKey].length > 0 ? dateset[datesetKey][0] : 'currently',
             _end   = dateset[datesetKey].length > 1 ? dateset[datesetKey][1] : 'auto',
             _scale = dateset[datesetKey].length > 2 ? dateset[datesetKey][2] : 'day',
             _mings = dateset[datesetKey].length > 3 ? dateset[datesetKey][3] : 44,
-            $jqtl = $el.Timeline({
+            defopts = {
                 type: 'mixed',
                 startDatetime: _begin,
                 endDatetime: _end,
@@ -1351,7 +1352,16 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                 rangeAlign: 'center',
                 zoom: true,
                 //debug: true,
-            }),
+            },
+            opts2 = {
+                ruler: {
+                    bottom: {
+                        lines: [ 'day' ]
+                    }
+                },
+            }
+        
+        let $jqtl = $el.Timeline( defopts ),
             timeline = $timeline.Constructor._getInstance( $jqtl[0] ),
             spy = sinon.spy( $timeline.Constructor.prototype, '_calcVars' )
         
