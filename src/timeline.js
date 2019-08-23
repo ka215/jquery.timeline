@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0
+ * Version: 2.0.0b3
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0"
+const VERSION            = "2.0.0b3"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -81,19 +81,24 @@ const Default = {
         horizontalGridStyle : "dotted",
         verticalGridStyle : "solid",
     },
-    //startHour       : 0, // Merge PR#37 since v2.0.0
-    //endHour         : 23, // Merge PR#37 since v2.0.0
-    hourPeriod      : { // Added new option inspired from PR#37 since v2.0.0; Available only if the scale is "day"( or "week")
+    //startHour       : 0, // Merge PR#37
+    //endHour         : 23, // Merge PR#37
+    /*
+    hourPeriod      : { // Added new option inspired from PR#37; Available only if the scale is "day"( or "week")
         start       : 0,
         end         : 23,
     },
+    */
     colorScheme     : { // Added new option since v2.0.0
-        eventText   : "#343A40",
-        eventBorder : "#6C757D",
-        eventBackground: "#E7E7E7",
+        event         : {
+            text        : "#343A40",
+            border      : "#6C757D",
+            background  : "#E7E7E7"
+        },
+        hookEventColors : () => null, // Added instead of merging setColorEvent of PR#37 since v2.0.0
     },
-    setColorEvent   : () => null, // Merge PR#37 since v2.0.0; (event) => null
-    onOpenEvent     : () => null, // Merge PR#37 since v2.0.0; (event) => null
+    // setColorEvent   : () => null, // Merge PR#37; (event) => null
+    // onOpenEvent     : () => null, // Merge PR#37; (event) => null
     rangeAlign      : "latest",
     loader          : "default",
     loadingMessage  : "",
@@ -141,13 +146,13 @@ const EventParams = {
     x         : 0,
     y         : Default.marginHeight,
     width     : Default.minGridSize,
-    height    : Math.min( 20, Default.rowHeight - Default.marginHeight * 2 ), // Modified since v2.0.0
+    height    : Default.rowHeight - Default.marginHeight * 2,
     start     : "",
     end       : "",
     row       : 1,
-    bgColor   : Default.colorScheme.eventBackground, // Modified since v2.0.0
-    color     : Default.colorScheme.eventText, // Modified since v2.0.0
-    bdColor   : Default.colorScheme.eventBorder, // Modified since v2.0.0
+    bgColor   : Default.colorScheme.event.background, // Modified since v2.0.0
+    color     : Default.colorScheme.event.text, // Modified since v2.0.0
+    bdColor   : Default.colorScheme.event.border, // Modified since v2.0.0
     label     : "",
     content   : "",
     category  : "", // Added new option since v2.0.0
@@ -303,14 +308,6 @@ class Timeline {
         this._isTouched        = false
         this._instanceProps    = {}
         this._observer         = null // Added new since v2.0.0
-        /* c.f. https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
-        this._observer = new MutationObserver(( mutations ) => {
-            mutations.forEach((mutation) => {
-                if ( mutation.type === 'childList' ) {
-                    do something...
-                }
-            })
-        }) */
         this._countEventinCell = {} // since v2.0.0
         Data.setData( element, DATA_KEY, this )
     }
@@ -399,7 +396,7 @@ class Timeline {
     /*
      * @private: Initialize the plugin
      */
-    _init() {
+    async _init() {
         this._debug( '_init' )
         
         let _elem       = this._element,
@@ -426,7 +423,7 @@ class Timeline {
         }
         
         if ( this._isCached ) {
-            this._placeEvent()
+            await this._placeEvent()
         }
         
         // Assign events for the timeline
@@ -486,6 +483,8 @@ class Timeline {
         )
         
         this._isCompleted = true
+        
+        await this.hideLoader()
         
         this.alignment()
         
@@ -718,7 +717,7 @@ class Timeline {
                 return new Date( _tmpDate.getTime() + _offset )
             }
         
-console.log( '!_getPluggableDatetime::return:', key )
+//console.log( '!_getPluggableDatetime::return:', key )
         switch ( true ) {
             case /^current(|ly)$/i.test( key ):
                 // now date
@@ -751,7 +750,7 @@ console.log( '!_getPluggableDatetime::return:', key )
             }
         }
         
-console.log( '!!_getPluggableDatetime::return:', _date )
+//console.log( '!!_getPluggableDatetime::return:', _date )
         return _date.getTime()
     }
     
@@ -1393,7 +1392,8 @@ console.log( '!!_getPluggableDatetime::return:', _date )
         
         let _that           = this,
             _elem           = this._element,
-            _default_events = this._config.eventData,
+            _opts           = this._config,
+            _default_events = _opts.eventData,
             _event_list     = $(_elem).find( Selector.DEFAULT_EVENTS ),
             _cnt            = _default_events.length,
             events          = [],
@@ -1448,6 +1448,36 @@ console.log( '!!_getPluggableDatetime::return:', _date )
             cacheIds.push( _this[_i].eventId )
         })
         
+        // Hook to event colors; Added instead of merging setColorEvent of PR#37
+        events.forEach( ( _evt, _i, _this ) => {
+            if ( Object.hasOwnProperty.call( _opts.colorScheme, 'event' ) && typeof _opts.colorScheme.event === 'object' ) {
+                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'text' ) && _evt.color !== _opts.colorScheme.event.text ) {
+                    _this[_i].color = _opts.colorScheme.event.text
+                }
+                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'background' ) && _evt.bgColor !== _opts.colorScheme.event.background ) {
+                    _this[_i].bgColor = _opts.colorScheme.event.background
+                }
+                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'border' ) && _evt.bdColor !== _opts.colorScheme.event.border ) {
+                    _this[_i].bdColor = _opts.colorScheme.event.border
+                }
+            }
+            if ( Object.hasOwnProperty.call( _opts.colorScheme, 'hookEventColors' ) && typeof _opts.colorScheme.hookEventColors === 'function' ) {
+                let _new_colors = _opts.colorScheme.hookEventColors( _evt, _opts.colorScheme.event ) || undefined
+                
+                if ( typeof _new_colors === 'object' ) {
+                    if ( Object.hasOwnProperty.call( _new_colors, 'text' ) && _evt.color !== _new_colors.text ) {
+                        _this[_i].color = _new_colors.text
+                    }
+                    if ( Object.hasOwnProperty.call( _new_colors, 'background' ) && _evt.bgColor !== _new_colors.background ) {
+                        _this[_i].bgColor = _new_colors.background
+                    }
+                    if ( Object.hasOwnProperty.call( _new_colors, 'border' ) && _evt.bdColor !== _new_colors.border ) {
+                        _this[_i].bdColor = _new_colors.border
+                    }
+                }
+            }
+        })
+        
         this._isCached = this._saveToCache( events )
         
     }
@@ -1467,7 +1497,7 @@ console.log( '!!_getPluggableDatetime::return:', _date )
             },
             _relation = {},
             _x, _w, _row, _c //, _pointSize
-//console.log( '!_registerEventData:', _opts, params )
+//console.log( '!_registerEventData:', EventParams, new_event )
         
         if ( Object.hasOwnProperty.call( params, 'start' ) && ! this.is_empty( params.start ) ) {
             _x = this._getCoordinateX( params.start )
@@ -1493,12 +1523,11 @@ console.log( '!!_getPluggableDatetime::return:', _date )
             _row = Object.hasOwnProperty.call( params, 'row' ) ? parseInt( params.row, 10 ) : 1
             _c = Math.floor( _row / 2 )
             new_event.y = ( _row - 1 ) * _opts.rowHeight + new_event.margin + _c
-//console.log( '!!_registerEventData::', new_event, 'C:', _c )
             
             Object.keys( new_event ).forEach( ( _prop ) => {
                 switch( true ) {
                     case /^eventId$/i.test( _prop ):
-                    if ( Object.hasOwnProperty.call( params, 'id' ) && this.is_empty( new_event.eventId ) ) {
+                        if ( Object.hasOwnProperty.call( params, 'id' ) ) {
                             new_event.eventId = parseInt( params.id, 10 )
                         } else {
                             new_event.eventId = parseInt( params[_prop], 10 ) || 0
@@ -1512,7 +1541,6 @@ console.log( '!!_getPluggableDatetime::return:', _date )
                         if ( $(event_element).children(`.event-${_prop}`).length > 0 ) {
                             new_event[_prop] = $(event_element).children(`.event-${_prop}`).html()
                         }
-//console.log( '!_registerEventData:', _prop, params[_prop], new_event[_prop] )
                         break
                     case /^relation$/i.test( _prop ):
                         // For drawing the relation line
@@ -1535,7 +1563,7 @@ console.log( '!!_getPluggableDatetime::return:', _date )
                         }
                         break
                 }
-            });
+            })
         }
 //console.log( '!_registerEventData:', new_event )
         return new_event
@@ -1545,6 +1573,7 @@ console.log( '!!_getPluggableDatetime::return:', _date )
      * @private: Get the coordinate X on the timeline of any date
      */
     _getCoordinateX( date ) {
+        /*
         // add new since v2.0.0 : start
         if ( this._config.scale === "day" ) {
             let dateAdjust = new Date( date )
@@ -1557,6 +1586,7 @@ console.log( '!!_getPluggableDatetime::return:', _date )
             }
         }
         // add new since v2.0.0 : end
+        */
         let _props = this._instanceProps,
             _date  = this.supplement( null, this._getPluggableDatetime( date ) ),
             coordinate_x = 0
@@ -1638,71 +1668,94 @@ console.log( '!!_getPluggableDatetime::return:', _date )
      * @private: Controller method to place event data on timeline
      */
     _placeEvent() {
-        this._debug( '_placeEvent' )
-        
-        if ( ! this._isCached ) {
-            return
-        }
-        
-        let _elem           = this._element,
-            _opts           = this._config,
-            _evt_container  = $(_elem).find( Selector.TIMELINE_EVENTS ),
-            _relation_lines = $(_elem).find( Selector.TIMELINE_RELATION_LINES ),
-            events          = this._loadToCache()
-        
-        this._observer = new MutationObserver(( mutations ) => { // add since v2.0.0
-            mutations.forEach((mutation) => {
-                if ( mutation.type === 'attributes' && mutation.attributeName === 'data-state' ) {
-                    if ( $(mutation.target).attr('data-state') === 'done' ) {
-                        this.hideLoader()
-                        this._observer.disconnect()
+        return new Promise(( resolve, reject ) => {
+            this._debug( '_placeEvent' )
+            
+            if ( ! this._isCached ) {
+                //return
+                reject('No Cached Event')
+            }
+            
+            let _elem           = this._element,
+                _opts           = this._config,
+                _evt_container  = $(_elem).find( Selector.TIMELINE_EVENTS ),
+                _relation_lines = $(_elem).find( Selector.TIMELINE_RELATION_LINES ),
+                events          = this._loadToCache(),
+                placedEvents    = []
+            
+            // c.f. https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+            this._observer = new MutationObserver(( mutations ) => {
+                mutations.forEach((mutation) => {
+                    let _self = mutation.target
+                    
+                    switch( mutation.type ) {
+                        case 'childList':
+                            // console.log( 'MutationObserver::childList:', mutation.addedNodes.length, placedEvents.length )
+                            if ( mutation.addedNodes.length == placedEvents.length ) {
+                                _relation_lines.attr( 'data-state', 'show' )
+                                _evt_container.attr( 'data-state', 'show' )
+                            }
+                            break;
+                        case 'attributes':
+                            if ( mutation.attributeName === 'data-state' ) {
+                                // console.log( 'MutationObserver::attributes:', $(_self).attr('data-state') )
+                                if ( $(_self).attr('data-state') === 'shown' ) {
+                                    resolve('Completed Placing')
+                                } else
+                                if ( $(_self).attr('data-state') === 'show' ) {
+                                    setTimeout(() => {
+                                        _evt_container.attr( 'data-state', 'shown' )
+                                    }, 300)
+                                }
+                            }
+                            break;
                     }
-                }
+                })
             })
-        })
-        this._observer.observe( _evt_container.get(0), { attributes: true, subtree: true, attributeOldValue: true } )
-        
-        if ( events.length > 0 ) {
-            _evt_container.empty()
-            // add new since v2.0.0 : start
-            events = events.sort( (a, b) => a.width < b.width ? 1 : -1 ) // sort elements
-            // add new since v2.0.0 : end
-            events.forEach( ( _evt ) => {
-                let _evt_elem = this._createEventNode( _evt )
-                
-                if ( _evt_elem ) {
-                    _evt_container.append( _evt_elem )
+            this._observer.observe( _evt_container.get(0), { childList: true, attributes: true, subtree: true, attributeOldValue: true } )
+            
+            if ( events.length > 0 ) {
+                _evt_container.empty()
+                /*
+                // add new since v2.0.0 : start
+                events = events.sort( (a, b) => a.width < b.width ? 1 : -1 ) // sort elements
+                // add new since v2.0.0 : end
+                */
+                events.forEach( ( _evt ) => {
+                    let _evt_elem = this._createEventNode( _evt )
+                    
+                    if ( _evt_elem ) {
+                        //_evt_container.append( _evt_elem )
+                        placedEvents.push( _evt_elem )
+                    }
+                })
+                if ( placedEvents.length > 0 ) {
+                    _evt_container.append( ...placedEvents )
                 }
+            }
+            
+            if ( /^mix(|ed)$/i.test( _opts.type ) || /^point(|er)$/i.test( _opts.type ) ) {
+                this._drawRelationLine( events )
+            }
+            
+            if ( Object.hasOwnProperty.call( _opts.effects, 'presentTime' ) && _opts.effects.presentTime ) {
+                this._viewPresentTime()
+            }
+            
+            /*
+            _evt_container.fadeIn( 'fast', () => {
+                this.hideLoader()
+                _relation_lines.fadeIn( 'fast' )
+                _evt_container.attr('data-state', 'show')
             })
-        }
-        
-        if ( /^mix(|ed)$/i.test( _opts.type ) || /^point(|er)$/i.test( _opts.type ) ) {
-            this._drawRelationLine( events )
-        }
-        
-        if ( Object.hasOwnProperty.call( _opts.effects, 'presentTime' ) && _opts.effects.presentTime ) {
-            this._viewPresentTime()
-        }
-        
-//console.log( '!_placeEvent:', _opts )
-        _evt_container.fadeIn( 'fast', () => {
-            _relation_lines.fadeIn( 'fast' )
-            _evt_container.attr('data-state', 'done')
-        })
-        
+            */
+        })// return Promise
     }
     
     /*
      * @private: Create an event element on the timeline (:> タイムライン上にイベント要素を作成する
      */
     _createEventNode( params ) {
-        // Merge PR#37 since v2.0.0 : Add setColorEvent for defined color with function
-        let colorEvt = this._config.setColorEvent( params )
-        if ( colorEvt != null ) {
-            params.color = colorEvt['color']
-            params.bgColor = colorEvt['bgcolor']
-        }
-        
         let _opts     = this._config,
             _props    = this._instanceProps,
             _evt_elem = $('<div></div>', {
@@ -1748,7 +1801,7 @@ console.log( '!!_getPluggableDatetime::return:', _date )
                     // The event end datetime is after the timeline end datetime (event exceeded end datetime) (:> イベント終点がタイムラインの終点より後（終点超過イベント）
                     params.width = _props.fullwidth - params.x
                     // add new since v2.0.0 : start
-                    _evt_elem.append( `<span class="${ClassName.TIMELINE_EVENT_NODE}-next glyphicon glyphicon-search glyphicon-chevron-right" aria-hidden="true"></span>` )
+                    //_evt_elem.append( `<span class="${ClassName.TIMELINE_EVENT_NODE}-next glyphicon glyphicon-search glyphicon-chevron-right" aria-hidden="true"></span>` )
                     // add new since v2.0.0 : end
                 }
             } else {
@@ -1771,15 +1824,15 @@ console.log( '!!_getPluggableDatetime::return:', _date )
                         // The event end datetime is less than or equal the timeline end datetime (event exceeded start datetime) (:> イベント終点がタイムラインの終点以下（始点超過イベント）
                         params.width = Math.abs( params.x + params.width )
                         // add new since v2.0.0 : start
-                        _evt_elem.prepend( `<span class="${ClassName.TIMELINE_EVENT_NODE}-before glyphicon glyphicon-search glyphicon-chevron-left" aria-hidden="true"></span>` )
+                        //_evt_elem.prepend( `<span class="${ClassName.TIMELINE_EVENT_NODE}-before glyphicon glyphicon-search glyphicon-chevron-left" aria-hidden="true"></span>` )
                         // add new since v2.0.0 : end
                         params.x = 0
                     } else {
                         // The event end datetime is after the timeline end datetime (event exceeded both start and end datetime) (:> イベント終点がタイムラインの終点より後（始点・終点ともに超過イベント）
                         params.width = _props.fullwidth
                         // add new since v2.0.0 : start
-                        _evt_elem.append( `<span class="${ClassName.TIMELINE_EVENT_NODE}-next glyphicon glyphicon-search glyphicon-chevron-right" aria-hidden="true"></span>` )
-                        _evt_elem.prepend( `<span class="${ClassName.TIMELINE_EVENT_NODE}-before glyphicon glyphicon-search glyphicon-chevron-left" aria-hidden="true"></span>` )
+                        //_evt_elem.append( `<span class="${ClassName.TIMELINE_EVENT_NODE}-next glyphicon glyphicon-search glyphicon-chevron-right" aria-hidden="true"></span>` )
+                        //_evt_elem.prepend( `<span class="${ClassName.TIMELINE_EVENT_NODE}-before glyphicon glyphicon-search glyphicon-chevron-left" aria-hidden="true"></span>` )
                         // add new since v2.0.0 : end
                         params.x = 0
                     }
@@ -1803,13 +1856,12 @@ console.log( '!!_getPluggableDatetime::return:', _date )
             .attr( 'data-base-size', _pointSize ).attr( 'data-base-left', _shiftX ).attr( 'data-base-top', _shiftY )
         } else {
             // If this event is the bar type
-            /*
             if ( params.width < 1 ) {
                 return null
             }
-            */
+            _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
+            /*
             // add new since v2.0.0 : start
-            // _evt_elem.css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` )
             if ( params.width < 15 ) {
                 // Create Event info on bullet point
                 let date_start = new Date( params.start ),
@@ -1853,7 +1905,7 @@ console.log( '!!_getPluggableDatetime::return:', _date )
                 params.x = this._getCoordinateX( date_start_grid )
                 _evt_elem.css( 'top', `${this.numRound( params.y+correction_y, 2 )}px` ).css( 'backgroundColor', 'transparent' )
                 .css( 'color', 'black' ).css( 'left', `${this.numRound( params.x+correction_x, 2 )}px` )
-                .css( 'width', `${this._config.minGridSize}px` )/* .css('height', `12px`) */
+                .css( 'width', `${this._config.minGridSize}px` ) // .css('height', `12px`)
                 //return null
             } else {
                 let date_start = new Date( params.start ),
@@ -1958,14 +2010,15 @@ console.log( '!!_getPluggableDatetime::return:', _date )
                 .css( 'left', `${params.x}px` ).css( 'width', `${params.width}px` ).css( 'border', `1px solid ${EventParams.bdColor}` )
             }
             // add new since v2.0.0 : end
-            
+            */
         }
         
         _evt_elem.attr( 'data-uid', params.uid )
+        /*
         // add new since v2.0.0 : start
         _evt_elem.attr( 'data-category', params.category);
         // add new since v2.0.0 : end
-        
+        */
         if ( ! this.is_empty( params.image ) ) {
             if ( ! _is_bar ) {
                 _evt_elem.css( 'background-image', `url(${params.image})` )
@@ -2345,10 +2398,10 @@ console.log( '!!_getPluggableDatetime::return:', _date )
      */
     _scrollTimeline( event ) {
         this._debug( '_scrollTimeline@Event' )
+        
         let _elem = event.target
         
-console.log( '!_scrollTimeline:', _elem.scrollLeft )
-        
+        this._debug( _elem.scrollLeft )
     }
     
     /*
@@ -2781,7 +2834,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
     /*
      * @public: Add new events to the rendered timeline object
      */
-    addEvent( ...args ) {
+    async addEvent( ...args ) {
         this._debug( 'addEvent' )
         
         let _args        = args[0],
@@ -2819,7 +2872,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
         
         this._saveToCache( _cacheEvents )
         
-        this._placeEvent()
+        await this._placeEvent()
         
         if ( callback ) {
             this._debug( 'Fired your callback function after replacing events.' )
@@ -2831,7 +2884,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
     /*
      * @public: Remove events from the currently timeline object
      */
-    removeEvent( ...args ) {
+    async removeEvent( ...args ) {
         this._debug( 'removeEvent' )
         
         let _args        = args[0],
@@ -2916,7 +2969,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
         //this._saveToCache( _cacheEvents )
         this._saveToCache( remainEvents )
         
-        this._placeEvent()
+        await this._placeEvent()
         
         if ( callback ) {
             this._debug( 'Fired your callback function after placing additional events.' )
@@ -2928,7 +2981,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
     /*
      * @public: Update events on the currently timeline object
      */
-    updateEvent( ...args ) {
+    async updateEvent( ...args ) {
         this._debug( 'updateEvent' )
         
         let _args        = args[0],
@@ -2968,7 +3021,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
         
         this._saveToCache( _cacheEvents )
         
-        this._placeEvent()
+        await this._placeEvent()
         
         if ( callback ) {
             this._debug( 'Fired your callback function after updating events.' )
@@ -2980,7 +3033,7 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
     /*
      * @public: Reload the timeline with overridable any options
      */
-    reload( ...args ) {
+    async reload( ...args ) {
         this._debug( 'reload' )
         
         let _args        = args[0],
@@ -3047,14 +3100,20 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
             this._loadEvent()
         }
         
-        this._placeEvent()
+        await this._placeEvent()
         
         this._isCompleted = true
+        
+        await this.hideLoader()
         
         if ( callback ) {
             this._debug( 'Fired your callback function after reloading timeline.' )
             
             callback( this._element, this._config, userdata )
+        }
+        // Binding bs.popover
+        if ( $.fn['popover'] ) {
+            $('[data-toggle="popover"]').popover()
         }
     }
     
@@ -3258,22 +3317,28 @@ console.log( '!_scrollTimeline:', _elem.scrollLeft )
             $elem.find( Selector.LOADER ).css({ width: '100%', height: '100%' })
         }
         // Show loader
-        $elem.find( Selector.LOADER ).show('fast', () => {
-            $elem.find( Selector.LOADER ).attr('data-state', 'shown')
-        })
+        //$elem.find( Selector.LOADER ).show('fast', () => {
+        $elem.find( Selector.LOADER ).attr('data-state', 'show')
+        //})
     }
     
     /*
      * @public:  Hide the loader
      */
     hideLoader() {
+        return new Promise(( resolve ) => {
+        
         this._debug( 'hideLoader' )
         
         let $elem   = $(this._element),
             _loader = $elem.find( Selector.LOADER )
         
-        _loader.hide('fast', () => {
-            _loader.attr('data-state', 'hidden')
+        //_loader.hide('fast', () => {
+        _loader.attr('data-state', 'hide')
+        //})
+        setTimeout(() => {
+            resolve()
+        }, 300)
         })
     }
     

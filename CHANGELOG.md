@@ -1,15 +1,12 @@
 Change Log
 ---
 
-### v2.0.0 (July 23, 2019 GMT)
+### v2.0.0b3 (August 23, 2019 GMT)
 
-* for bar: Show bullet event in timeline for event width < 1, and change limit 1 to 15 (:> barの場合：イベント幅が1未満の場合はタイムラインに箇条書きイベントを表示し、制限1を15に変更
-* Add setColorEvent for defined color with function (:> 関数で定義色のsetColorEventを追加する
-* Add onOpenEvent for defined action in function in clicking on event (:> イベントをクリックして関数内の定義済みアクションのonOpenEventを追加
-* Add option to show period in period by startHour and endHour (for day in work who start to 8:00 to 18:00 for example) (:> startHourとendHourで期間を表示するオプションを追加します（たとえば、8：00〜18：00に始まる勤務日）。
-* Add bootstrap chevron for event out of period (:> 期間外のイベントにブートストラップシェブロンを追加
-* Add move Y position when most event in same cell (:> 同じセル内のほとんどのイベントでY位置の移動を追加
-* Add "Category" property on Event (:> イベントに "Category"プロパティを追加
+* Fixed a bug that occurred error if an option does not have the ruler settings when binding the Timeline.
+* Changed to use webpack for deploying the scripts.
+* Synchronized several internal processing during timeline initialization by the Promise.
+* Added the "colorScheme" option for setting the default color of every event. (by @Guillaume-Bo, [PR#37](/ka215/jquery.timeline/pull/37))
 
 ### v2.0.0b2 (July 7, 2019 GMT)
 
@@ -17,7 +14,7 @@ Change Log
 * Added the "truncateLowers" property in the ruler option to ignore outputting lower ruler scale than global scale.
 * Fixed the bug when zooming the scale.
 * Changed the default preloading animation to indicator type from strings type.
-* Added the "loadingMessage" option for using the custom loader content (by @Guillaume-Bo , [PR#37](/ka215/jquery.timeline/pull/37))
+* Added the "loadingMessage" option for using the custom loader content. (by @Guillaume-Bo, [PR#37](/ka215/jquery.timeline/pull/37))
 * Became to able to include the initial events to the plugin option by the "eventData" option.
 * Added the "mixed" type to be able to place the events of bar and point type together on the timeline.
 * Added some properties that "presentTime", "stripedGridRow", "horizontalGridStyle", "verticalGridStyle".

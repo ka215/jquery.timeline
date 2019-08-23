@@ -20,6 +20,7 @@ test/*.php
 *.swp
 *.vi
 *.zip
+*.stash
 *~
 package-lock.json
 yarn.lock

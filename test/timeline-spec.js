@@ -1160,8 +1160,21 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
     })
     
     // public methods
-    /* */
-    it ( 'bind timeline object:', () => {
+    /* Biding to test 1 */
+    it ( 'bind timeline with default options:', () => {
+        if ( ! isBrowser ) {
+            return
+        }
+        let $el = $('<div id="defaultTimeline"><ul class="timeline-events"></ul></div>'),
+            $jqtl = $el.Timeline(),
+            timeline = $timeline.Constructor._getInstance( $jqtl[0] )
+        
+        console.log( 'Opts:', timeline._config )
+        console.log( 'Props:', timeline._instanceProps )
+        $('#main-content').empty().append( $jqtl ).css('display', 'block')
+    })
+    /* Biding to test 2 */
+    it ( 'bind timeline with custom options:', () => {
         if ( ! isBrowser ) {
             return
         }
@@ -1192,7 +1205,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                 // Check others
                 'static-day': [ '2019/6/30', '2019/8/4', 'day', 24 * 2 ],
                 'today': [ _beginToday, new Date(_beginToday.getTime() + (24 * 60 * 60 * 1000 - 1)), 'hour', 60 ],
-                'period': [ '2019/8/2 9:00', '2019/8/2 18:00', 'hour', 60 ],
+                'period': [ '2019/8/23 9:00', '2019/8/23 18:00', 'hour', 60 * 2 ],
             },
             datesetKey = 'period',
             _begin = dateset[datesetKey].length > 0 ? dateset[datesetKey][0] : 'currently',
@@ -1240,13 +1253,13 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     truncateLowers : true, // T|F Ok
                     top: {
                         lines: [
-                            'millennia',
-                            'century',
-                            'decade',
-                            'lustrum',
+                            //'millennia',
+                            //'century',
+                            //'decade',
+                            //'lustrum',
                             'years',
                             'months',
-                            'weeks',
+                            //'weeks',
                             'days',
                             'weekdays',
                             'hours',
@@ -1314,6 +1327,14 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     horizontalGridStyle: 'none', // solid|dotted|none Ok
                     verticalGridStyle: 'dotted', // solid|dotted|none Ok
                 },
+                colorScheme: {
+                    event: {
+                        text: 'red',
+                        border: 'green',
+                        background: 'blue',
+                    },
+                    hookEventColors: ( event, defaults ) => { /* console.log( event ); */ if ( event.eventId == 29 ) { defaults.text = 'white'; }; return defaults; },
+                },
                 eventData: [
                     { start: '2019/7/7 0:00', end: '2019/7/8 23:59', label: 'Test-1', content: '7/7 0:00 - 7/8 23:59' }, // 1
                     { start: '2019/7/8 12:00', end: '2019/7/13 12:00', row: 2, label: 'Test-2', content: '7/8 12:00 - 7/13 12:00' }, // 2
@@ -1344,9 +1365,9 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     { start: '2019/10/27 1:15', end: '2019/10/27 1:45', row: 4, label: 'DST End 4', content: '10/27 1:15 - 10/27 1:45' }, // 25
                     { start: '2019/10/27 22:00', end: '2019/10/28 0:30', row: 5, label: 'DST End 5', content: '10/27 22:00 - 10/28 0:30' }, // 26
                     // PR#37
-                    { start: '2019-7-23 10:8:40', end: '2019-7-23 11:21:15', row: 1, label: 'Test-27' }, // 27
-                    { start: '2019-7-23 10:8:40', end: '2019-7-23 11:21:15', row: 1, label: 'Test-28' }, // 28
-                    { start: '2019-7-23 10:8:40', end: '2019-7-23 11:21:15', row: 1, label: 'Test-29' }, // 29
+                    { start: '2019-8-23 10:8:40', end: '2019-8-23 11:21:15', row: 1, label: 'Test-27' }, // 27
+                    { start: '2019-8-23 10:8:40', end: '2019-8-23 11:21:15', row: 1, label: 'Test-28' }, // 28
+                    { start: '2019-8-23 10:8:40', end: '2019-8-23 11:21:15', row: 1, label: 'Test-29' }, // 29
 
                 ],
                 rangeAlign: 'center',

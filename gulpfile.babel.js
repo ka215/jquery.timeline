@@ -1,7 +1,6 @@
 import {src, dest, parallel, series, watch} from 'gulp'
 
 import autoprefixer  from 'gulp-autoprefixer'
-import cleanCSS      from 'gulp-clean-css'
 import eslint        from 'gulp-eslint'
 import rename        from 'gulp-rename'
 import sass          from 'gulp-sass'
@@ -14,16 +13,18 @@ const configDev     = { mode: 'development', devtool: 'source-map', output: { fi
 const configProd    = { mode: 'production' }
 
 export const scripts = () => src('src/timeline.js')
-    .pipe(webpackStream( Object.assign( webpackConfig, configDev ), webpack, (err, stats) => {
-        console.error( err )
-        //console.log( stats )
+    .pipe(webpackStream( Object.assign( webpackConfig, configDev ), webpack, (err) => {
+        if ( err ) {
+            console.error( err )
+        }
     }))
     .pipe(dest('dist'))
 
 export const deploy_scripts = () => src('src/timeline.js')
-    .pipe(webpackStream( Object.assign( webpackConfig, configProd ), webpack, (err, stats ) => {
-        console.error( err )
-        //console.log( stats )
+    .pipe(webpackStream( Object.assign( webpackConfig, configProd ), webpack, (err) => {
+        if ( err ) {
+            console.error( err )
+        }
     }))
     .pipe(dest('dist'))
 
@@ -34,12 +35,8 @@ export const check = () => src('src/timeline.js')
 
 
 export const styles = () => src('src/timeline.scss')
-    //.pipe(sass.sync().on('error', sass.logError))
     .pipe(sourcemaps.init())
-    .pipe(sass().on('error', sass.logError))
-    .pipe(cleanCSS({compatibility: 'ie8'}))
-    .pipe(sourcemaps.write({includeContent: false}))
-    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(sass({outputStyle:'compressed'}))
     .pipe(autoprefixer())
     .pipe(rename('jquery.timeline.min.css'))
     .pipe(sourcemaps.write('.'))
@@ -47,8 +44,7 @@ export const styles = () => src('src/timeline.scss')
 
 
 export const deploy_styles = () => src('src/timeline.scss')
-    .pipe(sass().on('error', sass.logError))
-    .pipe(cleanCSS({compatibility: 'ie8'}))
+    .pipe(sass({outputStyle:'compressed'}))
     .pipe(autoprefixer())
     .pipe(rename('jquery.timeline.min.css'))
     .pipe(dest('dist'))
