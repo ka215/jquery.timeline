@@ -1,7 +1,7 @@
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 2.0.0b3
+ * Version: 2.0.0b4
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -246,14 +246,7 @@
   top: 0;
   width: 100%;
   height: 100%;
-  visibility: hidden;
-  opacity: 0;
   transition: all 0.3s;
-
-  &[data-state^=show] {
-    visibility: visible;
-    opacity: 1;
-  }
 }
 
 .jqtl-relation-lines {
@@ -261,7 +254,15 @@
 }
 
 .jqtl-events {
+  overflow-x: hidden;
+  visibility: hidden;
+  opacity: 0;
   z-index: 4;
+
+  &[data-state^=shown] {
+    visibility: visible;
+    opacity: 1;
+  }
 }
 
 /* ----------------------------------------------------------------------------
@@ -278,9 +279,11 @@
   padding-right: 0;
   border-radius: 2px;
   overflow: hidden;
+  visibility: visible;
+  opacity: 1;
   z-index: 7;
   cursor: pointer;
-  transition: all .5s ease;
+  transition: all 0.3s ease;
 
   &:not(.jqtl-event-type-pointer) {
     &.active {

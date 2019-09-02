@@ -1,6 +1,13 @@
 Change Log
 ---
 
+### v2.0.0b4 (September 2, 2019 GMT)
+
+* Changed the order of priority of overwriting to "hook function > event params > colorScheme.event object".
+* Fixed a bug that does not hide the loader when empty event.
+* Fixed a bug that does not overflow the event container.
+* Added optional option type definition to the documentation of an esdoc.
+
 ### v2.0.0b3 (August 23, 2019 GMT)
 
 * Fixed a bug that occurred error if an option does not have the ruler settings when binding the Timeline.

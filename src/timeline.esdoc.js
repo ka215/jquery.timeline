@@ -1,6 +1,6 @@
 /*!
  * Typedef for jQuery Timeline's ESDoc
- * @version: 2.0.0b3
+ * @version: 2.0.0b4
  */
 
 /** @type {string} [NAME="Timeline"] */
@@ -8,9 +8,7 @@
 /** @type {string} DATA_KEY */
 /** @type {string} EVENT_KEY */
 /** @type {string} PREFIX */
-/** @type {string} LOADING_MESSAGE */
 /** @type {number} MIN_POINTER_SIZE */
-/** @type {string} DATA_API_KEY */
 /** @type {Object} JQUERY_NO_CONFLICT */
 
 /**
@@ -108,8 +106,28 @@
  * @typedef {Object} Effects
  * @property {boolean} [presentTime=false] - Whether to show marking a present time on the timeline container.
  * @property {boolean} [hoverEvent=true] - Whether to show the effect when individual events on the timeline container are mouse over.
+ * @property {boolean} [stripedGridRow=true] - 
  * @property {string} [horizontalGridStyle="solid"] - The style of horizontal grid line on the Timeline container. possible values are "solid", "dotted", "none".
  * @property {string} [verticalGridStyle="solid"] - The style of vertical grid line on the Timeline container. possible values are "solid", "dotted", "none".
+ * @since 2.0.0
+ */
+
+/**
+ * Color scheme to overwrite defaults UI color of the event node
+ *
+ * @typedef {Object} EventColors
+ * @property {string} [text="#343A40"] - Defaults to text color of the event node
+ * @property {string} [border="#6C757D"] - Defaults to border color of the event node
+ * @property {string} [background="#E7E7E7"] - Defaults to background color of the event node
+ * @since 2.0.0
+ */
+
+/**
+ * An option to overwrite defaults UI color of all event nodes
+ *
+ * @typedef {Object} ColorScheme
+ * @property {EventColors} [event] - Color scheme to overwrite defaults UI color of the event node
+ * @property {function} [hookEventColors] - You can declare a function to set colors with referring the data each event node
  * @since 2.0.0
  */
 
@@ -118,7 +136,7 @@
  * Those defaults are overridden to undefined settings of the timeline configuration.
  *
  * @typedef {Object} Default
- * @property {string} [type="bar"] - View type of timeline event is either "bar" or "point"
+ * @property {string} [type="bar"] - View type of timeline event is either "bar" or "point" or "mixed"
  * @property {string} [scale="day"] - Timetable's minimum level scale is either "year", "month", "week", "day", "hour", "minute"
  * @property {string} [startDatetime="currently"] - Beginning date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "currently"
  * @property {string} [endDatetime="auto"] - Ending date time of timetable on the timeline. format is ( "^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$" ) or "auto"
@@ -137,8 +155,9 @@
  * @property {string} [loader="default"] - Custom loader definition, possible values are "default", false and selector of loader element
  * @property {boolean} [hideScrollbar=false] - Whether or not to display the scroll bar displayed when the width of the timeline overflows (even if it is set to non-display, it will not function depending on the browser)
  * @property {EventMeta} [eventMeta] - Display meta of range on event node when the timeline type is "bar"
- * @property {array.<Object>} [eventData] - 
- * @property {Effects} [effects] - 
+ * @property {array.<Object>} [eventData] - You can declare the events with object format as default events you want to place
+ * @property {Effects} [effects] - You can declare effective styles as view of the timeline object
+ * @property {ColorScheme} [colorScheme] - Can overwrite defaults UI color of the event nodes
  * @property {string} [storage="session"] - Specification of Web storage to cache event data, defaults to sessionStorage
  * @property {boolean} [reloadCacheKeep=true] - Whether to load cached events during reloading, the cache is discarded if false
  * @property {boolean} [zoom=false] - Whether to use the ability to zoom the scale of the timeline by double clicking on any scale on the ruler
@@ -197,6 +216,7 @@
  * @property {string} [bdColor="#6C757D"] - 
  * @property {string} [label] - 
  * @property {string} [content] - 
+ * @property {string} [category] - 
  * @property {string} [image] - 
  * @property {number} [margin] - 
  * @property {string} [rangeMeta] - 
@@ -218,6 +238,9 @@
  * @property {string} CLICK_EVENT
  * @property {string} FOCUSIN_EVENT
  * @property {string} FOCUSOUT_EVENT
+ * @property {string} TOUCHSTART_TIMELINE
+ * @property {string} TOUCHMOVE_TIMELINE
+ * @property {string} TOUCHEND_TIMELINE
  * @property {string} MOUSEENTER_POINTER
  * @property {string} MOUSELEAVE_POINTER
  * @property {string} ZOOMIN_SCALE
@@ -261,6 +284,8 @@
  * @property {string} STICKY_LEFT
  * @property {string} OVERLAY
  * @property {string} ALIGN_SELF_RIGHT
+ * @property {string} PRESENT_TIME_MARKER
+ * @property {string} LOADER_CONTAINER
  * @property {string} LOADER_ITEM
  * @since 2.0.0
  */
@@ -274,7 +299,9 @@
  * @property {string} RULER_TOP
  * @property {string} RULER_BOTTOM
  * @property {string} TIMELINE_CONTAINER
+ * @property {string} TIMELINE_MAIN
  * @property {string} TIMELINE_RULER_TOP
+ * @property {string} TIMELINE_EVENT_CONTAINER
  * @property {string} TIMELINE_RULER_BOTTOM
  * @property {string} TIMELINE_RULER_ITEM
  * @property {string} TIMELINE_RELATION_LINES
@@ -311,6 +338,8 @@ class Timeline {
         this._isShown       = false
         /** @type {Object} */
         this._instanceProps = {}
+        /** @type {?Object} */
+        this._observer      = null
     }
     
     // Getters

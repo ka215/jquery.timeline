@@ -1207,7 +1207,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                 'today': [ _beginToday, new Date(_beginToday.getTime() + (24 * 60 * 60 * 1000 - 1)), 'hour', 60 ],
                 'period': [ '2019/8/23 9:00', '2019/8/23 18:00', 'hour', 60 * 2 ],
             },
-            datesetKey = 'period',
+            datesetKey = 'today',
             _begin = dateset[datesetKey].length > 0 ? dateset[datesetKey][0] : 'currently',
             _end   = dateset[datesetKey].length > 1 ? dateset[datesetKey][1] : 'auto',
             _scale = dateset[datesetKey].length > 2 ? dateset[datesetKey][2] : 'day',
@@ -1368,7 +1368,9 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
                     { start: '2019-8-23 10:8:40', end: '2019-8-23 11:21:15', row: 1, label: 'Test-27' }, // 27
                     { start: '2019-8-23 10:8:40', end: '2019-8-23 11:21:15', row: 1, label: 'Test-28' }, // 28
                     { start: '2019-8-23 10:8:40', end: '2019-8-23 11:21:15', row: 1, label: 'Test-29' }, // 29
-
+                    // today
+                    { start: `${_beginToday.getFullYear()}/${_beginToday.getMonth()+1}/${_beginToday.getDate()} 8:30:00`, end: `${_beginToday.getFullYear()}/${_beginToday.getMonth()+1}/${_beginToday.getDate()} 17:30:00`, row: 1, label: 'Task Sample 1' }, // 30
+                    { start: `${_beginToday.getFullYear()}/${_beginToday.getMonth()+1}/${_beginToday.getDate()} 8:30:00`, end: `${_beginToday.getFullYear()}/${_beginToday.getMonth()+1}/${_beginToday.getDate()} 17:30:00`, row: 2, label: 'Task Sample 2', bgColor: 'orange', color: 'green', bdColor: 'blue' }, // 31
                 ],
                 rangeAlign: 'center',
                 zoom: true,

@@ -30,7 +30,10 @@
   <ul>
     
   <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/timeline.esdoc.js~Timeline.html">Timeline</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ColorScheme">ColorScheme</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Default">Default</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Effects">Effects</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventColors">EventColors</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventMeta">EventMeta</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventParams">EventParams</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Footer">Footer</a></span></span></li>
@@ -50,8 +53,9 @@
 
   <table border="0">
     <tr>
-    <td width="50%" align="center"><img src="./imgs/jquery.timeline_v2a1_bar.png" width="99%"></td>
-    <td width="50%" align="center"><img src="./imgs/jquery.timeline_v2a1_point.png" width="99%"></td>
+    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_bar.png" width="100%"></td>
+    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_point.png" width="100%"></td>
+    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_mixed.png" width="100%"></td>
     </tr>
   </table>
 
@@ -66,8 +70,13 @@
     <a href="https://ka2.org/">Blog</a>
   </p>
 <p></p>
-<p><a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE"><img src="https://img.shields.io/packagist/l/doctrine/orm.svg" alt="Packagist"></a></p>
+
 <p></p>
+<p><a href="https://travis-ci.org/ka215/jquery.timeline"><img src="https://travis-ci.org/ka215/jquery.timeline.svg?branch=master" alt="Build Status"></a>
+<img src="https://img.shields.io/david/ka215/jquery.timeline.svg" alt="David">
+<img src="https://img.shields.io/github/release/ka215/jquery.timeline.svg" alt="GitHub release">
+<img src="https://img.shields.io/github/downloads/ka215/jquery.timeline/total.svg" alt="GitHub All Releases">
+<a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE"><img src="https://img.shields.io/packagist/l/doctrine/orm.svg" alt="Packagist"></a></p>
 <p><br></p>
 <h2 id="table-of-contents">Table of Contents</h2><ul>
 <li><a href="#quick-start">Quick start</a></li>
@@ -82,10 +91,12 @@
 <li><a href="#copyright-and-license">Copyright and license</a></li>
 </ul>
 <h2 id="quick-start">Quick start</h2><p>Several quick start options are available:</p>
+<p><!-- - npm: `npm i jq-timeline` -->
+</p>
+<p><!-- - bower: `bower install jq-timeline` -->
+</p>
 <ul>
-<!-- li>npm: <code>npm i jquery-timeline</code></li -->
-<!-- li>bower: <code>bower install jquery-timeline</code></li -->
-<li><a href="https://github.com/ka215/jquery.timeline/archive/v2.0.0.zip">Download the latest release.</a></li>
+<li><a href="https://github.com/ka215/jquery.timeline/releases/download/v2.0.0b3/jquery.timeline.v2.0.0b4.zip">Download the latest release</a>.</li>
 <li>Clone the repository: <code>git clone https://github.com/ka215/jquery.timeline.git</code></li>
 </ul>
 <h2 id="what--39-s-included">What&apos;s included</h2><p>Within the download you&apos;ll find the following directories and files, logically grouping common assets and providing compiled and minified variations. You&apos;ll see something like this:</p>
@@ -93,16 +104,16 @@
 &#x2514;&#x2500;&#x2500; dist/
     &#x251C;&#x2500;&#x2500; jquery.timeline.min.css
     &#x2514;&#x2500;&#x2500; jquery.timeline.min.js</code>
-</code></pre><p>We provide compiled and minified CSS and JS (<code>jquery.timeline.min.*</code>).<br>
+</code></pre><p>We provide compiled and minified CSS and JS (<code>jquery.timeline.min.*</code>).
 When deployed by using task for develop, generated source maps (<code>jquery.timeline.*.map</code>) are available for use with certain browsers&apos; developer tools.</p>
 <h2 id="usage">Usage</h2><p>Include the installed files into your html:</p>
-<pre><code class="lang-HTML"><code class="source-code prettyprint">&lt;link rel="stylesheet" src="/path/to/jquery.timeline.min.css">
+<pre><code class="lang-HTML"><code class="source-code prettyprint">&#x3C;link rel="stylesheet" src="/path/to/jquery.timeline.min.css"&#x3E;
 
-&lt;script src="/path/to/jquery.timeline.min.js">&lt;/script></code>
+&#x3C;script src="/path/to/jquery.timeline.min.js"&#x3E;&#x3C;/script&#x3E;</code>
 </code></pre>
 <p>Note: You should include the jquery core script before including this plugin javascript file. Also we recommend that would like to add <code>defer</code> attribute into script tag.</p>
 <p>Bind this plugin in the scope had imported the jQuery:</p>
-<pre><code class="lang-JavaScript"><code class="source-code prettyprint">$("#myTimeline").Timeline()</code>
+<pre><code class="lang-JavaScript"><code class="source-code prettyprint">$(&apos;#myTimeline&apos;).Timeline()</code>
 </code></pre>
 <h2 id="supported-browsers">Supported browsers</h2><p>jQuery.Timeline version 2.x supports the following browsers:</p>
 <p><table>
@@ -146,19 +157,22 @@ When deployed by using task for develop, generated source maps (<code>jquery.tim
 <li>For v1.0.x: <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md">https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md</a></li>
 <li>For v1.0.x (Japanese): <a href="https://ka2.org/jquery-timeline-v1/">https://ka2.org/jquery-timeline-v1/</a></li>
 </ul>
-<h2 id="example-as-demonstration">Example as demonstration</h2>
-<ul>
+<h2 id="example-as-demonstration">Example as demonstration</h2><ul>
 <li><a href="https://ka2.org/jqtl-v2/">jQuery.Timeline Tester</a></li>
+<li><a href="https://ka2.org/jqtl-v2/demo1.php">Version 2.x Point Type Timeline DEMO</a></li>
 <li><a href="https://ka2.org/jqtl-v1/">Version 1.x demo</a></li>
 </ul>
 <h2 id="contributions">Contributions</h2><p>Your donations for plugin development will help us.</p>
 <p>Donate URL: <a href="https://ka215.github.io/jquery.timeline/donation.html">https://ka215.github.io/jquery.timeline/donation.html</a></p>
-<h2 id="creators">Creators</h2><dl>
-<dt><b>ka2</b> (Katsuhiko Maeno)</dt>
-<dd style="margin-left:1em;"><a href="https://ka2.org/">https://ka2.org/</a></dd>
-</dl>
+<h2 id="creators">Creators</h2><p><strong>ka2 (Katsuhiko Maeno)</strong></p>
+<ul>
+<li><a href="https://ka2.org/">https://ka2.org/</a></li>
+</ul>
+<h2 id="contributors">Contributors</h2><ul>
+<li>Guillaume Bonnaire <a href="https://www.gbonnaire.fr/">www.gbonnaire.fr</a></li>
+</ul>
 <h2 id="copyright-and-license">Copyright and license</h2><p>Code and documentation copyright 2011-2019 the <a href="https://ka2.org/">ka2</a>. Code released under the <a href="https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE">MIT License</a>.</p>
-</div>
+</h1></div>
 </div>
 
 <footer class="footer">

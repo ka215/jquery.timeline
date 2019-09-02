@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0b3
+ * Version: 2.0.0b4
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0b3"
+const VERSION            = "2.0.0b4"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -97,7 +97,6 @@ const Default = {
         },
         hookEventColors : () => null, // Added instead of merging setColorEvent of PR#37 since v2.0.0
     },
-    // setColorEvent   : () => null, // Merge PR#37; (event) => null
     // onOpenEvent     : () => null, // Merge PR#37; (event) => null
     rangeAlign      : "latest",
     loader          : "default",
@@ -308,7 +307,7 @@ class Timeline {
         this._isTouched        = false
         this._instanceProps    = {}
         this._observer         = null // Added new since v2.0.0
-        this._countEventinCell = {} // since v2.0.0
+        //this._countEventinCell = {} // since v2.0.0
         Data.setData( element, DATA_KEY, this )
     }
     
@@ -1451,18 +1450,20 @@ class Timeline {
         // Hook to event colors; Added instead of merging setColorEvent of PR#37
         events.forEach( ( _evt, _i, _this ) => {
             if ( Object.hasOwnProperty.call( _opts.colorScheme, 'event' ) && typeof _opts.colorScheme.event === 'object' ) {
-                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'text' ) && _evt.color !== _opts.colorScheme.event.text ) {
+                // Firstly overwrite default colors
+                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'text' ) && _evt.color === Default.colorScheme.event.text && Default.colorScheme.event.text !== _opts.colorScheme.event.text ) {
                     _this[_i].color = _opts.colorScheme.event.text
                 }
-                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'background' ) && _evt.bgColor !== _opts.colorScheme.event.background ) {
+                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'background' ) && _evt.bgColor === Default.colorScheme.event.background && Default.colorScheme.event.background !== _opts.colorScheme.event.background ) {
                     _this[_i].bgColor = _opts.colorScheme.event.background
                 }
-                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'border' ) && _evt.bdColor !== _opts.colorScheme.event.border ) {
+                if ( Object.hasOwnProperty.call( _opts.colorScheme.event, 'border' ) && _evt.bdColor === Default.colorScheme.event.border && Default.colorScheme.event.border !== _opts.colorScheme.event.border ) {
                     _this[_i].bdColor = _opts.colorScheme.event.border
                 }
             }
             if ( Object.hasOwnProperty.call( _opts.colorScheme, 'hookEventColors' ) && typeof _opts.colorScheme.hookEventColors === 'function' ) {
-                let _new_colors = _opts.colorScheme.hookEventColors( _evt, _opts.colorScheme.event ) || undefined
+                // Lastly, overwrite current colors
+                let _new_colors = _opts.colorScheme.hookEventColors( _evt, { text: _this[_i].color, border: _this[_i].bdColor, background: _this[_i].bgColor } ) || undefined
                 
                 if ( typeof _new_colors === 'object' ) {
                     if ( Object.hasOwnProperty.call( _new_colors, 'text' ) && _evt.color !== _new_colors.text ) {
@@ -1732,6 +1733,9 @@ class Timeline {
                 if ( placedEvents.length > 0 ) {
                     _evt_container.append( ...placedEvents )
                 }
+            } else {
+                _relation_lines.attr( 'data-state', 'show' )
+                _evt_container.attr( 'data-state', 'show' )
             }
             
             if ( /^mix(|ed)$/i.test( _opts.type ) || /^point(|er)$/i.test( _opts.type ) ) {
@@ -1742,13 +1746,6 @@ class Timeline {
                 this._viewPresentTime()
             }
             
-            /*
-            _evt_container.fadeIn( 'fast', () => {
-                this.hideLoader()
-                _relation_lines.fadeIn( 'fast' )
-                _evt_container.attr('data-state', 'show')
-            })
-            */
         })// return Promise
     }
     

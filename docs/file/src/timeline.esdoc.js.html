@@ -30,7 +30,10 @@
   <ul>
     
   <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/timeline.esdoc.js~Timeline.html">Timeline</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ColorScheme">ColorScheme</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Default">Default</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Effects">Effects</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventColors">EventColors</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventMeta">EventMeta</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-EventParams">EventParams</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Footer">Footer</a></span></span></li>
@@ -48,7 +51,7 @@
 <div class="content" data-ice="content"><h1 data-ice="title">src/timeline.esdoc.js</h1>
 <pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/*!
  * Typedef for jQuery Timeline&apos;s ESDoc
- * @version: 2.0.0
+ * @version: 2.0.0b4
  */
 
 /** @type {string} [NAME=&quot;Timeline&quot;] */
@@ -56,9 +59,7 @@
 /** @type {string} DATA_KEY */
 /** @type {string} EVENT_KEY */
 /** @type {string} PREFIX */
-/** @type {string} LOADING_MESSAGE */
 /** @type {number} MIN_POINTER_SIZE */
-/** @type {string} DATA_API_KEY */
 /** @type {Object} JQUERY_NO_CONFLICT */
 
 /**
@@ -75,12 +76,12 @@
  * @property {string} [formatMatcher] - 
  * @property {string} [weekday] - The representation of the weekday. Possible values are &quot;narrow&quot;, &quot;short&quot;, &quot;long&quot;.
  * @property {string} [era] - The representation of the era. Possible values are &quot;narrow&quot;, &quot;short&quot;, &quot;long&quot;.
- * @property {string} [year] - The representation of the year. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;.
+ * @property {string} [year] - The representation of the year. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;. Then an extended value by this plugin is &quot;zerofill&quot;.
  * @property {string} [month] - The representation of the month. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;, &quot;narrow&quot;, &quot;short&quot;, &quot;long&quot;.
- * @property {string} [day] - The representation of the day. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;.
- * @property {string} [hour] - The representation of the hour. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;.
- * @property {string} [minute] - The representation of the minute. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;.
- * @property {string} [second] - The representation of the second. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;.
+ * @property {string} [day] - The representation of the day. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;. Then an extended value by this plugin is &quot;ordinal&quot;.
+ * @property {string} [hour] - The representation of the hour. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;. Then an extended value by this plugin is &quot;fulltime&quot;.
+ * @property {string} [minute] - The representation of the minute. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;. Then an extended value by this plugin is &quot;fulltime&quot;.
+ * @property {string} [second] - The representation of the second. Possible values are &quot;numeric&quot;, &quot;2-digit&quot;. Then an extended value by this plugin is &quot;fulltime&quot;.
  * @property {string} [timeZoneName] - The representation of the time zone name. Possible values are &quot;short&quot;, &quot;long&quot;.
  */
 
@@ -151,11 +152,42 @@
  */
 
 /**
+ * Various effect settings to the timeline object displayed in the DOM
+ *
+ * @typedef {Object} Effects
+ * @property {boolean} [presentTime=false] - Whether to show marking a present time on the timeline container.
+ * @property {boolean} [hoverEvent=true] - Whether to show the effect when individual events on the timeline container are mouse over.
+ * @property {boolean} [stripedGridRow=true] - 
+ * @property {string} [horizontalGridStyle=&quot;solid&quot;] - The style of horizontal grid line on the Timeline container. possible values are &quot;solid&quot;, &quot;dotted&quot;, &quot;none&quot;.
+ * @property {string} [verticalGridStyle=&quot;solid&quot;] - The style of vertical grid line on the Timeline container. possible values are &quot;solid&quot;, &quot;dotted&quot;, &quot;none&quot;.
+ * @since 2.0.0
+ */
+
+/**
+ * Color scheme to overwrite defaults UI color of the event node
+ *
+ * @typedef {Object} EventColors
+ * @property {string} [text=&quot;#343A40&quot;] - Defaults to text color of the event node
+ * @property {string} [border=&quot;#6C757D&quot;] - Defaults to border color of the event node
+ * @property {string} [background=&quot;#E7E7E7&quot;] - Defaults to background color of the event node
+ * @since 2.0.0
+ */
+
+/**
+ * An option to overwrite defaults UI color of all event nodes
+ *
+ * @typedef {Object} ColorScheme
+ * @property {EventColors} [event] - Color scheme to overwrite defaults UI color of the event node
+ * @property {function} [hookEventColors] - You can declare a function to set colors with referring the data each event node
+ * @since 2.0.0
+ */
+
+/**
  * Default options for generating the timeline by the jQuery.Timeline plugin.
  * Those defaults are overridden to undefined settings of the timeline configuration.
  *
  * @typedef {Object} Default
- * @property {string} [type=&quot;bar&quot;] - View type of timeline event is either &quot;bar&quot; or &quot;point&quot;
+ * @property {string} [type=&quot;bar&quot;] - View type of timeline event is either &quot;bar&quot; or &quot;point&quot; or &quot;mixed&quot;
  * @property {string} [scale=&quot;day&quot;] - Timetable&apos;s minimum level scale is either &quot;year&quot;, &quot;month&quot;, &quot;week&quot;, &quot;day&quot;, &quot;hour&quot;, &quot;minute&quot;
  * @property {string} [startDatetime=&quot;currently&quot;] - Beginning date time of timetable on the timeline. format is ( &quot;^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$&quot; ) or &quot;currently&quot;
  * @property {string} [endDatetime=&quot;auto&quot;] - Ending date time of timetable on the timeline. format is ( &quot;^d{4}(/|-)d{2}(/|-)d{2}\sd{2}:d{2}:d{2}$&quot; ) or &quot;auto&quot;
@@ -174,6 +206,9 @@
  * @property {string} [loader=&quot;default&quot;] - Custom loader definition, possible values are &quot;default&quot;, false and selector of loader element
  * @property {boolean} [hideScrollbar=false] - Whether or not to display the scroll bar displayed when the width of the timeline overflows (even if it is set to non-display, it will not function depending on the browser)
  * @property {EventMeta} [eventMeta] - Display meta of range on event node when the timeline type is &quot;bar&quot;
+ * @property {array.&lt;Object&gt;} [eventData] - You can declare the events with object format as default events you want to place
+ * @property {Effects} [effects] - You can declare effective styles as view of the timeline object
+ * @property {ColorScheme} [colorScheme] - Can overwrite defaults UI color of the event nodes
  * @property {string} [storage=&quot;session&quot;] - Specification of Web storage to cache event data, defaults to sessionStorage
  * @property {boolean} [reloadCacheKeep=true] - Whether to load cached events during reloading, the cache is discarded if false
  * @property {boolean} [zoom=false] - Whether to use the ability to zoom the scale of the timeline by double clicking on any scale on the ruler
@@ -232,6 +267,7 @@
  * @property {string} [bdColor=&quot;#6C757D&quot;] - 
  * @property {string} [label] - 
  * @property {string} [content] - 
+ * @property {string} [category] - 
  * @property {string} [image] - 
  * @property {number} [margin] - 
  * @property {string} [rangeMeta] - 
@@ -253,6 +289,9 @@
  * @property {string} CLICK_EVENT
  * @property {string} FOCUSIN_EVENT
  * @property {string} FOCUSOUT_EVENT
+ * @property {string} TOUCHSTART_TIMELINE
+ * @property {string} TOUCHMOVE_TIMELINE
+ * @property {string} TOUCHEND_TIMELINE
  * @property {string} MOUSEENTER_POINTER
  * @property {string} MOUSELEAVE_POINTER
  * @property {string} ZOOMIN_SCALE
@@ -296,6 +335,8 @@
  * @property {string} STICKY_LEFT
  * @property {string} OVERLAY
  * @property {string} ALIGN_SELF_RIGHT
+ * @property {string} PRESENT_TIME_MARKER
+ * @property {string} LOADER_CONTAINER
  * @property {string} LOADER_ITEM
  * @since 2.0.0
  */
@@ -309,7 +350,9 @@
  * @property {string} RULER_TOP
  * @property {string} RULER_BOTTOM
  * @property {string} TIMELINE_CONTAINER
+ * @property {string} TIMELINE_MAIN
  * @property {string} TIMELINE_RULER_TOP
+ * @property {string} TIMELINE_EVENT_CONTAINER
  * @property {string} TIMELINE_RULER_BOTTOM
  * @property {string} TIMELINE_RULER_ITEM
  * @property {string} TIMELINE_RELATION_LINES
@@ -346,6 +389,8 @@ class Timeline {
         this._isShown       = false
         /** @type {Object} */
         this._instanceProps = {}
+        /** @type {?Object} */
+        this._observer      = null
     }
     
     // Getters

@@ -294,9 +294,27 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "src/timeline.esdoc.js~colorscheme",
+    "typedef/index.html#static-typedef-ColorScheme",
+    "src/timeline.esdoc.js~ColorScheme",
+    "typedef"
+  ],
+  [
     "src/timeline.esdoc.js~default",
     "typedef/index.html#static-typedef-Default",
     "src/timeline.esdoc.js~Default",
+    "typedef"
+  ],
+  [
+    "src/timeline.esdoc.js~effects",
+    "typedef/index.html#static-typedef-Effects",
+    "src/timeline.esdoc.js~Effects",
+    "typedef"
+  ],
+  [
+    "src/timeline.esdoc.js~eventcolors",
+    "typedef/index.html#static-typedef-EventColors",
+    "src/timeline.esdoc.js~EventColors",
     "typedef"
   ],
   [
@@ -556,6 +574,12 @@ window.esdocSearchIndex = [
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-_mapPlacedEvents",
     "src/timeline.esdoc.js~Timeline#_mapPlacedEvents",
     "method"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#_observer",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-member-_observer",
+    "src/timeline.esdoc.js~Timeline#_observer",
+    "member"
   ],
   [
     "src/timeline.esdoc.js~timeline#_placeevent",
