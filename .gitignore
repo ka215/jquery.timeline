@@ -9,6 +9,7 @@ docs/js/*.map
 dist/*.map
 dist/jquery.timeline.js
 test/*.php
+test/dist/
 
 # Numerous always-ignore extensions
 *.diff
