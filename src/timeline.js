@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0b4
+ * Version: 2.0.0b5
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0b4"
+const VERSION            = "2.0.0b5"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -307,6 +307,7 @@ class Timeline {
         this._isTouched        = false
         this._instanceProps    = {}
         this._observer         = null // Added new since v2.0.0
+        this._beforeOpenEvent  = null // Added new since v2.0.0
         //this._countEventinCell = {} // since v2.0.0
         Data.setData( element, DATA_KEY, this )
     }
@@ -1281,6 +1282,7 @@ class Timeline {
                 _ruler_string    = this.getLocaleString( _key, this._filterScaleKeyName( line_scale ), locale, format ),
                 _data_ruler_item = ''
             
+//console.log( '!_createRulerContent::', _key, line_scale, _ruler_string )
             _data_ruler_item = `${line_scale}-${( _data_ruler_item === '' ? String( _key ) : _data_ruler_item )}`
             _line.attr( 'data-ruler-item', _data_ruler_item ).html( `<span>${_ruler_string}</span>` )
             
@@ -1524,6 +1526,7 @@ class Timeline {
             _row = Object.hasOwnProperty.call( params, 'row' ) ? parseInt( params.row, 10 ) : 1
             _c = Math.floor( _row / 2 )
             new_event.y = ( _row - 1 ) * _opts.rowHeight + new_event.margin + _c
+            new_event.height = _opts.rowHeight - (_opts.marginHeight * 2)
             
             Object.keys( new_event ).forEach( ( _prop ) => {
                 switch( true ) {
@@ -3122,44 +3125,62 @@ class Timeline {
     openEvent( event ) {
         this._debug( 'openEvent' )
         
-        let _that        = this,
-            _self        = event.target,
+        if ( ! this.is_empty( event ) && ! Object.hasOwnProperty.call( event, 'type' ) && ! Object.hasOwnProperty.call( event, 'target' ) ) {
+            if ( typeof event[0] === 'function' ) {
+                this._beforeOpenEvent = event[0]
+            }
+        }
+        
+        let _self        = event.target,
             $viewer      = $(document).find( Selector.EVENT_VIEW ),
             //eventId    = parseInt( $(_self).attr( 'id' ).replace( 'evt-', '' ), 10 ),
             uid          = $(_self).data( 'uid' ),
             //meta       = this.supplement( null, $(_self).data( 'meta' ) ),
             callback     = this.supplement( null, $(_self).data( 'callback' ) ),
-            _cacheEvents = _that._loadToCache(),
-            _eventData   = _cacheEvents.find( ( event ) => event.uid === uid )
+            _cacheEvents = this._loadToCache(),
+            _eventData   = _cacheEvents.find( ( event ) => event.uid === uid ),
+            _hookedState = true
         
-//console.log( '!openEvent:', _self, $viewer, eventId, uid, meta, callback )
+        if ( this.is_empty( _self ) ) {
+            return
+        }
+        
+        // Generate content for viewer
+        let _label   = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
+            _content = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
+            _meta    = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
+            _image   = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER }),
+            _viewers = []
+        
+        if ( ! this.is_empty( _eventData.image ) ) {
+            _image.append( `<img src="${_eventData.image}" class="${ClassName.VIEWER_EVENT_IMAGE}" />` )
+            _viewers.push( _image.get(0) )
+        }
+        if ( ! this.is_empty( _eventData.label ) ) {
+            _label.html( _eventData.label )
+            _viewers.push( _label.get(0) )
+        }
+        if ( ! this.is_empty( _eventData.content ) ) {
+            _content.html( _eventData.content )
+            _viewers.push( _content.get(0) )
+        }
+        if ( ! this.is_empty( _eventData.rangeMeta ) ) {
+            _meta.html( _eventData.rangeMeta )
+            _viewers.push( _meta.get(0) )
+        }
+        
+        if ( this._beforeOpenEvent ) {
+            _hookedState = this._beforeOpenEvent( _eventData, _viewers )
+            _hookedState = _hookedState == undefined ? true : _hookedState
+        }
+//console.log( '!openEvent::', _self, $viewer, uid, callback, _viewers, this._beforeOpenEvent, _hookedState )
+        if ( ! _hookedState ) {
+            return
+        }
         if ( $viewer.length > 0 ) {
             $viewer.each(function() {
-                let _label   = $('<div></div>', { class: ClassName.VIEWER_EVENT_TITLE }),
-                    _content = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
-                    _meta    = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
-                    _image   = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER })
-                
-//console.log( '!openEvent:', $(this), $(_self).html(), _eventData.label )
-                
                 $(this).empty() // Initialize Viewer
-                if ( ! _that.is_empty( _eventData.image ) ) {
-                    _image.append( `<img src="${_eventData.image}" class="${ClassName.VIEWER_EVENT_IMAGE}" />` )
-                    $(this).append( _image )
-                }
-                if ( ! _that.is_empty( _eventData.label ) ) {
-                    _label.html( _eventData.label )
-                    $(this).append( _label )
-                }
-                if ( ! _that.is_empty( _eventData.content ) ) {
-                    _content.html( _eventData.content )
-                    $(this).append( _content )
-                }
-                if ( ! _that.is_empty( _eventData.rangeMeta ) ) {
-                    _meta.html( _eventData.rangeMeta )
-                    $(this).append( _meta )
-                }
-                
+                $(this).append( ..._viewers )
             })
         }
         
@@ -3171,8 +3192,6 @@ class Timeline {
             } catch ( e ) {
                 throw new TypeError( e )
             }
-        } else {
-            this._config.onOpenEvent( _eventData )
         }
     }
     
@@ -3553,10 +3572,11 @@ class Timeline {
      * That is remapping to correct year if the year is 0 - 99, and supporting years BCE. (:> 0 - 99年の場合に年をリマッピングし、紀元前の年にも対応する
      *
      * @param mixed datetime (required; allowed an integer as milliseconds, a string as like datetime or an object instance of Date)
+     * @param boolean adjustTimeZoneDiff (optional; defaults to false)
      *
      * @return Date Object, or null if failed
      */
-    getCorrectDatetime( datetime ) {
+    getCorrectDatetime( datetime, adjustTimeZoneDiff = false ) {
         let normalizeDate = ( dateString ) => {
                 let isMinus = /^-/.test( dateString ),
                     _m = isMinus ? '-' : '',
@@ -3635,6 +3655,17 @@ class Timeline {
         if ( _checkDate instanceof Date === false ) {
             _checkDate = new Date( _checkDate )
         }
+        
+        if ( adjustTimeZoneDiff ) {
+            let _utcDate = new Date( _checkDate.getUTCFullYear(), _checkDate.getUTCMonth(), _checkDate.getUTCDate(), _checkDate.getUTCHours(), _checkDate.getUTCMinutes(), _checkDate.getUTCSeconds(), _checkDate.getUTCMilliseconds() ),
+                _tzDiff  = this.diffDate( _checkDate, _utcDate )
+            
+//console.log('!getCorrectDatetime::', _checkDate.toString(), _utcDate.toString(), _tzDiff )
+            if ( _tzDiff != 0 ) {
+                _checkDate = this.modifyDate( (_tzDiff > 0 ? _utcDate : _checkDate), -1 * _tzDiff, 'millisecond' )
+            }
+//console.log('!!getCorrectDatetime::', _checkDate.toString() )
+        }
         return _checkDate
     }
     
@@ -3650,7 +3681,7 @@ class Timeline {
         if ( this.is_empty( datetime ) ) {
             return false
         }
-        let firstDayIndex  = this._config.firstDayOfWeek,
+        let firstDayIndex  = this._config.firstDayOfWeek || 0,
             targetDate     = this.getCorrectDatetime( datetime ),
             firstDayOfYear = this.getCorrectDatetime( `${targetDate.getFullYear()}/1/1` ),
             //firstWeekday   = firstDayOfYear.getDay(),
@@ -4378,8 +4409,9 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 break
             case /^months?$/i.test( scale ):
                 // Allowed value as format: 'numeric', '2-digit', 'narrow', 'short', 'long'
-                _temp  = this.getCorrectDatetime( date_seed )
+                _temp  = this.getCorrectDatetime( date_seed, true )
                 _month = _temp.getMonth() + 1
+//console.log(`!getLocaleString::${scale}:`, date_seed, _temp, _month, is_toLocalString, options[scale], _options )
                 if ( is_toLocalString ) {
                     if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit|narrow|short|long)$/i.test( options[scale] ) ) {
@@ -4394,6 +4426,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                     }
                 }
                 locale_string = this.is_empty( locale_string ) ? _month : locale_string
+//console.log(`!!getLocaleString::${scale}:`, locale_string )
                 break
             case /^weeks?$/i.test( scale ):
                 // Allowed value as format: 'numeric', 'ordinal'
@@ -4413,10 +4446,10 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 // Allowed value as format: 'narrow', 'short', 'long'
                 if ( typeof date_seed === 'string' && /^(.*)+,\d{1}$/.test( date_seed ) ) {
                     [ _str, _num ] = date_seed.split(',')
-                    _temp = this.getCorrectDatetime( _str )
+                    _temp = this.getCorrectDatetime( _str, true )
                     _num  = parseInt( _num, 10 )
                 } else {
-                    _temp = this.getCorrectDatetime( date_seed )
+                    _temp = this.getCorrectDatetime( date_seed, true )
                 }
                 if ( is_toLocalString ) {
                     if ( Object.hasOwnProperty.call( options, scale ) ) {
@@ -4443,7 +4476,7 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 break
             case /^days?$/i.test( scale ):
                 // Allowed value as format: 'numeric', '2-digit', 'ordinal'
-                _temp  = this.getCorrectDatetime( date_seed )
+                _temp  = this.getCorrectDatetime( date_seed, true )
                 if ( is_toLocalString ) {
                     if ( Object.hasOwnProperty.call( options, scale ) ) {
                         if ( /^(numeric|2-digit)$/i.test( options[scale] ) ) {

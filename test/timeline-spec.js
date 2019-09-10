@@ -886,7 +886,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
         let _nowDt = new Date()
         
         expect( timelineMethods.getLocaleString() ).to.be.false
-        expect( timelineMethods.getLocaleString( _nowDt ) ).to.be.equal( _nowDt.toString() )
+        expect( timelineMethods.getLocaleString( _nowDt ).toString() ).to.be.equal( _nowDt.toString() )
         if ( isGMT ) {
             expect( timelineMethods.getLocaleString( _nowDt.toString() ) ).to.be.equal( _nowDt.toString() )
         } else {
@@ -971,6 +971,7 @@ console.log( 'd::mil:', timelineMethods.verifyScale( 'millennium', _now.getTime(
             expect( timelineMethods.getLocaleString( '2019/1/1', 'month', 'ja-JP-u-ca-japanese', { era: 'long', year: 'numeric', month: 'long' } ) ).to.be.equal( 'CE (F3: M01)' )
         }
         // week
+        timelineMethods._config = Object.assign( defaultOptions, { firstDayOfWeek: 0 } )
         expect( timelineMethods.getLocaleString( _nowDt, 'week' ) ).to.be.equal( timelineMethods.getWeek( _nowDt ).toString() )
         expect( timelineMethods.getLocaleString( _nowDt, 'weeks', null, { weeks: 'numeric' } ) ).to.be.equal( timelineMethods.getWeek( _nowDt ).toString() )
         expect( timelineMethods.getLocaleString( '2019/7/5', 'week', '', { week: 'ordinal' } ) ).to.be.equal( '27th' )
