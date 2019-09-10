@@ -49,9 +49,13 @@ Several quick start options are available:
 <!-- - npm: `npm i jq-timeline` -->
 <!-- - bower: `bower install jq-timeline` -->
 
-- [Download the latest release](https://github.com/ka215/jquery.timeline/releases/download/v2.0.0b4/jquery.timeline.v2.0.0b4.zip).
+- [Download the latest release](https://github.com/ka215/jquery.timeline/releases/download/v2.0.0b4/jquery.timeline.v2.0.0b5.zip).
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
-
+- Load via CDN:
+```HTML
+<link href="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@2.0.0b5/dist/jquery.timeline.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@2.0.0b5/dist/jquery.timeline.min.js"></script>
+```
 
 ## What's included
 
