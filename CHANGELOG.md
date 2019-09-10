@@ -5,7 +5,7 @@ Change Log
 
 * Fixed a bug that the event node height does not work to be adjusted with depending on a "rowHeight" option.
 * Fixed a bug that different ruler is displayed from actual date-time when has timezone diff times as like on while DST.
-
+* Changed an "openEvent" method to be able to bind custom user function that fire just before opening event.
 
 ### v2.0.0b4 (September 2, 2019 GMT)
 
