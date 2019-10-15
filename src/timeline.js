@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0b5
+ * Version: 2.0.0b6
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0b5"
+const VERSION            = "2.0.0b6"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -1749,6 +1749,7 @@ class Timeline {
                 this._viewPresentTime()
             }
             
+            resolve(true)
         })// return Promise
     }
     
@@ -3150,28 +3151,33 @@ class Timeline {
             _content = $('<div></div>', { class: ClassName.VIEWER_EVENT_CONTENT }),
             _meta    = $('<div></div>', { class: ClassName.VIEWER_EVENT_META }),
             _image   = $('<div></div>', { class: ClassName.VIEWER_EVENT_IMAGE_WRAPPER }),
-            _viewers = []
+            _viewers = {},
+            _order   = [ 'label', 'image', 'content', 'meta' ]
         
         if ( ! this.is_empty( _eventData.image ) ) {
             _image.append( `<img src="${_eventData.image}" class="${ClassName.VIEWER_EVENT_IMAGE}" />` )
-            _viewers.push( _image.get(0) )
+            //_viewers.push( _image.get(0) )
+            _viewers.image = _image.get(0)
         }
         if ( ! this.is_empty( _eventData.label ) ) {
             _label.html( _eventData.label )
-            _viewers.push( _label.get(0) )
+            //_viewers.push( _label.get(0) )
+            _viewers.label = _label.get(0)
         }
         if ( ! this.is_empty( _eventData.content ) ) {
             _content.html( _eventData.content )
-            _viewers.push( _content.get(0) )
+            //_viewers.push( _content.get(0) )
+            _viewers.content = _content.get(0)
         }
         if ( ! this.is_empty( _eventData.rangeMeta ) ) {
             _meta.html( _eventData.rangeMeta )
-            _viewers.push( _meta.get(0) )
+            //_viewers.push( _meta.get(0) )
+            _viewers.meta = _meta.get(0)
         }
         
         if ( this._beforeOpenEvent ) {
-            _hookedState = this._beforeOpenEvent( _eventData, _viewers )
-            _hookedState = _hookedState == undefined ? true : _hookedState
+            _hookedState = this._beforeOpenEvent( _eventData, _viewers ) || true
+            //_hookedState = _hookedState == undefined ? true : _hookedState
         }
 //console.log( '!openEvent::', _self, $viewer, uid, callback, _viewers, this._beforeOpenEvent, _hookedState )
         if ( ! _hookedState ) {
@@ -3180,7 +3186,11 @@ class Timeline {
         if ( $viewer.length > 0 ) {
             $viewer.each(function() {
                 $(this).empty() // Initialize Viewer
-                $(this).append( ..._viewers )
+                _order.forEach((_prop) => {
+                    if ( Object.prototype.hasOwnProperty.call(_viewers, _prop) ) {
+                        $(this).append( _viewers[_prop].outerHTML )
+                    }
+                })
             })
         }
         
