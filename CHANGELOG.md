@@ -1,5 +1,11 @@
-Change Log
+Change Logs
 ---
+
+### v2.0.0b6 (October 16, 2019 GMT)
+
+* Fixed a bug that the displayed date on the ruler differs actually value when timezone is UTC ([Issue#48](/ka215/jquery.timeline/issues/48)).
+* Fixed a bug that had not return resolve of promise object in the "placeEvent" method.
+* Fixed the default order of outputting to display event detail contents by the "opneEvent" method.
 
 ### v2.0.0b5 (September 10, 2019 GMT)
 
