@@ -24,6 +24,7 @@
     "watch": "./node_modules/.bin/gulp --max_old_space_size=8192 dev",
     "build-dev": "webpack --mode development --config webpack.config.development.js",
     "build-prod": "webpack --mode production --config webpack.config.production.js",
+    "build4test": "webpack --mode development --config webpack.config.tester.js",
     "esdoc": "./node_modules/.bin/esdoc; open ./docs/index.html",
     "test": "mocha ./test/timeline-spec.js"
   },
