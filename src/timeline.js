@@ -4,7 +4,8 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0b6
+ * Version: 2.0.0 (revised from beta 6)
+ * Last Modified: November 19, 2019 (UTC)
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +16,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0b6"
+const VERSION            = "2.0.0"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"

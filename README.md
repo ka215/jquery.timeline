@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">jQuery.Timeline V2</h3>
+  <h1 align="center">jQuery.Timeline Ver.2</h3>
 
   <table border="0">
     <tr>

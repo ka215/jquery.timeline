@@ -1,6 +1,10 @@
 Change Logs
 ---
 
+### v2.0.0 (November 19, 2019 GMT)
+
+* Revised as first public version 2.0.0 from beta version.
+
 ### v2.0.0b6 (October 16, 2019 GMT)
 
 * Fixed a bug that the displayed date on the ruler differs actually value when timezone is UTC ([Issue#48](/ka215/jquery.timeline/issues/48)).
