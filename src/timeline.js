@@ -2204,7 +2204,7 @@ class Timeline {
                         case /^lt$/i.test( _curveType[_ba] ): // "(_ex,_ey)┌(_sx,_sy)"
                             ctx_relations.moveTo( _sx, _sy )
                             if ( Math.abs( _sx - _ex ) > _radius ) {
-                                ctx_relations.lineTo( _ex - _radius, _sy ) // "─"
+                                ctx_relations.lineTo( _ex + _radius, _sy ) // "─"
                             }
                             if ( Math.abs( _ey - _sy ) > _radius ) {
                                 ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _sy + _radius ) // "┌"
