@@ -8,9 +8,9 @@ docs/css/*.map
 docs/js/*.map
 dist/*.map
 dist/jquery.timeline.js
-test/*.php
-test/dist/
-test/sample.html
+#test/*.php
+#test/dist/
+#test/sample.html
 
 # Numerous always-ignore extensions
 *.diff
@@ -24,8 +24,8 @@ test/sample.html
 *.zip
 *.stash
 *~
-package-lock.json
-yarn.lock
+#package-lock.json
+#yarn.lock
 
 # OS or Editor folders
 ._*

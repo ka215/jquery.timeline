@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>jQuery.Timeline Example</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@master/dist/jquery.timeline.min.css">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body style="overflow-x: hidden">
+  <div id="my-timeline">
+    <ul class="timeline-events">
+      <li data-timeline-node="{start:'2019-12-12 0:00:00',end:'2019-12-15 23:59:59',row:1,content:'The 1st event content...'}">Event Node 1</li>
+      <li data-timeline-node="{start:'2019-12-13 12:34:54',end:'2019-12-20 12:34:54',row:2,content:'The second event content...'}">Event Node 2</li>
+    </ul>
+  </div>
+
+  <div class="timeline-event-view"></div>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@master/dist/jquery.timeline.min.js"></script>
+  <script>
+$(function(){
+    $('#my-timeline').Timeline({
+        startDatetime: '2019-12-01 0:00:00',
+        endDatetime: '2019-12-31 23:59:59',
+        scale: 'day',
+        minGridSize: 48,
+        sidebar: {
+            list: [
+                '<span style="padding:0 1em;">Row 1</span>',
+                '<span style="padding:0 1em;">Row 2</span>',
+                '<span style="padding:0 1em;">Row 3</span>',
+            ]
+        },
+        ruler: {
+            top: {
+                lines: [ 'year', 'month', 'day' ],
+                format: {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                }
+            }
+        }
+    });
+});
+  </script>
+</body>
+</html>
