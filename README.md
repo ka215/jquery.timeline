@@ -1,5 +1,8 @@
 <p align="center">
-  <h1 align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/timeline.svg" width="40" height="40" style="vertical-align:middle;margin-right:0.5em;">jQuery.Timeline V2</h1>
+  <h1 align="center" valign="middle" height="40">
+    <img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/timeline.svg" width="40" height="40">&nbsp;
+    jQuery.Timeline V2
+  </h1>
 
   <table border="0">
     <tr>
