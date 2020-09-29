@@ -1,7 +1,7 @@
 Change Logs
 ---
 
-### v2.1.0 (September 25, 2020 GMT)
+### v2.1.0 (September 29, 2020 GMT)
 
 * Fixed the event ID generation process by the addEvent method ([Issue#13](/ka215/jquery.timeline/issues/13)).
   Since ver.2.1.0, the events with duplicate IDs cannot be added and an error will occur. And if you specify a unique ID, it will be added with that event ID. An ID is automatically generated as in the past when an event with an unspecified ID is added.
