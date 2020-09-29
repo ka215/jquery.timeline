@@ -1,11 +1,15 @@
 <p align="center">
-  <h1 align="center">jQuery.Timeline Ver.2</h3>
+  <h1 align="center" valign="bottom" height="43">
+    <img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/timeline.svg" width="36" height="36" valign="bottom">&nbsp;
+    jQuery.Timeline V2
+  </h1>
 
   <table border="0">
     <tr>
-    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_bar.png" width="100%" alt="Bar Type" /></td>
-    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_point.png" width="100%" alt="Point Type" /></td>
-    <td width="33%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_mixed.png" width="100%" alt="Mixed Type" /></td>
+    <td width="25%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_bar.png" width="100%" alt="Bar Type" /></td>
+    <td width="25%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_point.png" width="100%" alt="Point Type" /></td>
+    <td width="25%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v2_mixed.png" width="100%" alt="Mixed Type" /></td>
+    <td width="25%" align="center"><img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/jquery.timeline_v21_theme.png" width="100%" alt="Switch Theme" /></td>
     </tr>
   </table>
 
@@ -101,26 +105,26 @@ jQuery.Timeline version 2.x supports the following browsers:
 <th colspan="2">Mobile</th>
 </tr>
 <tr>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/chrome-brands.svg" width="32" alt="Chrome" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/firefox-brands.svg" width="32" alt="Firefox" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" width="32" alt="Safari" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/internet-explorer-brands.svg" width="32" alt="IE" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/edge-brands.svg" width="32" alt="Edge" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/opera-brands.svg" width="32" alt="Opera" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/android-brands.svg" width="32" alt="Android" /></th>
-<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" width="32" alt="iOS Safari" /></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/chrome-brands.svg" width="32" alt="Chrome" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/firefox-brands.svg" width="32" alt="Firefox" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" width="32" alt="Safari" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/internet-explorer-brands.svg" width="32" alt="IE" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/edge-brands.svg" width="32" alt="Edge" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/opera-brands.svg" width="32" alt="Opera" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/android-brands.svg" width="32" alt="Android" style="opacity:0.65"></th>
+<th width="12.5%" align="center"><img src="https://github.com/ka215/jquery.timeline/blob/develop/docs/imgs/safari-brands.svg" width="32" alt="iOS Safari" style="opacity:0.65"></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td name="PC:Chrome" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Firefox" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Safari" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:IE" align="center"><b style="color:brown">Non-compliant</b></td>
-<td name="PC:Edge" align="center"><b style="color:green">Ok</b></td>
-<td name="PC:Opera" align="center"><b style="color:green">Ok</b></td>
-<td name="MP:Android" align="center"><b style="color:green">Ok</b></td>
-<td name="MP:iOS Safari" align="center"><b style="color:green">Ok</b></td>
+<td name="PC:Chrome" align="center"><b style="color:#00A960">Ok</b></td>
+<td name="PC:Firefox" align="center"><b style="color:#00A960">Ok</b></td>
+<td name="PC:Safari" align="center"><b style="color:#00A960">Ok</b></td>
+<td name="PC:IE" align="center"><b style="color:#E17B34">Non-compliant</b></td>
+<td name="PC:Edge" align="center"><b style="color:#00A960">Ok</b></td>
+<td name="PC:Opera" align="center"><b style="color:#00A960">Ok</b></td>
+<td name="MP:Android" align="center"><b style="color:#00A960">Ok</b></td>
+<td name="MP:iOS Safari" align="center"><b style="color:#00A960">Ok</b></td>
 </tr>
 </tbody>
 </table>
@@ -140,13 +144,14 @@ jQuery.Timeline's documentation, included in this repository in the root directo
 
 ### Documentation for previous releases
 
-- For v2.0.x: <https://ka2.org/jquery-timeline/>
-- For v2.0.x(ESDoc): <https://ka215.github.io/jquery.timeline/>
+- For v2.x: <https://ka2.org/jquery-timeline/>
+- For v2.x(ESDoc): <https://ka215.github.io/jquery.timeline/>
 - For v1.0.x: <https://raw.githubusercontent.com/ka215/jquery.timeline/v1/README.md>
 - For v1.0.x (Japanese): <https://ka2.org/jquery-timeline-v1/>
 
 ## Example as demonstration
 
+- [jQuery.Timeline 2.1.0 via jQuery 3.5.1](https://ka2.org/jqtl-v2/v2.1.html)
 - [jQuery.Timeline Tester](https://ka2.org/jqtl-v2/)
 - [Version 2.x Point Type Timeline DEMO](https://ka2.org/jqtl-v2/demo1.php)
 - [Version 1.x demo](https://ka2.org/jqtl-v1/)
@@ -172,4 +177,4 @@ Donate URL: <https://ka215.github.io/jquery.timeline/donation.html>
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2019 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).
+Code and documentation copyright 2011-2020 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).

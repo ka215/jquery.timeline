@@ -1,6 +1,6 @@
 /*!
  * Typedef for jQuery Timeline's ESDoc
- * @version: 2.0.0
+ * @version: 2.1.0
  */
 
 /** @type {string} [NAME="Timeline"] */
@@ -123,9 +123,32 @@
  */
 
 /**
+ * Color scheme to overwrite defaults UI color of the timeline instance
+ *
+ * @typedef {Object} ThemeColors
+ * @property {string} [name="default"] - 
+ * @property {string} [text="#343A40"] - Defaults to basic text color
+ * @property {string} [subtext="#707070"] - 
+ * @property {string} [offtext="#BBBBBB"] - 
+ * @property {string} [modesttext="#969696"] - 
+ * @property {string} [line="#6C757D"] - Defaults to basic border color
+ * @property {string} [offline="#DDDDDD"] - 
+ * @property {string} [activeline="#DC3545"] - 
+ * @property {string} [background="#FFFFFF"] - Defaults to background color
+ * @property {string} [invertbg="#121212"] - 
+ * @property {string} [striped1="#F7F7F7"] - 
+ * @property {string} [striped2="#F0F0F0"] - 
+ * @property {string} [active="#F73333"] - 
+ * @property {string} [marker="#2C7CFF"] - 
+ * @property {string} [gridbase="#333333"] - 
+ * @since 2.1.0
+ */
+
+/**
  * An option to overwrite defaults UI color of all event nodes
  *
  * @typedef {Object} ColorScheme
+ * @property {ThemeColors} [theme] - Color scheme to overwrite defaults UI color of the timeline instance
  * @property {EventColors} [event] - Color scheme to overwrite defaults UI color of the event node
  * @property {function} [hookEventColors] - You can declare a function to set colors with referring the data each event node
  * @since 2.0.0
@@ -2263,7 +2286,20 @@ class Timeline {
         }
         $(_elem).css( 'left', `${_x}px` ).css( 'top', `${_y}px` ).css( 'width', `${_w}px` ).css( 'height', `${_w}px` ).css( 'z-index', _z )
     }
-    
+
+    /**
+     * Logger of errors when the method execution
+     * @private
+     * @param {!string} message - 
+     * @param {string} [type='error'] - 
+     */
+    _error( message, type = 'error' ) {
+        if ( message && window.console ) {
+            type = window.console[type] ? type : 'error'
+            console[type]( message )
+        }
+    }
+
     /**
      * Echo the log of plugin for debugging
      * @private
@@ -2296,7 +2332,7 @@ class Timeline {
      * This method is able to call only once after completed an initializing of the plugin
      * @public
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     initialized( ...args ) {
         let _message = this._isInitialized ? 'Skipped because method "initialized" already has been called once' : 'initialized'
@@ -2384,7 +2420,7 @@ class Timeline {
      * @public
      * @param {?Object} options - Options for moving as dateback on the timeline container
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     dateback( ...args ) {
         this._debug( 'dateback' )
@@ -2433,7 +2469,7 @@ class Timeline {
      * @public
      * @param {?Object} options - Options for moving as dateforth on the timeline container
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     dateforth( ...args ) {
         this._debug( 'dateforth' )
@@ -2588,7 +2624,7 @@ class Timeline {
      * Add new events to the rendered timeline object
      * @public
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     addEvent( ...args ) {
         this._debug( 'addEvent' )
@@ -2641,7 +2677,7 @@ class Timeline {
      * Remove events from the currently timeline object
      * @public
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     removeEvent( ...args ) {
         this._debug( 'removeEvent' )
@@ -2733,7 +2769,7 @@ class Timeline {
      * Update events on the currently timeline object
      * @public
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     updateEvent( ...args ) {
         this._debug( 'updateEvent' )
@@ -2788,7 +2824,7 @@ class Timeline {
      * Reload the timeline with overridable any options
      * @public
      * @param {?Function()} callback - Custom callback fired after calling this method
-     * @param {?Object} userdata - Data as object of referable in that callback
+     * @param {?(number|string|Object)} userdata - Data as object of referable in that callback
      */
     reload( ...args ) {
         this._debug( 'reload' )
@@ -3348,7 +3384,6 @@ class Timeline {
         if ( typeof _checkDate !== 'object' ) {
             _checkDate = new Date( _checkDate )
         }
-//console.log( '!getCorrectDatetime::input:', datetime_str, '::output:', _checkDate, typeof _checkDate )
         return _checkDate
     }
     
@@ -3366,7 +3401,6 @@ class Timeline {
             if ( ! this.is_empty( _str[1] ) ) {
                 _str[1] = parseInt( _str[1], 10 ) - 1 // To month index
             }
-//console.log( '!getWeek:', _str )
             targetDate = new Date( ..._str )
         } else {
             targetDate = new Date( date_str )
@@ -3376,54 +3410,573 @@ class Timeline {
     }
     
     /**
-     * Retrieve one higher scale
-     * @param {!string} scale - 
-     * @return {string} - String of higher scale
+     * Retrieve a first day of the week from week number (Note: added support for daylight savings time but needs improvement as performance has dropped)
+     * @param {!number} week_number - 
+     * @param {!number} year - defaults to current year
+     * @return {object|boolean}
      */
-    getHigherScale( scale ) {
-        let higher_scale = scale
-        
+    getFirstDayOfWeek( week_number, year ) {
+        if ( this.is_empty( week_number ) ) {
+            return false
+        }
+        year = this.is_empty( year ) ? new Date().getFullYear() : parseInt( year, 10 )
+        let firstDayIndex  = this._config.firstDayOfWeek,
+            firstDayOfYear = this.getCorrectDatetime( `${year}/1/1` ),
+            _weekday       = firstDayOfYear.getDay(),
+            _keyDayOfWeek  = firstDayOfYear,
+            _offset        = _weekday > firstDayIndex ? _weekday - firstDayIndex : 0,
+            _weekNumber    = _offset <= 0 ? 0 : 1,
+            hitDate
+        if ( _weekNumber == week_number && _weekday == firstDayIndex ) {
+            hitDate = firstDayOfYear
+        } else {
+            for ( let i = _offset; i < _offset + 7; i++ ) {
+                if ( i > _offset ) {
+                    _keyDayOfWeek = this.modifyDate( firstDayOfYear, i, 'day' )
+                }
+                if ( _keyDayOfWeek.getDay() == firstDayIndex ) {
+                    _weekNumber++
+                    break
+                }
+            }
+            if ( _weekNumber == week_number ) {
+                hitDate = _keyDayOfWeek
+            } else {
+                hitDate = this.modifyDate( _keyDayOfWeek, (week_number - _weekNumber) * 7, 'day' )
+            }
+        }
+        return hitDate
+    }
+
+    /**
+     * Get the datetime shifted from the specified datetime by any fluctuation value
+     * @param {!object} datetime - to be date object filtered by getCorrectDatetime method
+     * @param {!number} fluctuation - an interval value to shift from given base datetime
+     * @param {!string} scale  - the scale of an interval value
+     * @return {object|boolean}
+     */
+    modifyDate( datetime, fluctuation, scale ) {
+        if ( this.is_empty( datetime ) || this.is_empty( fluctuation ) || this.is_empty( scale ) || ! this.verifyScale( scale ) ) {
+            return false
+        }
+        let baseDate = this.getCorrectDatetime( datetime ),
+            flct     = this.validateNumeric( 0, fluctuation ),
+            dateElms = [
+                baseDate.getFullYear(),    // 0: year
+                baseDate.getMonth(),       // 1: month (index)
+                baseDate.getDate(),        // 2: day
+                baseDate.getHours(),       // 3: hour
+                baseDate.getMinutes(),     // 4: minute
+                baseDate.getSeconds(),     // 5: second
+                baseDate.getMilliseconds() // 6: millisec
+            ],
+            tmpDate  = new Date( new Date( ...dateElms ).setFullYear( dateElms[0] ) ),
+            isAdjust = false,
+            newDate
+
         switch ( true ) {
-            case /^millisec(|ond)s?$/i.test( scale ):
-                higher_scale = 'second'
-                break
-            case /^seconds?$/i.test( scale ):
-                higher_scale = 'minute'
-                break
-            case /^minutes?$/i.test( scale ):
-                higher_scale = 'hour'
-                break
-            case /^quarter-?(|hour)$/i.test( scale ):
-            case /^half-?(|hour)$/i.test( scale ):
-            case /^hours?$/i.test( scale ):
-                higher_scale = 'day'
-                break
-            case /^days?$/i.test( scale ):
-            case /^weeks?$/i.test( scale ):
-                higher_scale = 'month'
-                break
-            case /^months?$/i.test( scale ):
-                higher_scale = 'year'
-                break
-            case /^years?$/i.test( scale ):
-                higher_scale = 'lustrum'
-                break
-            case /^lustrum$/i.test( scale ):
-                higher_scale = 'decade'
-                break
-            case /^dec(ade|ennium)$/i.test( scale ):
-                higher_scale = 'century'
+            case /^millenniums?|millennia$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 1000) ) )
                 break
             case /^century$/i.test( scale ):
-                higher_scale = 'millennium'
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 100) ) )
                 break
-            case /^millenniums?|millennia$/i.test( scale ):
+            case /^dec(ade|ennium)$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 10) ) )
+                break
+            case /^lustrum$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + (flct * 5) ) )
+                break
+            case /^years?$/i.test( scale ):
+                newDate = new Date( tmpDate.setFullYear( tmpDate.getFullYear() + flct ) )
+                break
+            case /^months?$/i.test( scale ):
+                newDate = new Date( tmpDate.setMonth( tmpDate.getMonth() + flct ) )
+                break
+            case /^weeks?$/i.test( scale ):
+                newDate = new Date( tmpDate.setDate( tmpDate.getDate() + (flct * 7) ) )
+                newDate.setHours( dateElms[3] )
+                newDate.setMinutes( dateElms[4] )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^(|week)days?$/i.test( scale ):
+                newDate = new Date( tmpDate.setDate( tmpDate.getDate() + flct ) )
+                newDate.setHours( dateElms[3] )
+                newDate.setMinutes( dateElms[4] )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^hours?$/i.test( scale ):
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + ( flct * 60 * 60 * 1000 ) ) )
+                newDate.setMinutes( dateElms[4] )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^minutes?$/i.test( scale ):
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + ( flct * 60 * 1000 ) ) )
+                newDate.setSeconds( dateElms[5] )
+                newDate.setMilliseconds( dateElms[6] )
+                break
+            case /^seconds?$/i.test( scale ):
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + ( flct * 1000 ) ) )
+                newDate.setMilliseconds( dateElms[6] )
+                break
             default:
+                newDate = new Date( tmpDate.setTime( tmpDate.getTime() + flct ) )
                 break
         }
-        return higher_scale
+
+        if ( isAdjust ) {
+            // Why different time of 1 min 15 sec on 12/01/1847, 0:00:00? (GMT+0001)
+            let divide = this.getCorrectDatetime( '1847/12/1 0:01:15' )
+
+            if ( baseDate.getTime() < divide.getTime() && newDate.getTime() >= divide.getTime() ) {
+                newDate = new Date( newDate.setTime( newDate.getTime() - (60 * 1000) ) )
+            } else
+            if ( baseDate.getTime() > divide.getTime() && newDate.getTime() <= divide.getTime() ) {
+                newDate = new Date( newDate.setTime( newDate.getTime() - (75 * 1000) ) )
+            }
+        }
+        return newDate
     }
-    
+
+    /**
+     * Acquire the difference between two dates with the specified scale value
+     * @param {!(number|object)} date1 - integer as milliseconds or object instanceof Date)
+     * @param {!(number|object)} date2 - integer as milliseconds or object instanceof Date)
+     * @param {string} [scale='millisecond'] - defaults to 'millisecond'
+     * @param {boolean} [absval=false] - defaults to false
+     * @return {object|boolean}
+     */
+    diffDate( date1, date2, scale = 'millisecond', absval = false ) {
+        let _dt1   = date1 === undefined ? null : date1,
+            _dt2   = date2 === undefined ? null : date2,
+            diffMS = 0,
+            retval = false,
+            lastDayOfMonth = ( dateObj ) => {
+                let _tmp = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+                _tmp.setTime( _tmp.getTime() - 1 )
+                return _tmp.getDate()
+            },
+            isLeapYear = ( dateObj ) => {
+                let _tmp = new Date( dateObj.getFullYear(), 0, 1 ),
+                    sum  = 0
+
+                for ( let i = 0; i < 12; i++ ) {
+                    _tmp.setMonth(i)
+                    sum += lastDayOfMonth( _tmp )
+                }
+                return sum == 365 ? false : true
+            }
+
+        if ( ! _dt1 || ! _dt2 ) {
+            //console.warn( 'Cannot parse date to get difference because undefined.' )
+            this._error( 'Cannot parse date to get difference because undefined.', 'warn' )
+            return false
+        }
+
+        diffMS = _dt2 - _dt1
+
+        if ( isNaN( diffMS ) ) {
+            //console.warn( 'Cannot parse date to get difference because invalid format.' )
+            this._error( 'Cannot parse date to get difference because invalid format.', 'warn' )
+            return false
+        }
+        if ( absval ) {
+            diffMS = Math.abs( diffMS )
+        }
+
+        let _bd = _dt1 instanceof Date ? _dt1 : new Date( _dt1 ),
+            _ed = _dt2 instanceof Date ? _dt2 : new Date( _dt2 ),
+            _dy = _ed.getFullYear() - _bd.getFullYear(),
+            _m  = {}
+
+        switch ( true ) {
+            case /^millenniums?|millennia$/i.test( scale ): {
+                // return { "millennium-number": years,... }
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _bm = Math.ceil( (_by == 0 ? 1 : _by) / 1000 ), // millennium of first ordinal
+                    _em = Math.ceil( (_ey == 0 ? 1 : _ey) / 1000 ),
+                    _cm = _bm
+
+                _m[_bm] = _em - _bm > 0 ? (_bm * 1000) - _by : _ey - _by
+                _cm++
+                while ( _cm <= _em ) {
+                    _m[_cm] = _em - _cm > 0 ? 1000 : _ey - ((_cm - 1) * 1000)
+                    _cm++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^century$/i.test( scale ): {
+                // return { "century-number": years,... }
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _bc = Math.ceil( (_by == 0 ? 1 : _by) / 100 ), // century of first ordinal
+                    _ec = Math.ceil( (_ey == 0 ? 1 : _ey) / 100 ),
+                    _cc = _bc
+
+                _m[_bc] = _ec - _bc > 0 ? (_bc * 100) - _by : _ey - _by
+                _cc++
+                while ( _cc <= _ec ) {
+                    _m[_cc] = _ec - _cc > 0 ? 100 : _ey - ((_cc - 1) * 100)
+                    _cc++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^dec(ade|ennium)$/i.test( scale ): {
+                // return { "decade-number": days,... }
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _cy = _by == 0 ? 1 : _by,
+                    _cd, _days
+
+                while ( _cy <= _ey ) {
+                    _days = isLeapYear( new Date( _cy, 0, 1 ) ) ? 366 : 365
+                    _cd = Math.ceil( _cy / 10 ) // decade of first ordinal
+                    if ( Object.hasOwnProperty.call( _m, _cd ) ) {
+                        _m[_cd] += _days
+                    } else {
+                        _m[_cd] = _days
+                    }
+                    _cy++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^lustrum$/i.test( scale ): {
+                // return { "lustrum-number": days,... }
+                let _by = _bd.getFullYear(),
+                    _ey = _ed.getFullYear(),
+                    _cy = _by == 0 ? 1 : _by,
+                    _cl, _days
+
+                while ( _cy <= _ey ) {
+                    _days = isLeapYear( new Date( _cy, 0, 1 ) ) ? 366 : 365
+                    _cl = Math.ceil( _cy / 5 ) // lustrum of first ordinal
+                    if ( Object.hasOwnProperty.call( _m, _cl ) ) {
+                        _m[_cl] += _days
+                    } else {
+                        _m[_cl] = _days
+                    }
+                    _cy++
+                }
+                retval = _m
+                // return number of milliseconds
+                // retval = diffMS
+                break
+            }
+            case /^years?$/i.test( scale ):
+                // return { "year": days,... }
+                if ( _dy > 0 ) {
+                    for ( let i = 0; i <= _dy; i++ ) {
+                        let _cd = new Date( _bd.getFullYear() + i, 0, 1 )
+                        _m[`${_bd.getFullYear() + i}`] = isLeapYear( _cd ) ? 366 : 365
+                    }
+                } else {
+                    _m[`${_bd.getFullYear()}`] = isLeapYear( _bd ) ? 366 : 365
+                }
+                retval = _m
+                break
+            case /^months?$/i.test( scale ):
+                // return { "year/month": days,... }
+                if ( _dy > 0 ) {
+                    for ( let i = _bd.getMonth(); i < 12; i++ ) {
+                        let _cd = new Date( _bd.getFullYear(), i, 1 )
+                        _m[`${_bd.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
+                    }
+                    if ( _dy > 1 ) {
+                        for ( let y = 1; y < _dy; y++ ) {
+                            for ( let i = 0; i < 12; i++ ) {
+                                let _cd = new Date( _bd.getFullYear() + y, i, 1 )
+                                _m[`${_bd.getFullYear() + y}/${i + 1}`] = lastDayOfMonth( _cd )
+                            }
+                        }
+                    }
+                    for ( let i = 0; i <= _ed.getMonth(); i++ ) {
+                        let _cd = new Date( _ed.getFullYear(), i, 1 )
+                        _m[`${_ed.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
+                    }
+                } else {
+                    for ( let i = _bd.getMonth(); i <= _ed.getMonth(); i++ ) {
+                        let _cd = new Date( _bd.getFullYear(), i, 1 )
+                        _m[`${_bd.getFullYear()}/${i + 1}`] = lastDayOfMonth( _cd )
+                    }
+                }
+                retval = _m
+                break
+            case /^weeks?$/i.test( scale ): {
+                // return { "year,week": hours,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
+                    _cw = this.getWeek( _cd ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd ),
+                    _newWeek = `${_cd.getFullYear()},${_cw}`
+
+                _nd.setDate( _nd.getDate() + 1 )
+                _pd.setDate( _pd.getDate() - 1 )
+                _m[_newWeek] = ( _cd - _pd ) / ( 60 * 60 * 1000 ) // hours of first day
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setDate( _nd.getDate() + 1 )
+                    _cd.setDate( _cd.getDate() + 1 )
+                    _cw = this.getWeek( _cd )
+                    let _newWeekKey = `${_cd.getFullYear()},${_cw}`
+
+                    if ( Object.hasOwnProperty.call( _m, _newWeekKey ) ) {
+                        _m[_newWeekKey] += ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    } else {
+                        _m[_newWeekKey] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                    }
+                }
+                retval = _m
+                break
+            }
+            case /^(|week)days?$/i.test( scale ): {
+                // return { "year/month/day": hours,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd )
+
+                _nd.setDate( _nd.getDate() + 1 )
+                _pd.setDate( _pd.getDate() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _cd - _pd ) / ( 60 * 60 * 1000 )
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setDate( _nd.getDate() + 1 )
+                    _cd.setDate( _cd.getDate() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()}`] = ( _nd - _cd ) / ( 60 * 60 * 1000 )
+                }
+                retval = _m
+                break
+            }
+            case /^hours?$/i.test( scale ): {
+                // return { "year/month/day hour": minutes,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd )
+
+                _nd.setHours( _nd.getHours() + 1 )
+                _pd.setHours( _pd.getHours() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}`] = ( _cd - _pd ) / ( 60 * 1000 )
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setHours( _nd.getHours() + 1 )
+                    _cd.setHours( _cd.getHours() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}`] = ( _nd - _cd ) / ( 60 * 1000 )
+                }
+                retval = _m
+                break
+            }
+            case /^minutes?$/i.test( scale ): {
+                // return { "year/month/day hour:minute": seconds,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours(), _bd.getMinutes() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd )
+
+                _nd.setMinutes( _nd.getMinutes() + 1 )
+                _pd.setMinutes( _pd.getMinutes() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}`] = ( _cd - _pd ) / 1000
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setMinutes( _nd.getMinutes() + 1 )
+                    _cd.setMinutes( _cd.getMinutes() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}`] = ( _nd - _cd ) / 1000
+                }
+                retval = _m
+                break
+            }
+            case /^seconds?$/i.test( scale ): {
+                // return { "year/month/day hour:minute:second": milliseconds,... }
+                let _cd = new Date( _bd.getFullYear(), _bd.getMonth(), _bd.getDate(), _bd.getHours(), _bd.getMinutes(), _bd.getSeconds() ),
+                    _nd = new Date( _cd ),
+                    _pd = new Date( _cd )
+
+                _nd.setSeconds( _nd.getSeconds() + 1 )
+                _pd.setSeconds( _pd.getSeconds() - 1 )
+                _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}:${_cd.getSeconds()}`] = _cd - _pd
+                while ( _nd.getTime() <= _ed.getTime() ) {
+                    _nd.setSeconds( _nd.getSeconds() + 1 )
+                    _cd.setSeconds( _cd.getSeconds() + 1 )
+                    _m[`${_cd.getFullYear()}/${(_cd.getMonth() + 1)}/${_cd.getDate()} ${_cd.getHours()}:${_cd.getMinutes()}:${_cd.getSeconds()}`] = _nd - _cd
+                }
+                retval = _m
+                break
+            }
+            default:
+                // return number of milliseconds
+                retval = diffMS
+                break
+        }
+
+        return retval
+    }
+
+    /**
+     * Verify whether is allowed scale in the plugin. Then retrieves that values of intervals on the scale if the scale is available and given arguments of date range. And return the base millisecond of scale if it is not the variable length scale (isVLS to false)
+     * @param {!string} scale - 
+     * @param {number} [begin=null] - begin of range as unit millisecs that got by `Date.getTime()`
+     * @param {number} [end=null] - end of range as unit millisecs that got by `Date.getTime()`
+     * @param {boolean} [isVLS=false] - whether is variable length scale, defaults to false
+     * @return {object|boolean} boolean if no arguments are given after the first argument
+     */
+    verifyScale( scale, begin = null, end = null, isVLS = false ) {
+        let _ms    = -1,
+            isBool = this.is_empty( begin ) || this.is_empty( end ),
+            retval = isVLS ? this.diffDate( begin, end, scale ) : false
+
+        if ( typeof scale === 'undefined' || typeof scale !== 'string' ) {
+            return false
+        }
+        switch ( true ) {
+            case /^millisec(|ond)s?$/i.test( scale ):
+                // Millisecond (:> ミリ秒
+                _ms = 1
+                break
+            case /^seconds?$/i.test( scale ):
+                // Second (:> 秒
+                _ms = 1000
+                break
+            case /^minutes?$/i.test( scale ):
+                // Minute (:> 分
+                _ms = 60 * 1000
+                break
+            case /^quarter-?(|hour)$/i.test( scale ):
+                // Quarter of an hour (:> 15分
+                _ms = 15 * 60 * 1000
+                break
+            case /^half-?(|hour)$/i.test( scale ):
+                // Half an hour (:> 30分
+                _ms = 30 * 60 * 1000
+                break
+            case /^hours?$/i.test( scale ):
+                // Hour (:> 時（時間）
+                _ms = 60 * 60 * 1000
+                break
+            case /^(|week)days?$/i.test( scale ):
+                // Day (is the variable length scale by DST) (:> 日 (サマータイムによる可変長スケール)
+                _ms = 24 * 60 * 60 * 1000
+                break
+            case /^weeks?$/i.test( scale ):
+                // Week (is the variable length scale by DST) (:> 週 (サマータイムによる可変長スケール)
+                _ms = 7 * 24 * 60 * 60 * 1000
+                break
+            case /^months?$/i.test( scale ):
+                // Month (is the variable length scale) (:> 月（可変長スケール）
+                _ms = 30.44 * 24 * 60 * 60 * 1000
+                break
+            case /^years?$/i.test( scale ):
+                // Year (is the variable length scale) (:> 年（可変長スケール）
+                _ms = 365.25 * 24 * 60 * 60 * 1000
+                break
+            case /^lustrum$/i.test( scale ):
+                // Lustrum (is the variable length scale, but currently does not support) (:> 五年紀 (可変長スケールだが現在サポートしてない)
+                // 5y = 1826 or 1827; 1826 * 24 * 60 * 60 = 15766400, 1827 * 24 * 60 * 60 = 157852800 | avg.= 157788000
+                //_ms = ( ( 3.1536 * Math.pow( 10, 8 ) ) / 2 ) * 1000 // <--- Useless by info of wikipedia
+                _ms = 157788000 * 1000
+                break
+            case /^dec(ade|ennium)$/i.test( scale ):
+                // Decade (is the variable length scale, but currently does not support) (:> 十年紀 (可変長スケールだが現在サポートしてない)
+                // 10y = 3652 or 3653; 3652 * 24 * 60 * 60 = 315532800, 3653 * 24 * 60 * 60 = 157852800 | avg. = 315576000
+                // _ms = ( 3.1536 * Math.pow( 10, 8 ) ) * 1000 // <--- Useless by info of wikipedia
+                _ms = 315576000 * 1000
+                break
+            case /^century$/i.test( scale ):
+                // Century (:> 世紀（百年紀）
+                // 100y = 36525; 36525 * 24 * 60 * 60 = 3155760000
+                _ms = 3155760000 * 1000
+                break
+            case /^millenniums?|millennia$/i.test( scale ):
+                // Millennium (:> 千年紀
+                // 100y = 365250
+                //_ms = ( 3.1536 * Math.pow( 10, 10 ) ) * 1000
+                _ms = 3155760000 * 10 * 1000
+                break
+            default:
+                //console.warn( `Specified an invalid "${scale}" scale.` )
+                this._error( `Specified an invalid "${scale}" scale.`, 'warn' )
+                _ms = -1
+        }
+        if ( isBool ) {
+            return _ms > 0
+        } else {
+            return isVLS ? retval : _ms
+        }
+    }
+
+    /**
+     * Retrieve one higher scale
+     * @param {!string} scale - 
+     * @return {string} String of higher scale
+     */
+    getHigherScale( scale ) {
+        return this.findScale( scale, 'higher' )
+    }
+
+    /**
+     * Retrieve one lower scale
+     * @param {!string} scale - 
+     * @return {string} String of lower scale
+     */
+    getLowerScale( scale ) {
+        return this.findScale( scale, 'lower' )
+    }
+
+    /**
+     * Find scale matched the specified condition
+     * @param {!string} base_scale - 
+     * @param {!string} condition - 
+     * @return {string|object} matched scale(s)
+     */
+    findScale( base_scale, condition ) {
+        let scalePatternMap = [
+                [ 'millisecond', '^millisec(|ond)s?$' ],
+                [ 'second', '^seconds?$' ],
+                [ 'minute', '^minutes?$' ],
+                [ 'hour', '^(|half|quarter)-?(|hour)s?$' ],
+                [ 'day', '^(|week)days?$' ],
+                [ 'week', '^weeks?$' ],
+                [ 'month', '^months?$' ],
+                [ 'year', '^years?$' ],
+                [ 'lustrum', '^lustrum$' ],
+                [ 'decade', '^dec(ade|ennium)$' ],
+                [ 'century', '^century$' ],
+                [ 'millennium', '^millenniums?|millennia$' ],
+            ],
+            _idx = scalePatternMap.findIndex( ( elm ) => new RegExp( `${elm[1]}`, 'i' ).test( base_scale ) ),
+            _narrows
+
+        switch ( true ) {
+            case /^higher$/i.test( condition ):
+                _idx = scalePatternMap[(_idx + 1)] ? _idx + 1 : _idx
+                return scalePatternMap[_idx][0]
+            case /^higher\s?all$/i.test( condition ):
+                _narrows = scalePatternMap.slice( _idx + 1 )
+                _narrows = _narrows.reduce( ( acc, cur ) => acc.concat( cur[0] ), [] )
+                if ( _narrows.includes( 'day' ) ) {
+                    _narrows.push( 'weekday' )
+                }
+                return _narrows
+            case /^lower$/i.test( condition ):
+                _idx = scalePatternMap[(_idx - 1)] ? _idx - 1 : _idx
+                return scalePatternMap[_idx][0]
+            case /^lower\s?all$/i.test( condition ):
+                _narrows = scalePatternMap.slice( 0, _idx )
+                _narrows = _narrows.reduce( ( acc, cur ) => acc.concat( cur[0] ), [] )
+                if ( _narrows.includes( 'day' ) ) {
+                    _narrows.push( 'weekday' )
+                }
+                return _narrows
+            default:
+                return scalePatternMap[_idx][0]
+        }
+    }
+
     /**
      * Retrieve the date string of specified locale
      * @param {!string} date_seed - 
@@ -3479,7 +4032,6 @@ class Timeline {
                 _options[_prop] = options[_prop]
             }
         }
-//console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], is_toLocalString )
         
         switch ( true ) {
             case /^millenniums?|millennia$/i.test( scale ):
@@ -3522,7 +4074,6 @@ class Timeline {
                 break
             case /^weeks?$/i.test( scale ):
                 [ _str, _num ] = date_seed.split(',')
-//console.log( date_seed, _str, _num, new Date( _str ), parseDatetime( _str ), this.getCorrectDatetime( _str ) )
                 if ( options.hasOwnProperty( scale ) && options[scale] === 'ordinal' ) {
                     locale_string = getOrdinal( parseInt( _num, 10 ) )
                 } else {
@@ -3616,10 +4167,138 @@ class Timeline {
                 //locale_string = this.getCorrectDatetime( date_seed )
                 break
         }
-//console.log( '!getLocaleString:', date_seed, scale, locales, options[scale], locale_string )
         return locale_string
     }
-    
+
+    /**
+     * Convert the date-time to custom formatting strings, as like ruby
+     * @param {!(number|object)} baseDate - should be a Date object
+     * @param {string} [format=''] - 
+     * @param {string} [locales='en-US'] - 
+     * @return {string}
+     */
+    datetimeFormat( baseDate, format = '', locales = 'en-US' ) {
+        // let _baseDt = Object.prototype.toString.call( baseDate ) === '[object Date]' ? baseDate : this.getCorrectDatetime( baseDate ),
+        let _baseDt = baseDate instanceof Date ? baseDate : this.getCorrectDatetime( baseDate ),
+            _fmt    = format.toString().split(''),
+            _ptn    = 'YyZmBbdwWAaIHMSj'.split(''),
+            _cnvStr = '',
+            lastDayOfMonth = ( dateObj ) => {
+                let _tmp = new Date( dateObj.getFullYear(), dateObj.getMonth() + 1, 1 )
+
+                _tmp.setTime( _tmp.getTime() - 1 )
+                return _tmp.getDate()
+            }
+
+        if ( this.is_empty( _fmt ) ) {
+            return _baseDt.toString()
+        }
+        _fmt.forEach( ( _str, _i, _orig ) => {
+            let _match  = false,
+                _repStr = ''
+
+            if ( _ptn.includes( _str ) && ! this.is_empty( _orig[_i - 1] ) && _orig[_i - 1] === '%' ) {
+                _match = this.is_empty( _orig[_i - 2] ) || _orig[_i - 2] !== '\\'
+            }
+            if ( _match ) {
+                switch ( _str ) {
+                    case 'Y':
+                    case 'y':
+                    case 'Z': {
+                        // year
+                        let _year = _baseDt.getFullYear()
+
+                        if ( _str === 'Z' ) {
+                            _repStr = _year < 10 ? `000${_year}` : _year < 100 ? `00${_year}` : _year < 1000 ? `0${_year}` : _year
+                        } else {
+                            _repStr = _str === 'Y' ? _year : _year.toString().slice(-2)
+                        }
+                        break
+                    }
+                    case 'm':
+                    case 'B':
+                    case 'b': {
+                        // month
+                        if ( _str === 'm' ) {
+                            let _month = _baseDt.getMonth() + 1
+
+                            _repStr = _month < 10 ? `0${_month}` : _month
+                        } else {
+                            let _opts = { month: _str === 'B' ? 'long' : 'short' }
+
+                            _repStr = _baseDt.toLocaleDateString( locales, _opts )
+                        }
+                        break
+                    }
+                    case 'd': {
+                        // day
+                        let _day = _baseDt.getDate()
+
+                        _repStr = _day < 10 ? `0${_day}` : _day
+                        break
+                    }
+                    case 'w':
+                    case 'A':
+                    case 'a': {
+                        // weekday
+                        if ( _str === 'w' ) {
+                            let _wday = _baseDt.getDay()
+
+                            _repStr = _wday
+                        } else {
+                            let _opts = { weekday: _str === 'A' ? 'long' : 'short' }
+
+                            _repStr = _baseDt.toLocaleDateString( locales, _opts )
+                        }
+                        break
+                    }
+                    case 'W': {
+                        // week
+                        _repStr = this.getWeek( _baseDt )
+                        break
+                    }
+                    case 'I':
+                    case 'H': {
+                        // hour
+                        let _opts = { hour12: _str === 'I', hour: 'numeric' }
+
+                        _repStr = _baseDt.toLocaleTimeString( locales, _opts )
+                        break
+                    }
+                    case 'M': {
+                        // minute
+                        _repStr = _baseDt.toLocaleTimeString( locales, { minute: 'numeric' } )
+                        break
+                    }
+                    case 'S': {
+                        // second
+                        _repStr = _baseDt.toLocaleTimeString( locales, { second: 'numeric' } )
+                        break
+                    }
+                    case 'j': {
+                        // day of year
+                        let _fdy   = new Date( _baseDt.getFullYear(), 0, 1 ),
+                            _month = _baseDt.getMonth(),
+                            _days  = 0, _m
+
+                        for ( _m = 0; _m < _month; _m++ ) {
+                            _fdy.setMonth( _m )
+                            _days += lastDayOfMonth( _fdy )
+                        }
+                        _repStr = _days + _baseDt.getDate()
+                        _repStr = _repStr < 10 ? `00${_repStr}` : _repStr < 100 ? `0${_repStr}` : _repStr
+                        break
+                    }
+                }
+                _cnvStr = _cnvStr.substring(0, _cnvStr.length - 1) + _repStr.toString()
+            } else {
+                _cnvStr += _str
+            }
+        }, _cnvStr )
+        _cnvStr = _cnvStr.toString().replace( /\\/g, '' )
+        return _cnvStr
+    }
+
     /**
      * Get the rendering width of the given string
      * @param {!string} str - 
@@ -3665,7 +4344,107 @@ class Timeline {
             return order === 'desc' ? comparison * -1 : comparison
         }
     }
-    
+
+    /**
+     * Getter argument as user data
+     * @since v2.1.0
+     * @param {!object} userdata - 
+     * @return {object}
+     */
+    getUserArg( userdata ) {
+        //console.log( '!_getUserArg:', userdata, typeof userdata, typeof userdata[0], this.is_Object( userdata[0] ) )
+        switch( typeof userdata[0] ) {
+            case 'string':
+            case 'number':
+                userdata = [ userdata[0] ]
+                break
+            case 'object':
+                if ( this.is_Object( userdata[0] ) ) {
+                    // Object
+                    if ( this.is_empty( userdata[0] ) ) {
+                        userdata = {}
+                    } else {
+                        userdata = this.mergeDeep( {}, userdata[0] )
+                    }
+                } else {
+                    // Array
+                    if ( this.is_empty( userdata[0] ) ) {
+                        userdata = []
+                    } else {
+                        userdata = userdata[0]
+                    }
+                }
+                break
+            default:
+                userdata = userdata[0]
+                break
+        }
+        return userdata
+    }
+
+    /**
+     * Apply custom theme styles
+     * @since v2.1.0
+     * @return {void}
+     */
+    applyThemeStyle() {
+        let theme    = this._config.colorScheme.theme,
+            selector = this._selector,
+            styleId  = `${PREFIX}-theme-${selector.replace(/[.#_]/g, '-')}`,
+            styleTag = $('<style></style>', { id: styleId }),
+            _is      = {},
+            _os      = {},
+            cssText  = ''
+        
+        if ( $(`style#${styleId}`).length > 0 ) {
+            $(`style#${styleId}`).remove()
+        }
+        if ( 'default' === theme.name ) {
+            return
+        }
+
+        _is[Selector.TIMELINE_CONTAINER] = `border:solid 1px ${theme.offline}; background:${theme.background}`
+        _is[Selector.HEADLINE_TITLE] = `color:${theme.text}`
+        _is[Selector.RANGE_META] = `color:${theme.subtext}`
+        _is[Selector.TIMELINE_RULER_TOP] = `outline:solid 1px ${theme.offline}`
+        _is[Selector.TIMELINE_RULER_BOTTOM] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_RULER_LINES}:nth-child(even)`] = `background-color:${this.hexToRgbA(theme.striped1, 0.25)}`
+        _is[Selector.TIMELINE_RULER_ITEM] = `color:${theme.subtext}`
+        _is[`${Selector.TIMELINE_RULER_ITEM}:nth-child(even)`] = `background-color:${this.hexToRgbA(theme.striped2, 0.25)}`
+        _is[Selector.TIMELINE_EVENT_CONTAINER] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}:not(.jqtl-event-type-pointer).active`] = `color:${theme.background};background-color:${theme.active}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}:hover`] = `color:${theme.background};background-color:${theme.active}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}:hover::after`] = `background-color:${this.hexToRgbA(theme.invertbg, 0.1)}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}::before`] = `color:${theme.modesttext}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}${Selector.VIEWER_EVENT_TYPE_POINTER}`] = `border:solid 3px ${theme.line}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}${Selector.VIEWER_EVENT_TYPE_POINTER}.active`] = `border-color:${theme.activeline}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}${Selector.VIEWER_EVENT_TYPE_POINTER}:hover`] = `border-color:${theme.activeline}`
+        _is[Selector.TIMELINE_SIDEBAR] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_SIDEBAR}> [class^="jqtl-side-index-"]`] = `border-bottom:dotted 1px ${theme.offline};background-color:${theme.background};color:${theme.text}`
+        _is[`${Selector.TIMELINE_SIDEBAR} ${Selector.TIMELINE_SIDEBAR_ITEM}:nth-child(odd)`] = `background-color:${theme.striped1}`
+        _is[`${Selector.TIMELINE_SIDEBAR} ${Selector.TIMELINE_SIDEBAR_ITEM}:first-child`] = `border-top:solid 1px ${theme.offline}`
+        _is[Selector.TIMELINE_SIDEBAR_MARGIN] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_SIDEBAR_MARGIN}:first-child`] = `border-bottom:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_SIDEBAR_MARGIN}:last-child`] = `border-top:solid 1px ${theme.offline}`
+        _is[Selector.OVERLAY] = `background-color:${this.hexToRgbA(theme.background, 0.65)} !important`
+        _is[`${Selector.OVERLAY}:nth-child(odd)`] = `background-color:${this.hexToRgbA(theme.striped1, 0.45)} !important`
+        _os[`${Selector.VIEWER_EVENT_TITLE},${Selector.VIEWER_EVENT_CONTENT}`] = `color:${theme.text}`
+        _os[`${Selector.VIEWER_EVENT_TITLE}> .event-content`] = `color:${theme.offtext}`
+        _os[Selector.VIEWER_EVENT_META] = `color:${theme.offtext}`
+        _is[Selector.PRESENT_TIME_MARKER] = `border-left:dotted 1px ${theme.marker}`
+        _is[`${Selector.PRESENT_TIME_MARKER}::before,${Selector.PRESENT_TIME_MARKER}::after`] = `background-color:${theme.marker}`
+        _is[`${Selector.LOADER_ITEM} span`] = `background:${this.hexToRgbA(theme.text, 0.15)}`
+        _os['@keyframes loader'] = `0%{background:${this.hexToRgbA(theme.text, 0.15)}}25%{background:${this.hexToRgbA(theme.text, 0.15)}}50%{background:${this.hexToRgbA(theme.text, 0.15)}}100%{background:${this.hexToRgbA(theme.text, 0.15)}}`
+
+        for ( let _prop of Object.keys( _is ) ) {
+            cssText += `${selector} ${_prop}{${_is[_prop]}}`
+        }
+        for ( let _prop of Object.keys( _os ) ) {
+            cssText += `${_prop}{${_os[_prop]}}`
+        }
+        $('head').append( styleTag.text( cssText ) )
+    }
+
     /**
      * Validator for string
      * @param {!(number|string|Object|boolean)} def - Define instead this value as default if validation failure

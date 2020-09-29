@@ -4,8 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.0.0 (revised from beta 6)
- * Last Modified: November 19, 2019 (UTC)
+ * Version: 2.1.0
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -16,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.0.0"
+const VERSION            = "2.1.0"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -54,11 +53,20 @@ const Default = {
             lines      : [],
             height     : 30,
             fontSize   : 14,
-            color      : "#777777",
-            background : "#FFFFFF",
+            color      : "inherit",// Changed since v2.1.0, an old value is "#777777"
+            background : "inherit",// Changed since v2.1.0, an old value is "#FFFFFF"
             locale     : "en-US",
             format     : { hour12: false }
         },
+        bottom      : {// Added since v2.1.0 to fix #61
+            lines      : [],
+            height     : 30,
+            fontSize   : 14,
+            color      : "inherit",
+            background : "inherit",
+            locale     : "en-US",
+            format     : { hour12: false }
+        }
     },
     footer          : {
         display     : true,
@@ -91,6 +99,23 @@ const Default = {
     },
     */
     colorScheme     : { // Added new option since v2.0.0
+        theme         : { // Added new option since v2.1.0
+            name        : "default",
+            text        : "#343A40",
+            subtext     : "#707070",
+            offtext     : "#BBBBBB",
+            modesttext  : "#969696",
+            line        : "#6C757D",
+            offline     : "#DDDDDD",
+            activeline  : "#DC3545",
+            background  : "#FFFFFF",
+            invertbg    : "#121212",
+            striped1    : "#F7F7F7",
+            striped2    : "#F0F0F0",
+            active      : "#F73333",
+            marker      : "#2C7CFF",
+            gridbase    : "#333333"
+        },
         event         : {
             text        : "#343A40",
             border      : "#6C757D",
@@ -228,17 +253,27 @@ const Selector = {
     RULER_BOTTOM              : `.${PREFIX}ruler-bottom`,
     TIMELINE_CONTAINER        : `.${ClassName.TIMELINE_CONTAINER}`,
     TIMELINE_MAIN             : `.${ClassName.TIMELINE_MAIN}`,
+    HEADLINE_TITLE            : `.${ClassName.HEADLINE_TITLE}`,// Added since v2.1.0
+    RANGE_META                : `.${ClassName.RANGE_META}`,// Added since v2.1.0
     TIMELINE_RULER_TOP        : `.${PREFIX}ruler-top`,
     TIMELINE_EVENT_CONTAINER  : `.${ClassName.TIMELINE_EVENT_CONTAINER}`,
     TIMELINE_RULER_BOTTOM     : `.${PREFIX}ruler-bottom`,
+    TIMELINE_RULER_LINES      : `.${ClassName.TIMELINE_RULER_LINES}`,// Added since v2.1.0
     TIMELINE_RULER_ITEM       : `.${ClassName.TIMELINE_RULER_ITEM}`,
     TIMELINE_RELATION_LINES   : `.${ClassName.TIMELINE_RELATION_LINES}`,
     TIMELINE_EVENTS           : `.${ClassName.TIMELINE_EVENTS}`,
     TIMELINE_SIDEBAR          : `.${ClassName.TIMELINE_SIDEBAR}`,
+    TIMELINE_SIDEBAR_MARGIN   : `.${ClassName.TIMELINE_SIDEBAR_MARGIN}`,// Added since v2.1.0
     TIMELINE_SIDEBAR_ITEM     : `.${ClassName.TIMELINE_SIDEBAR_ITEM}`,
     TIMELINE_EVENT_NODE       : `.${ClassName.TIMELINE_EVENT_NODE}`,
+    VIEWER_EVENT_TITLE        : `.${ClassName.VIEWER_EVENT_TITLE}`,// Added since v2.1.0
+    VIEWER_EVENT_CONTENT      : `.${ClassName.VIEWER_EVENT_CONTENT}`,// Added since v2.1.0
+    VIEWER_EVENT_META         : `.${ClassName.VIEWER_EVENT_META}`,// Added since v2.1.0
     VIEWER_EVENT_TYPE_POINTER : `.${ClassName.VIEWER_EVENT_TYPE_POINTER}`,
+    OVERLAY                   : `.${ClassName.OVERLAY}`,// Added since v2.1.0
+    PRESENT_TIME_MARKER       : `.${ClassName.PRESENT_TIME_MARKER}`,// Added since v2.1.0
     LOADER                    : `.${ClassName.LOADER_CONTAINER}`,
+    LOADER_ITEM               : `.${ClassName.LOADER_ITEM}`,// Added since v2.1.0
     DEFAULT_EVENTS            : ".timeline-events"
 }
 
@@ -768,7 +803,8 @@ class Timeline {
                     params.extend = JSON.parse( JSON.stringify( ( new Function( `return ${params.extend}` ) )() ) )
                 }
             } catch( e ) {
-                console.warn( 'Can not parse to object therefor invalid param.' )
+                //console.warn( 'Can not parse to object therefor invalid param.' )
+                this._error( 'Can not parse to object therefor invalid param.', 'warn' )
             }
         }
         return params
@@ -804,23 +840,24 @@ class Timeline {
         let _elem          = this._element,
             _opts          = this._config,
             _props         = this._instanceProps,
-            _tl_container  = $('<div></div>', { class: ClassName.TIMELINE_CONTAINER, style: `width: ${_props.visibleWidth}; height: ${_props.visibleHeight};` }),
-            _tl_main       = $('<div></div>', { class: ClassName.TIMELINE_MAIN })
+            _tl_container  = $('<div></div>', { class: ClassName.TIMELINE_CONTAINER, style: `width: ${_props.visibleWidth}; height: ${_props.visibleHeight};` }),// .jqtl-container
+            _tl_main       = $('<div></div>', { class: ClassName.TIMELINE_MAIN }),// .jqtl-main
+            $_el           = $(_elem)// Cached an element
 
 //console.log( _elem, _opts, _props )
-        if ( $(_elem).length == 0 ) {
+        if ( $_el.length == 0 ) {
             throw new TypeError( 'Does not exist the element to render a timeline container.' )
         }
 
         this._debug( `Timeline:{ fullWidth: ${_props.fullwidth}px, fullHeight: ${_props.fullheight}px, viewWidth: ${_props.visibleWidth}, viewHeight: ${_props.visibleHeight} }` )
 
-        $(_elem).css( 'position', 'relative' ) // initialize; not .empty()
+        $_el.css( 'position', 'relative' ) // initialize; not .empty()
         if ( _opts.hideScrollbar ) {
-            _tl_container.addClass( ClassName.HIDE_SCROLLBAR )
+            _tl_container.addClass( ClassName.HIDE_SCROLLBAR )// .jqtl-hide-scrollbar
         }
 
         // Create the timeline headline (:> タイムラインの見出しを生成
-        $(_elem).prepend( this._createHeadline() )
+        $_el.prepend( this._createHeadline() )
 
         // Create the timeline event container (:> タイムラインのイベントコンテナを生成
         _tl_main.append( this._createEventContainer() )
@@ -845,10 +882,13 @@ class Timeline {
 
         // Append the timeline container in the timeline element (:> タイムライン要素にタイムラインコンテナを追加
         _tl_container.append( _tl_main )
-        $(_elem).append( _tl_container )
+        $_el.append( _tl_container )
 
         // Create the timeline footer (:> タイムラインのフッタを生成
-        $(_elem).append( this._createFooter() )
+        $_el.append( this._createFooter() )
+
+        // Apply the theme color scheme (:> テーマ配色設定を適用
+        this.applyThemeStyle()
 
         this._isShown = true
     }
@@ -867,24 +907,29 @@ class Timeline {
             _begin   = this.supplement( null, _props.begin ),
             _end     = this.supplement( null, _props.end ),
             _scale   = _opts.scale,
-            _tl_headline = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE }),
-            _wrapper     = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE_WRAPPER })
+            _tl_headline = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE }),// .jqtl-headline
+            _wrapper     = $('<div></div>', { class: ClassName.TIMELINE_HEADLINE_WRAPPER })// .jqtl-headline-wrapper
 
         if ( _title ) {
-            _wrapper.append( `<h3 class="${ClassName.HEADLINE_TITLE}">${_opts.headline.title}</h3>` )
+            _wrapper.append( `<h3 class="${ClassName.HEADLINE_TITLE}">${_opts.headline.title}</h3>` )// .jqtl-timeline-title
         }
         if ( _range ) {
             if ( _begin && _end ) {
+                let _meta = ''
+                
                 if ( Object.hasOwnProperty.call( _format, 'custom' ) ) {
                     _scale = 'custom'
                 }
-                let _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
-
-                _wrapper.append( `<div class="${ClassName.RANGE_META}">${_meta}</div>` )
+                if ( [ 'year', 'month', 'day', 'week' ].includes( _scale ) ) {
+                    _meta = `${this.getLocaleString( _opts.startDatetime, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _opts.endDatetime, _scale, _locale, _format )}`
+                } else {
+                    _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
+                }
+                _wrapper.append( `<div class="${ClassName.RANGE_META}">${_meta}</div>` )// .jqtl-range-meta
             }
         }
         if ( ! _display ) {
-            _tl_headline.addClass( ClassName.HIDE )
+            _tl_headline.addClass( ClassName.HIDE )// .jqtl-hide
         }
         return _tl_headline.append( _wrapper )
     }
@@ -895,7 +940,7 @@ class Timeline {
     _createEventContainer() {
         let _opts         = this._config,
             _props        = this._instanceProps,
-            _actualHeight = _props.fullheight + Math.ceil( _props.rows / 2 ),
+            _actualHeight = _props.fullheight + Math.ceil( _props.rows / 2 ) + 1,
             _container    = $('<div></div>', { class: ClassName.TIMELINE_EVENT_CONTAINER, style: `height:${_actualHeight}px;` }),
             _events_bg    = $(`<canvas width="${( _props.fullwidth - 1 )}" height="${_actualHeight}" class="${ClassName.TIMELINE_BACKGROUND_GRID}"></canvas>`),
             _events_lines = $(`<canvas width="${( _props.fullwidth - 1 )}" height="${_actualHeight}" class="${ClassName.TIMELINE_RELATION_LINES}"></canvas>`),
@@ -904,7 +949,7 @@ class Timeline {
             ctx_grid      = _events_bg[0].getContext('2d'),
             _grid_style   = { horizontal: 'dotted', vertical: 'solid' },
             drawRowRect   = ( pos_y, color ) => {
-                color = this.supplement( '#FFFFFF', color )
+                color = this.supplement( _opts.colorScheme.theme.background, color )
                 // console.log( 0, pos_y, _fullwidth, _size_row, color )
                 ctx_grid.fillStyle = color
                 ctx_grid.fillRect( 0, pos_y + 0.5, _props.fullwidth, _props.rowSize + 1.5 )
@@ -924,7 +969,7 @@ class Timeline {
                     default:
                         return
                 }
-                ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.1 )'
+                ctx_grid.strokeStyle = this.hexToRgbA( _opts.colorScheme.theme.gridbase, 0.1 )// 'rgba( 51, 51, 51, 0.1 )'
                 ctx_grid.lineWidth = 1
                 ctx_grid.filter = 'url(#crisp)'
                 ctx_grid.beginPath()
@@ -952,7 +997,7 @@ class Timeline {
                     default:
                         return
                 }
-                ctx_grid.strokeStyle = 'rgba( 51, 51, 51, 0.025 )'
+                ctx_grid.strokeStyle = this.hexToRgbA( _opts.colorScheme.theme.gridbase, 0.1 )// 'rgba( 51, 51, 51, 0.025 )'
                 ctx_grid.lineWidth = 1
                 ctx_grid.filter = 'url(#crisp)'
                 ctx_grid.beginPath()
@@ -962,7 +1007,7 @@ class Timeline {
                     ctx_grid.setLineDash([])
                 }
                 ctx_grid.moveTo( pos_x + _correction, 0 )
-                ctx_grid.lineTo( pos_x + _correction, _props.fullheight )
+                ctx_grid.lineTo( pos_x + _correction, _actualHeight )
                 ctx_grid.closePath()
                 ctx_grid.stroke()
             }
@@ -978,10 +1023,10 @@ class Timeline {
         for ( let i = 0; i < _props.rows; i++ ) {
             _cy += i % 2 == 0 ? 1 : 0
             let _pos_y = ( i * _props.rowSize ) + _cy,
-                _color = '#FEFEFE'
+                _color = this.hexToRgbA( _opts.colorScheme.theme.striped1, 0.1 )// '#FEFEFE'
 
             if ( Object.hasOwnProperty.call( _opts.effects, 'stripedGridRow' ) && _opts.effects.stripedGridRow ) {
-                _color = i % 2 == 0 ? '#FEFEFE' : '#F8F8F8'
+                _color = i % 2 == 0 ? this.hexToRgbA( _opts.colorScheme.theme.striped1, 0.1 ) : this.hexToRgbA( _opts.colorScheme.theme.striped2, 0.25 )// '#FEFEFE' : '#F8F8F8'
             }
             drawRowRect( _pos_y, _color )
         }
@@ -1077,13 +1122,21 @@ class Timeline {
             _finalLines = 0,
             ctx_ruler   = _ruler_bg[0].getContext('2d')
 
+        // Override ruler options for applying theme; added since v2.1.0
+        if ( 'inherit' === ruler_opts.color ) {
+            ruler_opts.color = _opts.colorScheme.theme.subtext
+        }
+        if ( 'inherit' === ruler_opts.background ) {
+            ruler_opts.background = _opts.colorScheme.theme.background
+        }
+
 //console.log( '!_createRuler:', ruler_line, ruler_opts )
         // Draw background of ruler
-        ctx_ruler.fillStyle = background
+        ctx_ruler.fillStyle = ruler_opts.background
         ctx_ruler.fillRect( 0, 0, ctx_ruler.canvas.width, ctx_ruler.canvas.height )
 
         // Draw stroke of ruler
-        ctx_ruler.strokeStyle = 'rgba( 51, 51, 51, 0.1 )'
+        ctx_ruler.strokeStyle = this.hexToRgbA( _opts.colorScheme.theme.gridbase, 0.1 )// 'rgba( 51, 51, 51, 0.1 )'
         ctx_ruler.lineWidth = 1
         ctx_ruler.filter = 'url(#crisp)'
         ruler_line.some( ( line_scale, idx ) => {
@@ -1277,6 +1330,7 @@ class Timeline {
             format       = this.supplement( Default.ruler.top.format, ruler.format, this.validateObject ),
             _ruler_lines = $('<div></div>', { class: ClassName.TIMELINE_RULER_LINES, style: `width:100%;height:${line_height}px;` })
 
+//console.log( '!_createRulerContent::', ruler, line_scale, text_color, locale, format )
         for ( let _key of Object.keys( _line_grids ) ) {
             let _item_width      = _line_grids[_key],
                 _line            = $('<div></div>', { class: ClassName.TIMELINE_RULER_ITEM, style: `width:${_item_width}px;height:${line_height}px;line-height:${line_height}px;font-size:${font_size}px;color:${text_color};` }),
@@ -1411,7 +1465,8 @@ class Timeline {
 
         if ( _cnt == 0 ) {
             //this._debug( 'Enable event does not exist.' )
-            console.warn( 'Enable event does not exist.' )
+            //console.warn( 'Enable event does not exist.' )
+            this._error( 'Enable event does not exist.', 'warn' )
         }
 
         // Register Event Data
@@ -1606,7 +1661,8 @@ class Timeline {
                 coordinate_x = ( ( _date - _props.begin ) / _props.scale ) * _props.scaleSize
             }
         } else {
-            console.warn( 'Cannot parse date because invalid format or undefined.' )
+            //console.warn( 'Cannot parse date because invalid format or undefined.' )
+            this._error( 'Cannot parse date because invalid format or undefined.', 'warn' )
         }
 
         return coordinate_x
@@ -1709,6 +1765,7 @@ class Timeline {
                                 } else
                                 if ( $(_self).attr('data-state') === 'show' ) {
                                     setTimeout(() => {
+                                        _relation_lines.attr( 'data-state', 'shown' )
                                         _evt_container.attr( 'data-state', 'shown' )
                                     }, 300)
                                 }
@@ -1727,6 +1784,16 @@ class Timeline {
                 // add new since v2.0.0 : end
                 */
                 events.forEach( ( _evt ) => {
+                    // Apply color scheme to the creation event
+                    if ( _evt.color === Default.colorScheme.event.text && Default.colorScheme.event.text !== _opts.colorScheme.event.text ) {
+                        _evt.color = _opts.colorScheme.event.text
+                    }
+                    if ( _evt.bgColor === Default.colorScheme.event.background && Default.colorScheme.event.background !== _opts.colorScheme.event.background ) {
+                        _evt.bgColor = _opts.colorScheme.event.background
+                    }
+                    if ( _evt.bdColor === Default.colorScheme.event.border && Default.colorScheme.event.border !== _opts.colorScheme.event.border ) {
+                        _evt.bdColor = _opts.colorScheme.event.border
+                    }
                     let _evt_elem = this._createEventNode( _evt )
 
                     if ( _evt_elem ) {
@@ -2092,12 +2159,16 @@ class Timeline {
             _canvas       = $(this._element).find( Selector.TIMELINE_RELATION_LINES ),
             ctx_relations = _canvas[0].getContext('2d'),
             drawLine      = ( _sx, _sy, _ex, _ey, evt, _ba ) => {
-                let _curveType = {},
-                    _radius    = this.numRound( Math.min( _props.scaleSize, _props.rowSize ) / 2, 2 )//,
+                let _curveType   = {},
+                    _strokeColor = EventParams.bdColor,
+                    _radius      = this.numRound( Math.min( _props.scaleSize, _props.rowSize ) / 2, 2 )//,
                     // _subRadius = this.numRound( this._getPointerSize( evt.size, _opts.marginHeight ) / 2, 2 )
 
                 // Defaults
-                ctx_relations.strokeStyle = EventParams.bdColor
+                if ( _strokeColor === Default.colorScheme.event.border && Default.colorScheme.event.border !== this._config.colorScheme.event.border ) {
+                    _strokeColor = this._config.colorScheme.event.border
+                }
+                ctx_relations.strokeStyle = _strokeColor
                 ctx_relations.lineWidth   = 2.5
                 ctx_relations.filter      = 'url(#crisp)'
 
@@ -2204,10 +2275,11 @@ class Timeline {
                         case /^lt$/i.test( _curveType[_ba] ): // "(_ex,_ey)┌(_sx,_sy)"
                             ctx_relations.moveTo( _sx, _sy )
                             if ( Math.abs( _sx - _ex ) > _radius ) {
-                                ctx_relations.lineTo( _ex - _radius, _sy ) // "─"
+                                ctx_relations.lineTo( _ex + _radius, _sy ) // "─"
                             }
                             if ( Math.abs( _ey - _sy ) > _radius ) {
-                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _sy + _radius ) // "┌"
+                                let _hep = _ey - _sy >= 0 ? _sy + _radius : _sy - _radius
+                                ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _hep ) // "┌"
                                 ctx_relations.lineTo( _ex, _ey ) // "│"
                             } else {
                                 ctx_relations.quadraticCurveTo( _ex, _sy, _ex, _ey ) // "┌"
@@ -2266,6 +2338,10 @@ class Timeline {
                             //ctx_relations.bezierCurveTo( _sx + _subRadius + _radius, _sy, _sx + _subRadius + _radius, _ey, _sx + _subRadius, _ey ) // "⊃"
                             ctx_relations.bezierCurveTo( _sx + _radius * 2, _sy, _sx + _radius * 2, _ey, _sx + _radius, _ey ) // "⊃"
                             ctx_relations.lineTo( _ex, _ey ) // "─"
+                            break
+                        default:
+                            ctx_relations.moveTo( _sx, _sy )
+                            ctx_relations.lineTo( _ex, _ey )
                             break
                     }
                 } else {
@@ -2480,6 +2556,16 @@ class Timeline {
     }
 
     /*
+     * @private: Logger of errors when the method execution
+     */
+    _error( message, type = 'error' ) {
+        if ( message && window.console ) {
+            type = window.console[type] ? type : 'error'
+            console[type]( message )
+        }
+    }
+
+    /*
      * @private: Echo the log of plugin for debugging
      */
     _debug( message, throwType = 'Notice' ) {
@@ -2519,7 +2605,7 @@ class Timeline {
             _opts    = this._config,
             _args    = args[0],
             callback = _args.length > 0 && typeof _args[0] === 'function' ? _args[0] : null,
-            userdata = _args.length > 1 ? _args.slice(1) : null
+            userdata = _args.length > 1 ? this.getUserArg( _args.slice(1) ) : undefined
 
 // console.log( '!initialized:', callback, userdata )
         if ( callback && ! this._isInitialized ) {
@@ -2600,7 +2686,7 @@ class Timeline {
             _opts    = this._config,
             moveOpts = this.supplement( null, _args[0], this.validateObject ),
             callback = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
-            userdata = _args.length > 2 ? _args.slice(2) : null,
+            userdata = _args.length > 2 ? this.getUserArg( _args.slice(2) ) : undefined,
             newOpts  = {},
             begin_date, end_date, _tmpDate
 
@@ -2669,7 +2755,7 @@ class Timeline {
             _opts    = this._config,
             moveOpts = this.supplement( null, _args[0], this.validateObject ),
             callback = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
-            userdata = _args.length > 2 ? _args.slice(2) : null,
+            userdata = _args.length > 2 ? this.getUserArg( _args.slice(2) ) : undefined,
             newOpts  = {},
             begin_date, end_date, _tmpDate
 
@@ -2842,9 +2928,11 @@ class Timeline {
         let _args        = args[0],
             events       = this.supplement( null, _args[0], this.validateArray ),
             callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
-            userdata     = _args.length > 2 ? _args.slice(2) : null,
+            userdata     = _args.length > 2 ? this.getUserArg( _args.slice(2) ) : undefined,
             _cacheEvents = this._loadToCache(),
+            _cacheIds    = _cacheEvents.map((evt) => evt.eventId),
             lastEventId  = 0,
+            addedEvents  = [],
             add_done     = false
 
         if ( this.is_empty( events ) || ! this._isCompleted ) {
@@ -2852,34 +2940,56 @@ class Timeline {
         }
 
         if ( ! this.is_empty( _cacheEvents ) ) {
-            _cacheEvents.sort( this.compareValues( 'eventId' ) )
-            lastEventId = parseInt( _cacheEvents[_cacheEvents.length - 1].eventId, 10 )
+            //_cacheEvents.sort( this.compareValues( 'eventId' ) )
+            //lastEventId = parseInt( _cacheEvents[_cacheEvents.length - 1].eventId, 10 )
+            lastEventId = Math.max( ..._cacheIds )
         }
-//console.log( '!addEvent::before:', _cacheEvents, lastEventId, callback, userdata )
+//console.log( '!_addEvent::before:', _cacheEvents, lastEventId, callback, userdata )
 
-        events.forEach( ( evt ) => {
+        //events.forEach( ( evt ) => {
+        events.some( ( evt ) => {
+            if ( ! this.is_empty( evt.eventId ) && _cacheIds.includes( evt.eventId ) ) {
+                this._error( `An event with the same eventID: ${evt.eventId} already exists.`, 'warn' )
+                return false
+            }
             let _one_event = this._registerEventData( '<div></div>', evt )
 
             if ( ! this.is_empty( _one_event ) ) {
-                _one_event.eventId = Math.max( lastEventId + 1, parseInt( _one_event.eventId, 10 ) )
-                _cacheEvents.push( _one_event )
-                lastEventId = parseInt( _one_event.eventId, 10 )
+//console.log( '!!_addEvent::before:', _cacheIds, lastEventId, _one_event.eventId )
+                if ( _one_event.eventId == 0 ) {
+                    _one_event.eventId = Math.max( lastEventId + 1, parseInt( _one_event.eventId, 10 ) )
+                    _cacheEvents.push( _one_event )
+                    lastEventId = parseInt( _one_event.eventId, 10 )
+                } else {
+                    _cacheEvents.push( _one_event )
+                    lastEventId = lastEventId < _one_event.eventId ? _one_event.eventId : lastEventId
+                }
+                addedEvents[_one_event.eventId] = _one_event
+                _cacheIds.push( _one_event.eventId )
                 add_done = true
             }
         })
-//console.log( '!addEvent::after:', _cacheEvents, lastEventId, callback, userdata )
+//console.log( '!!!_addEvent::after:', _cacheEvents, lastEventId, callback, userdata )
         if ( ! add_done ) {
             return
         }
 
         this._saveToCache( _cacheEvents )
 
+        // Prevents flicker when re-placing events; Added since v2.1.0 (#51)
+        $(this._element).find(Selector.TIMELINE_RELATION_LINES)[0].style.opacity = 1
+        $(this._element).find(Selector.TIMELINE_EVENTS)[0].style.opacity = 1
+
         await this._placeEvent()
 
         if ( callback ) {
             this._debug( 'Fired your callback function after replacing events.' )
 
-            callback( this._element, this._config, userdata )
+            if ( userdata ) {
+                callback( this._element, this._config, userdata, addedEvents )
+            } else {
+                callback( this._element, this._config, addedEvents )
+            }
         }
     }
 
@@ -2889,14 +2999,13 @@ class Timeline {
     async removeEvent( ...args ) {
         this._debug( 'removeEvent' )
 
-        let _args        = args[0],
-            targets      = this.supplement( null, _args[0], this.validateArray ),
-            callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
-            userdata     = _args.length > 2 ? _args.slice(2) : null,
-            _cacheEvents = this._loadToCache(),
-            condition    = {},
-            remainEvents = [],
-            remove_done  = false
+        let _args         = args[0],
+            targets       = this.supplement( null, _args[0], this.validateArray ),
+            callback      = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata      = _args.length > 2 ? this.getUserArg( _args.slice(2) ) : undefined,
+            _cacheEvents  = this._loadToCache(),
+            condition     = {},
+            removedEvents = []
 
         if ( this.is_empty( targets ) || ! this._isCompleted || this.is_empty( _cacheEvents ) ) {
             return
@@ -2925,58 +3034,63 @@ class Timeline {
                     condition.value = new RegExp( cond )
                     break
             }
-            _cacheEvents.forEach( ( evt ) => {
+            //_cacheEvents.forEach( ( evt ) => {
+            _cacheEvents.some( ( evt, idx ) => {
                 let is_remove = false
 
                 switch ( condition.type ) {
                     case 'eventId': {
                         if ( parseInt( evt.eventId, 10 ) == condition.value ) {
-//console.log( `!removeEvent::${condition.type}:${condition.value}:`, _cacheEvents[_idx] )
+                            //console.log( `!removeEvent::${condition.type}:${condition.value}:`, _cacheEvents[_idx] )
                             is_remove = true
                         }
                         break
                     }
                     case 'daterange': {
-//console.log( condition.value )
                         let _fromX = condition.value.from ? Math.ceil( this._getCoordinateX( condition.value.from.toString() ) ) : 0,
                             _toX   = condition.value.to   ? Math.floor( this._getCoordinateX( condition.value.to.toString() ) ) : _fromX
 
-//console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, `${evt.eventId}: ${_fromX} <= ${evt.x} <= ${_toX} ?`, _fromX <= evt.x && evt.x <= _toX )
+                        //console.log( `!removeEvent::${condition.type}:${condition.value.from} ~ ${condition.value.to}:`, `${evt.eventId}: ${_fromX} <= ${evt.x} <= ${_toX} ?`, _fromX <= evt.x && evt.x <= _toX )
                         if ( _fromX <= evt.x && evt.x <= _toX ) {
-//console.log( `!matchEvent::`, evt )
                             is_remove = true
                         }
                         break
                     }
                     case 'regex': {
-//console.log( `!removeEvent::${condition.type}:${condition.value}:`, JSON.stringify( evt ) )
+                        //console.log( `!removeEvent::${condition.type}:${condition.value}:`, JSON.stringify( evt ) )
                         if ( condition.value.test( JSON.stringify( evt ) ) ) {
                             is_remove = true
                         }
                         break
                     }
                 }
-                if ( ! is_remove ) {
-                    remainEvents.push( evt )
+                if ( is_remove ) {
+                    removedEvents[evt.eventId] = evt
+                    _cacheEvents.splice( idx, 1 )
                 }
             })
         })
-//console.log( remainEvents.length !== _cacheEvents.length )
-        remove_done = remainEvents.length !== _cacheEvents.length
-//console.log( `!removeEvent::after:`, _cacheEvents )
-        if ( ! remove_done ) {
+        if ( removedEvents.length == 0 ) {
+            this._error( 'There is no event that matches the deletion condition.', 'warn' )
             return
         }
 
-        //this._saveToCache( _cacheEvents )
-        this._saveToCache( remainEvents )
+        this._saveToCache( _cacheEvents )
+
+        // Prevents flicker when re-placing events; Added since v2.1.0 (#51)
+        $(this._element).find(Selector.TIMELINE_RELATION_LINES)[0].style.opacity = 1
+        $(this._element).find(Selector.TIMELINE_EVENTS)[0].style.opacity = 1
 
         await this._placeEvent()
 
         if ( callback ) {
             this._debug( 'Fired your callback function after placing additional events.' )
 
-            callback( this._element, this._config, userdata )
+            if ( userdata ) {
+                callback( this._element, this._config, userdata, removedEvents )
+            } else {
+                callback( this._element, this._config, removedEvents )
+            }
         }
     }
 
@@ -2986,18 +3100,29 @@ class Timeline {
     async updateEvent( ...args ) {
         this._debug( 'updateEvent' )
 
-        let _args        = args[0],
-            events       = this.supplement( null, _args[0], this.validateArray ),
-            callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
-            userdata     = _args.length > 2 ? _args.slice(2) : null,
-            _cacheEvents = this._loadToCache(),
-            update_done  = false
+        let _args         = args[0],
+            events        = this.supplement( null, _args[0], this.validateArray ),
+            callback      = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
+            userdata      = _args.length > 2 ? this.getUserArg( _args.slice(2) ) : undefined,
+            _cacheEvents  = this._loadToCache(),
+            _cacheIds     = _cacheEvents.map((evt) => evt.eventId),
+            updatedEvents = [],
+            update_done   = false
 
         if ( this.is_empty( events ) || ! this._isCompleted || this.is_empty( _cacheEvents ) ) {
             return
         }
 
-        events.forEach( ( evt ) => {
+        //events.forEach( ( evt ) => {
+        events.some( ( evt ) => {
+            if ( this.is_empty( evt.eventId ) ) {
+                this._error( 'Could not update because the eventID to be updated is not defined.', 'warn' )
+                return false
+            }
+            if ( ! _cacheIds.includes( evt.eventId ) ) {
+                this._error( `The event node with the eventID: ${evt.eventId} to update does not exist.`, 'warn' )
+                return false
+            }
             let _upc_event = this._registerEventData( '<div></div>', evt ), // Update Candidate
                 _old_index = null,
                 _old_event = _cacheEvents.find( ( _evt, _idx ) => {
@@ -3013,6 +3138,8 @@ class Timeline {
                 _new_event = Object.assign( _new_event, _old_event, _upc_event )
 //console.log( _new_event, _old_event, _upc_event, _old_index )
                 _cacheEvents[_old_index] = _new_event
+                updatedEvents[_upc_event.eventId] = _upc_event
+                _cacheIds.push( _upc_event.eventId )
                 update_done = true
             }
         })
@@ -3023,12 +3150,20 @@ class Timeline {
 
         this._saveToCache( _cacheEvents )
 
+        // Prevents flicker when re-placing events; Added since v2.1.0 (#51)
+        $(this._element).find(Selector.TIMELINE_RELATION_LINES)[0].style.opacity = 1
+        $(this._element).find(Selector.TIMELINE_EVENTS)[0].style.opacity = 1
+
         await this._placeEvent()
 
         if ( callback ) {
             this._debug( 'Fired your callback function after updating events.' )
 
-            callback( this._element, this._config, userdata )
+            if ( userdata ) {
+                callback( this._element, this._config, userdata, updatedEvents )
+            } else {
+                callback( this._element, this._config, updatedEvents )
+            }
         }
     }
 
@@ -3041,7 +3176,7 @@ class Timeline {
         let _args        = args[0],
             _upc_options = this.supplement( null, _args[0], this.validateObject ),
             callback     = _args.length > 1 && typeof _args[1] === 'function' ? _args[1] : null,
-            userdata     = _args.length > 2 ? _args.slice(2) : null,
+            userdata     = _args.length > 2 ? this.getUserArg( _args.slice(2) ) : undefined,
             _elem        = this._element,
             $default_evt = $(_elem).find( Selector.DEFAULT_EVENTS ),
             _old_options = this._config,
@@ -3659,7 +3794,8 @@ class Timeline {
         }
 
         if ( isNaN( _checkDate ) || ! _checkDate ) {
-            console.warn( `"${datetime}" Cannot parse date because invalid format.` )
+            //console.warn( `"${datetime}" Cannot parse date because invalid format.` )
+            this._error( `"${datetime}" Cannot parse date because invalid format.`, 'warn' )
             return null
         }
 
@@ -3902,14 +4038,16 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
             }
 
         if ( ! _dt1 || ! _dt2 ) {
-            console.warn( 'Cannot parse date to get difference because undefined.' )
+            //console.warn( 'Cannot parse date to get difference because undefined.' )
+            this._error( 'Cannot parse date to get difference because undefined.', 'warn' )
             return false
         }
 
         diffMS = _dt2 - _dt1
 
         if ( isNaN( diffMS ) ) {
-            console.warn( 'Cannot parse date to get difference because invalid format.' )
+            //console.warn( 'Cannot parse date to get difference because invalid format.' )
+            this._error( 'Cannot parse date to get difference because invalid format.', 'warn' )
             return false
         }
         if ( absval ) {
@@ -4231,7 +4369,8 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
                 _ms = 3155760000 * 10 * 1000
                 break
             default:
-                console.warn( `Specified an invalid "${scale}" scale.` )
+                //console.warn( `Specified an invalid "${scale}" scale.` )
+                this._error( `Specified an invalid "${scale}" scale.`, 'warn' )
                 _ms = -1
         }
         if ( isBool ) {
@@ -4807,6 +4946,111 @@ console.log( '!!!getFirstDayOfWeek::', week_number, _retDt.toDateString() )
             }
             return order === 'desc' ? comparison * -1 : comparison
         }
+    }
+
+    /*
+     * Getter argument as user data
+     *
+     * @since v2.1.0
+     *
+     * @param array userdata (required)
+     *
+     * @return mixed
+     */
+    getUserArg( userdata ) {
+        //console.log( '!_getUserArg:', userdata, typeof userdata, typeof userdata[0], this.is_Object( userdata[0] ) )
+        switch( typeof userdata[0] ) {
+            case 'string':
+            case 'number':
+                userdata = [ userdata[0] ]
+                break
+            case 'object':
+                if ( this.is_Object( userdata[0] ) ) {
+                    // Object
+                    if ( this.is_empty( userdata[0] ) ) {
+                        userdata = {}
+                    } else {
+                        userdata = this.mergeDeep( {}, userdata[0] )
+                    }
+                } else {
+                    // Array
+                    if ( this.is_empty( userdata[0] ) ) {
+                        userdata = []
+                    } else {
+                        userdata = userdata[0]
+                    }
+                }
+                break
+            default:
+                userdata = userdata[0]
+                break
+        }
+        return userdata
+    }
+
+    /*
+     * Apply custom theme styles
+     *
+     * @since v2.1.0
+     *
+     * @return void
+     */
+    applyThemeStyle() {
+        let theme    = this._config.colorScheme.theme,
+            selector = this._selector,
+            styleId  = `${PREFIX}-theme-${selector.replace(/[.#_]/g, '-')}`,
+            styleTag = $('<style></style>', { id: styleId }),
+            _is      = {},
+            _os      = {},
+            cssText  = ''
+        
+        if ( $(`style#${styleId}`).length > 0 ) {
+            $(`style#${styleId}`).remove()
+        }
+        if ( 'default' === theme.name ) {
+            return
+        }
+
+        _is[Selector.TIMELINE_CONTAINER] = `border:solid 1px ${theme.offline}; background:${theme.background}`
+        _is[Selector.HEADLINE_TITLE] = `color:${theme.text}`
+        _is[Selector.RANGE_META] = `color:${theme.subtext}`
+        _is[Selector.TIMELINE_RULER_TOP] = `outline:solid 1px ${theme.offline}`
+        _is[Selector.TIMELINE_RULER_BOTTOM] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_RULER_LINES}:nth-child(even)`] = `background-color:${this.hexToRgbA(theme.striped1, 0.25)}`
+        _is[Selector.TIMELINE_RULER_ITEM] = `color:${theme.subtext}`
+        _is[`${Selector.TIMELINE_RULER_ITEM}:nth-child(even)`] = `background-color:${this.hexToRgbA(theme.striped2, 0.25)}`
+        _is[Selector.TIMELINE_EVENT_CONTAINER] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}:not(.jqtl-event-type-pointer).active`] = `color:${theme.background};background-color:${theme.active}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}:hover`] = `color:${theme.background};background-color:${theme.active}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}:hover::after`] = `background-color:${this.hexToRgbA(theme.invertbg, 0.1)}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}::before`] = `color:${theme.modesttext}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}${Selector.VIEWER_EVENT_TYPE_POINTER}`] = `border:solid 3px ${theme.line}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}${Selector.VIEWER_EVENT_TYPE_POINTER}.active`] = `border-color:${theme.activeline}`
+        _is[`${Selector.TIMELINE_EVENT_NODE}${Selector.VIEWER_EVENT_TYPE_POINTER}:hover`] = `border-color:${theme.activeline}`
+        _is[Selector.TIMELINE_SIDEBAR] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_SIDEBAR}> [class^="jqtl-side-index-"]`] = `border-bottom:dotted 1px ${theme.offline};background-color:${theme.background};color:${theme.text}`
+        _is[`${Selector.TIMELINE_SIDEBAR} ${Selector.TIMELINE_SIDEBAR_ITEM}:nth-child(odd)`] = `background-color:${theme.striped1}`
+        _is[`${Selector.TIMELINE_SIDEBAR} ${Selector.TIMELINE_SIDEBAR_ITEM}:first-child`] = `border-top:solid 1px ${theme.offline}`
+        _is[Selector.TIMELINE_SIDEBAR_MARGIN] = `outline:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_SIDEBAR_MARGIN}:first-child`] = `border-bottom:solid 1px ${theme.offline}`
+        _is[`${Selector.TIMELINE_SIDEBAR_MARGIN}:last-child`] = `border-top:solid 1px ${theme.offline}`
+        _is[Selector.OVERLAY] = `background-color:${this.hexToRgbA(theme.background, 0.65)} !important`
+        _is[`${Selector.OVERLAY}:nth-child(odd)`] = `background-color:${this.hexToRgbA(theme.striped1, 0.45)} !important`
+        _os[`${Selector.VIEWER_EVENT_TITLE},${Selector.VIEWER_EVENT_CONTENT}`] = `color:${theme.text}`
+        _os[`${Selector.VIEWER_EVENT_TITLE}> .event-content`] = `color:${theme.offtext}`
+        _os[Selector.VIEWER_EVENT_META] = `color:${theme.offtext}`
+        _is[Selector.PRESENT_TIME_MARKER] = `border-left:dotted 1px ${theme.marker}`
+        _is[`${Selector.PRESENT_TIME_MARKER}::before,${Selector.PRESENT_TIME_MARKER}::after`] = `background-color:${theme.marker}`
+        _is[`${Selector.LOADER_ITEM} span`] = `background:${this.hexToRgbA(theme.text, 0.15)}`
+        _os['@keyframes loader'] = `0%{background:${this.hexToRgbA(theme.text, 0.15)}}25%{background:${this.hexToRgbA(theme.text, 0.15)}}50%{background:${this.hexToRgbA(theme.text, 0.15)}}100%{background:${this.hexToRgbA(theme.text, 0.15)}}`
+
+        for ( let _prop of Object.keys( _is ) ) {
+            cssText += `${selector} ${_prop}{${_is[_prop]}}`
+        }
+        for ( let _prop of Object.keys( _os ) ) {
+            cssText += `${_prop}{${_os[_prop]}}`
+        }
+        $('head').append( styleTag.text( cssText ) )
     }
 
     /*

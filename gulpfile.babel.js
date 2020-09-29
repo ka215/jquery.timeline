@@ -51,8 +51,8 @@ export const deploy_styles = () => src('src/timeline.scss')
 
 
 export const docsJS = () => src([
-        'dist/jquery.timeline.min.js',
-        'dist/jquery.timeline.min.js.map'
+        'dist/jquery.timeline.js',
+        'dist/jquery.timeline.js.map'
     ])
     .pipe(dest('docs/js'))
 

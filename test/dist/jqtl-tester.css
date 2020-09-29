@@ -1,0 +1,66 @@
+html {
+  width: 100%;
+}
+
+body {
+  max-width: 100vw;
+  width: inherit;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: #F1F4F7;
+}
+
+[data-standby="shown"] {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  -webkit-transition: opacity 0.3s linear;
+  transition: opacity 0.3s linear;
+}
+
+#page-top {
+  display: inline-block;
+  width: 100%;
+  height: 56px;
+}
+
+#wrapper {
+  height: calc(100% - 116px);
+  max-height: max-content;
+}
+
+footer {
+  background-color: transparent !important;
+}
+
+.nons.brand {
+  text-decoration: none;
+  font-size: 1.5rem;
+  color: #212529;
+  margin-left: 56px;
+}
+
+button.outline {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+#env-setting li.inline label:first-child {
+  width: 50%;
+  margin-right: 0 !important;
+}
+
+#env-setting li.inline label:first-child + * {
+  width: auto;
+  max-width: 50%;
+  margin-right: 0 !important;
+}
+
+#apply-env { width: 100%; }
+
+#my-timeline {
+  overflow-x: hidden;
+  overflow-y: visible;
+  height: max-content;
+  max-height: 100%;
+}
