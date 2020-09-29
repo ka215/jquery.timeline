@@ -378,6 +378,12 @@ window.esdocSearchIndex = [
     "typedef"
   ],
   [
+    "src/timeline.esdoc.js~themecolors",
+    "typedef/index.html#static-typedef-ThemeColors",
+    "src/timeline.esdoc.js~ThemeColors",
+    "typedef"
+  ],
+  [
     "src/timeline.esdoc.js~timeline#_activeevent",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-_activeEvent",
     "src/timeline.esdoc.js~Timeline#_activeEvent",
@@ -460,6 +466,12 @@ window.esdocSearchIndex = [
     "class/src/timeline.esdoc.js~Timeline.html#instance-member-_element",
     "src/timeline.esdoc.js~Timeline#_element",
     "member"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#_error",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-_error",
+    "src/timeline.esdoc.js~Timeline#_error",
+    "method"
   ],
   [
     "src/timeline.esdoc.js~timeline#_filterscalekeyname",
@@ -642,6 +654,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "src/timeline.esdoc.js~timeline#applythemestyle",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-applyThemeStyle",
+    "src/timeline.esdoc.js~Timeline#applyThemeStyle",
+    "method"
+  ],
+  [
     "src/timeline.esdoc.js~timeline#comparevalues",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-compareValues",
     "src/timeline.esdoc.js~Timeline#compareValues",
@@ -660,9 +678,27 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "src/timeline.esdoc.js~timeline#datetimeformat",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-datetimeFormat",
+    "src/timeline.esdoc.js~Timeline#datetimeFormat",
+    "method"
+  ],
+  [
     "src/timeline.esdoc.js~timeline#destroy",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-destroy",
     "src/timeline.esdoc.js~Timeline#destroy",
+    "method"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#diffdate",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-diffDate",
+    "src/timeline.esdoc.js~Timeline#diffDate",
+    "method"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#findscale",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-findScale",
+    "src/timeline.esdoc.js~Timeline#findScale",
     "method"
   ],
   [
@@ -678,6 +714,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "src/timeline.esdoc.js~timeline#getfirstdayofweek",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-getFirstDayOfWeek",
+    "src/timeline.esdoc.js~Timeline#getFirstDayOfWeek",
+    "method"
+  ],
+  [
     "src/timeline.esdoc.js~timeline#gethigherscale",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-getHigherScale",
     "src/timeline.esdoc.js~Timeline#getHigherScale",
@@ -690,9 +732,21 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "src/timeline.esdoc.js~timeline#getlowerscale",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-getLowerScale",
+    "src/timeline.esdoc.js~Timeline#getLowerScale",
+    "method"
+  ],
+  [
     "src/timeline.esdoc.js~timeline#getoptions",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-getOptions",
     "src/timeline.esdoc.js~Timeline#getOptions",
+    "method"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#getuserarg",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-getUserArg",
+    "src/timeline.esdoc.js~Timeline#getUserArg",
     "method"
   ],
   [
@@ -747,6 +801,12 @@ window.esdocSearchIndex = [
     "src/timeline.esdoc.js~timeline#mergedeep",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-mergeDeep",
     "src/timeline.esdoc.js~Timeline#mergeDeep",
+    "method"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#modifydate",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-modifyDate",
+    "src/timeline.esdoc.js~Timeline#modifyDate",
     "method"
   ],
   [
@@ -849,6 +909,12 @@ window.esdocSearchIndex = [
     "src/timeline.esdoc.js~timeline#validatestring",
     "class/src/timeline.esdoc.js~Timeline.html#instance-method-validateString",
     "src/timeline.esdoc.js~Timeline#validateString",
+    "method"
+  ],
+  [
+    "src/timeline.esdoc.js~timeline#verifyscale",
+    "class/src/timeline.esdoc.js~Timeline.html#instance-method-verifyScale",
+    "src/timeline.esdoc.js~Timeline#verifyScale",
     "method"
   ],
   [

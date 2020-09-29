@@ -10,7 +10,7 @@ dist/*.map
 dist/jquery.timeline.js
 #test/*.php
 #test/dist/
-#test/sample.html
+test/sample*
 
 # Numerous always-ignore extensions
 *.diff

@@ -19,8 +19,8 @@ $args = [
     ],
 ];
 $params = filter_input_array( INPUT_GET, $args );
-define( 'USE_LOCAL_TIMEZONE', $params['ltz'] || false );
-define( 'DEBUG_MODE', $params['mode'] || false );
+define( 'USE_LOCAL_TIMEZONE', isset( $params['ltz'] ) ? (bool) $params['ltz'] : false );
+define( 'DEBUG_MODE', isset( $params['mode'] ) ? (bool) $params['mode'] : false );
 
 try {
     // DateTimeImmutableオブジェクトで現在の日時を取得

@@ -1,6 +1,21 @@
 Change Logs
 ---
 
+### v2.1.0 (September 25, 2020 GMT)
+
+* Fixed the event ID generation process by the addEvent method ([Issue#13](/ka215/jquery.timeline/issues/13)).
+  Since ver.2.1.0, the events with duplicate IDs cannot be added and an error will occur. And if you specify a unique ID, it will be added with that event ID. An ID is automatically generated as in the past when an event with an unspecified ID is added.
+* Prevented flicker when replacing any events by using addEvent method ([Issue#51](/ka215/jquery.timeline/issues/51)).
+* Fixed a bug with some curved relation lines ([Issue#57](/ka215/jquery.timeline/issues/57)).
+* Added the theme color setting option for timeline instances ([Issue#58](/ka215/jquery.timeline/issues/58)).
+  If you want to enable a custom theme, you need to change the theme name to something other than "default" and set various colors.
+* Fixed a bug that there is a difference in locale processing between the top and bottom rulers ([Issue#61](/ka215/jquery.timeline/issues/61)).
+* Added an argument that can refer to the newly added event data to the callback function of the addEvent method.
+  If user data is specified in the 4th argument of the method, the event data added in the 4th argument of the callback can be referenced, and if user data is not specified, the event data added in the 3rd argument of the callback can be referenced.
+  The event data is an array with the issued event ID as the key and the event data object as the value.
+* Changed the wrapping process for custom user data arguments for each method.
+* Adjusted and added various styles.
+
 ### v2.0.0b6 (October 16, 2019 GMT)
 
 * Fixed a bug that the displayed date on the ruler differs actually value when timezone is UTC ([Issue#48](/ka215/jquery.timeline/issues/48)).

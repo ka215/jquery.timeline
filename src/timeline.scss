@@ -1,7 +1,21 @@
+$theme:      'default';
+$text:       #343A40;
+$subtext:    #707070;
+$offtext:    #B0B0B0;
+$modesttext: #969696;
+$line:       #6C757D;
+$offline:    #DDDDDD;
+$activeline: #DC3545;
+$background: #FFFFFF;
+$invertbg:   #121212;
+$striped1:   #F7F7F7;
+$striped2:   #F0F0F0;
+$active:     #F73333;
+$marker:     #2C7CFF;
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 2.0.0b4
+ * Version: 2.1.0
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -57,7 +71,7 @@
  * ----------------------------------------------------------------------------
  */
 .jqtl-headline {
-  width: 100%;
+  width: auto;
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
   padding-left: 5px;
@@ -75,13 +89,13 @@
 .jqtl-timeline-title {
   align-self: center;
   font-size: 26px;
-  color: #333;
+  color: $text;
 }
 
 .jqtl-range-meta {
   align-self: center;
   font-size: 86%;
-  color: #777;
+  color: $subtext;
 }
 
 .jqtl-range-span {
@@ -98,7 +112,7 @@
     left: 20%;
     top: calc(50% - 0.5rem);
     font-size: 1rem;
-    color: #bbb;
+    color: $offtext;
   }
 }
 
@@ -112,10 +126,10 @@
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: flex-start;
-  border: solid 1px #DDD;
+  border: solid 1px $offline;
   overflow-x: auto;
   overflow-y: hidden;
-  background-color: #FFFFFF;
+  background-color: $background;
   box-sizing: content-box;
   
   *,
@@ -145,7 +159,7 @@
 .jqtl-ruler-top,
 .jqtl-ruler-bottom {
   position: relative;
-  outline: solid 1px #DDD;
+  outline: solid 1px $offline;
   overflow: hidden;
   z-index: 20;
 }
@@ -190,7 +204,7 @@
   justify-content: flex-start;
 
   &:nth-child(even) {
-    background-color: rgba(247,247,247,.25);
+    background-color: rgba($striped1, 0.25);
   }
 }
 
@@ -202,7 +216,7 @@
   text-align: center;
   align-self: center;
   font-family: "Courier New", monospace !important;
-  color: #777;
+  color: $subtext;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -220,7 +234,7 @@
 }
 
 .jqtl-ruler-line-item:nth-child(even) {
-  background-color: rgba(240,240,240,.25);
+  background-color: rgba($striped2, 0.25);
 }
 
 /* ----------------------------------------------------------------------------
@@ -229,7 +243,7 @@
  */
 .jqtl-event-container {
   position: relative;
-  outline: solid 1px #DDD;
+  outline: solid 1px $offline;
   z-index: 1;
 }
 
@@ -250,7 +264,14 @@
 }
 
 .jqtl-relation-lines {
+  visibility: hidden;
+  opacity: 0;
   z-index: 3;
+
+  &[data-state="shown"] {
+    visibility: visible;
+    opacity: 1;
+  }
 }
 
 .jqtl-events {
@@ -259,7 +280,7 @@
   opacity: 0;
   z-index: 4;
 
-  &[data-state^=shown] {
+  &[data-state="shown"] {
     visibility: visible;
     opacity: 1;
   }
@@ -287,8 +308,8 @@
 
   &:not(.jqtl-event-type-pointer) {
     &.active {
-      color: #FEFEFE;
-      background-color: #F73333;
+      color: $background;
+      background-color: $active;
     }
   }
 }
@@ -317,12 +338,12 @@
 
 .jqtl-event-node {
   &:hover {
-    color: #FEFEFE;
-    background-color: #F73333;
+    color: $background;
+    background-color: $active;
 
     &::after {
       z-index: 6;
-      background-color: rgba(0, 0, 0, 0.1);
+      background-color: rgba($invertbg, 0.1);
     }
 
     .jqtl-event-thumbnail {
@@ -337,7 +358,7 @@
     top: 2px;
     text-align: right;
     font-size: 0.625rem; /* Defaults to 10px */
-    color: #999999;
+    color: $modesttext;
   }
 
   &::after {
@@ -359,7 +380,7 @@
 .jqtl-event-node.jqtl-event-type-pointer { 
   padding: 0;
   border-radius: 50%;
-  border: solid 3px #6C757D;
+  border: solid 3px $line;
   background-image: none;
   background-repeat: no-repeat;
   background-size: cover;
@@ -367,11 +388,11 @@
   transition: all 0.1s linear;
 
   &.active {
-    border-color: #DC3545 !important;
+    border-color: $activeline !important;
   }
 
   &:hover {
-    border-color: #DC3545;
+    border-color: $activeline;
   }
 
   &::after {
@@ -400,7 +421,7 @@
   justify-content: flex-start;
   align-items: center;
   width: max-content;
-  outline: solid 1px #DDD;
+  outline: solid 1px $offline;
   z-index: 25;
 
   &> [class^="jqtl-side-index-"] { 
@@ -413,25 +434,25 @@
     width: 100%;
     font-size: 14px;
     vertical-align: middle;
-    border-bottom: dotted 1px #DDD;
-    background-color: #FFFFFF;
+    border-bottom: dotted 1px $offline;
+    background-color: $background;
     white-space: nowrap;
   }
 
   .jqtl-side-index-item {
     &:nth-child(odd) {
-      background-color: #F7F7F7;
+      background-color: $striped1;
     }
 
     &:first-child {
-      border-top: solid 1px #DDD;
+      border-top: solid 1px $offline;
     }
 
     img {
       position: relative;
       display: inline-block;
       margin-right: 0.5rem;
-      height: calc( 100% - 6px );
+      height: calc(100% - 6px);
       width: auto;
       text-align: left;
       vertical-align: middle;
@@ -439,14 +460,14 @@
   }
 
   .jqtl-side-index-margin {
-    outline: solid 1px #DDD;
+    outline: solid 1px $offline;
 
     &:first-child {
-      border-bottom: solid 1px #DDD;
+      border-bottom: solid 1px $offline;
     }
 
     &:last-child {
-      border-top: solid 1px #DDD;
+      border-top: solid 1px $offline;
       border-bottom: 0;
     }
   }
@@ -458,10 +479,10 @@
 }
 
 .jqtl-overlay {
-  background-color: rgba(255,255,255,.65) !important;
+  background-color: rgba($background, 0.65) !important;
 
   &:nth-child(odd) {
-    background-color: rgba(247,247,247,.45) !important;
+    background-color: rgba($striped1, 0.45) !important;
   }
 }
 
@@ -499,7 +520,7 @@
   padding: 1rem;
 
   &> .event-content {
-    color: #C0C0C0;
+    color: $offtext;
   }
 }
 
@@ -526,7 +547,7 @@
   left: -9999px;
   top: -9999px;
   width: 1px;
-  border-left: dotted 1px #2c7cff;
+  border-left: dotted 1px $marker;
   z-index: 21;
 
   &::before,
@@ -536,7 +557,7 @@
     border-radius: 50%;
     width: 5px;
     height: 5px;
-    background-color: #2c7cff;
+    background-color: $marker;
     z-index: 22;
   }
 
@@ -606,7 +627,7 @@
     bottom: 0px;
     width: 9px;
     height: 5px;
-    background: rgba(51, 51, 51, 0.15);
+    background: rgba($text, 0.15);
     position: absolute;
     animation: loader 1.5s infinite ease-in-out;
 
@@ -636,22 +657,22 @@
   0% {
     height: 5px;
     transform: translateY(0px);
-    background: rgba(51, 51, 51, 0.15);
+    background: rgba($text, 0.15);
   }
   25% {
     height: 30px;
     transform: translateY(15px);
-    background: rgba(51, 51, 51, 0.3);
+    background: rgba($text, 0.3);
   }
   50% {
     height: 5px;
     transform: translateY(0px);
-    background: rgba(51, 51, 51, 0.15);
+    background: rgba($text, 0.15);
   }
   100% {
     height: 5px;
     transform: translateY(0px);
-    background: rgba(51, 51, 51, 0.15);
+    background: rgba($text, 0.15);
   }
 }
 
@@ -665,4 +686,21 @@
   top: -9999px;
   visibility: hidden;
   white-space: nowrap;
+}
+
+.jqtl-icon {
+  position: relative;
+  display: inline-block;
+  margin-top: auto;
+  margin-bottom: auto;
+  min-width: 1em;
+  min-height: 1em;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: middle;
+  text-align: center;
+  background-image: url("data:image/svg+xml;utf-8,<svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='538.583px' height='538.583px' viewBox='0 0 538.583 538.583'><path fill='%23184EE8' d='M270.291,78.341c16.82,0,30.45,13.63,30.45,30.45s-13.63,30.45-30.45,30.45s-30.45-13.63-30.45-30.45S253.471,78.341,270.291,78.341z M270.291,398.341c16.82,0,30.45,13.63,30.45,30.45s-13.63,30.45-30.45,30.45s-30.45-13.63-30.45-30.45S253.471,398.341,270.291,398.341z M139.291,237.341c16.82,0,30.45,13.63,30.45,30.45s-13.63,30.45-30.45,30.45s-30.45-13.63-30.45-30.45S122.471,237.341,139.291,237.341z M405.291,237.341c16.82,0,30.45,13.63,30.45,30.45s-13.63,30.45-30.45,30.45s-30.45-13.63-30.45-30.45S388.471,237.341,405.291,237.341z M19.291,188.792c0,31.49,23.63,64.05,56,79.96c0.52,34.9,28.97,63.04,64,63.04c31.6,0,57.85-22.89,63.06-53h139.88c5.21,30.11,31.46,53,63.06,53c26.4,0,49.06-15.98,58.85-38.8c16.85,12.94,27.15,31.24,27.15,51.52c0,21.67-11.45,41.08-30.14,54.1c-13.46,6.91-29.61,10.9-47.32,10.9h-82.82c-8.48-25.41-32.46-43.72-60.72-43.72c-27.52,0-50.99,17.37-60.03,41.75h-81.64v-43.75l-84.33,59.5l84.33,59.5v-43.75h78.33c4.49,30.96,31.13,54.75,63.34,54.75c32.39,0,59.16-24.06,63.41-55.28h87.13c52.17,0,99.46-43.82,99.46-88v-12c0-29.96-21.4-60.9-51.36-77.53c-3.4-32.15-30.59-57.19-63.64-57.19c-27.62,0-51.15,17.49-60.12,42h-145.76c-8.97-24.51-32.5-42-60.12-42c-24.97,0-46.6,14.3-57.15,35.15c-20.78-12.98-33.85-33.31-33.85-56.15c0-21.67,11.45-41.08,30.14-54.1c13.46-6.91,29.61-10.9,47.32-10.9h81.03c3.94,31.57,30.87,56,63.51,56c30.8,0,56.52-21.76,62.63-50.75h79.04v43.75l84.33-59.5l-84.33-59.5v43.75h-80.31c-7.86-26.46-32.35-45.75-61.36-45.75c-27.99,0-51.78,17.97-60.48,43h-91.06c-52.17,0-99.46,43.82-99.46,88V188.792z'/></svg>");
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
