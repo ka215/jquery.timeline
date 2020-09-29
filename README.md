@@ -1,6 +1,6 @@
 <p align="center">
-  <h1 align="center" valign="middle" height="40">
-    <img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/timeline.svg" width="40" height="40">&nbsp;
+  <h1 align="center" valign="bottom" height="43">
+    <img src="https://raw.githubusercontent.com/ka215/jquery.timeline/develop/docs/imgs/timeline.svg" width="36" height="36" valign="bottom">&nbsp;
     jQuery.Timeline V2
   </h1>
 
