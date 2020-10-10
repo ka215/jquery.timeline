@@ -1,6 +1,13 @@
 Change Logs
 ---
 
+### v2.1.1 (October 10, 2020 GMT)
+
+* Fixed a bug that some methods did not work if the selector of the timeline instance contained uppercase letters ([Issue#56](/ka215/jquery.timeline/issues/56)).
+* Fixed a bug that the side-scroll bar is displayed when the width of the element of the timeline instance overflows the parent element ([Issue#59](/ka215/jquery.timeline/issues/59)).
+* Upgraded all modules for plugin builds to the latest configuration.
+* Ignored testing resources from the master branch (Note: they still exist in the develop branch).
+
 ### v2.1.0 (September 29, 2020 GMT)
 
 * Fixed the event ID generation process by the addEvent method ([Issue#13](/ka215/jquery.timeline/issues/13)).

@@ -151,6 +151,7 @@ jQuery.Timeline's documentation, included in this repository in the root directo
 
 ## Example as demonstration
 
+- [CRUD System for jQuery.Timeline](https://ka2.org/jqtl-v2/sample-crud.html)
 - [jQuery.Timeline 2.1.0 via jQuery 3.5.1](https://ka2.org/jqtl-v2/v2.1.html)
 - [jQuery.Timeline Tester](https://ka2.org/jqtl-v2/)
 - [Version 2.x Point Type Timeline DEMO](https://ka2.org/jqtl-v2/demo1.php)

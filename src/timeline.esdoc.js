@@ -1,6 +1,6 @@
 /*!
  * Typedef for jQuery Timeline's ESDoc
- * @version: 2.1.0
+ * @version: 2.1.1
  */
 
 /** @type {string} [NAME="Timeline"] */

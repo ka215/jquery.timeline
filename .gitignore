@@ -10,6 +10,7 @@ dist/*.map
 dist/jquery.timeline.js
 #test/*.php
 #test/dist/
+test/dist/jqtl-crud*
 test/sample*
 
 # Numerous always-ignore extensions

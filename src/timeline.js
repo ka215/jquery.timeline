@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.1.0
+ * Version: 2.1.1
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.1.0"
+const VERSION            = "2.1.1"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -435,10 +435,10 @@ class Timeline {
     async _init() {
         this._debug( '_init' )
 
-        let _elem       = this._element,
-            _selector   = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`
+        let _elem     = this._element,
+            _selector = `${_elem.tagName}${( _elem.id ? `#${_elem.id}` : '' )}${( _elem.className ? `.${_elem.className.replace(/\s/g, '.')}` : '' )}`
 
-        this._selector = _selector.toLowerCase()
+        this._selector = _selector//.toLowerCase()
 
         if ( this._isInitialized || this._isCompleted ) {
             return this
@@ -644,8 +644,8 @@ class Timeline {
         }
         _props.fullheight = _props.rows * _props.rowSize // Provisional value as theoretical value
         // Define visible size according to full size of timeline (:> タイムラインのフルサイズに準じた可視サイズを定義
-        _props.visibleWidth  = _props.width > 0  ? `${( _props.width <= _props.fullwidth ? _props.width : _props.fullwidth )}px` : '100%'
-        _props.visibleHeight = _props.height > 0 ? `${( _props.height <= _props.fullheight ? _props.height : _props.fullheight )}px` : 'auto'
+        _props.visibleWidth  = _props.width > 0  ? `${( _props.width <= _props.fullwidth ? _props.width : _props.fullwidth )}px` : 'max-content'
+        _props.visibleHeight = _props.height > 0 ? `${( _props.height <= _props.fullheight ? _props.height : _props.fullheight )}px` : 'max-content'
 
         for ( let _prop in _props ) {
             if ( /^(width|height|variableScale|absX|moveX)$/.test( _prop ) ) {
@@ -840,11 +840,12 @@ class Timeline {
         let _elem          = this._element,
             _opts          = this._config,
             _props         = this._instanceProps,
-            _tl_container  = $('<div></div>', { class: ClassName.TIMELINE_CONTAINER, style: `width: ${_props.visibleWidth}; height: ${_props.visibleHeight};` }),// .jqtl-container
+            _tl_container  = $('<div></div>', { class: ClassName.TIMELINE_CONTAINER }),// .jqtl-container
             _tl_main       = $('<div></div>', { class: ClassName.TIMELINE_MAIN }),// .jqtl-main
-            $_el           = $(_elem)// Cached an element
+            $_el           = $(_elem),// Cached an element
+            $_tl_parent    = $_el.parent()
 
-//console.log( _elem, _opts, _props )
+//console.log( '_renderView::', _elem, _opts, _props )
         if ( $_el.length == 0 ) {
             throw new TypeError( 'Does not exist the element to render a timeline container.' )
         }
@@ -887,7 +888,19 @@ class Timeline {
         // Create the timeline footer (:> タイムラインのフッタを生成
         $_el.append( this._createFooter() )
 
-        // Apply the theme color scheme (:> テーマ配色設定を適用
+        // Optimize the parent element of the timeline
+        if ( this.is_empty( $_el.attr( 'data-resized' ) ) ) {
+//console.log( '_renderView::', $_tl_parent, Number(_tl_main.get(0).scrollWidth), Number($_el.get(0).scrollWidth), Number($_tl_parent.width() + 2) )
+            if ( $_el.get(0).scrollWidth > $_tl_parent.width() + 2 ) {
+                _tl_container.css({ width: $_tl_parent.width() - 2, height: _props.visibleHeight })
+                $_tl_parent.css({ maxWidth: '100vw', overflowX: 'hidden' })
+            } else {
+                _tl_container.css({ width: _props.visibleWidth, height: _props.visibleHeight })
+            }
+            $_el.attr( 'data-resized', true )
+        }
+
+        // Apply the theme color scheme
         this.applyThemeStyle()
 
         this._isShown = true
