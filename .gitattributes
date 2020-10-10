@@ -1,2 +1,2 @@
-.gitignore merge=ours
-.cache/ merge=ours
+/.gitignore merge=ours
+/.cache/ merge=ours
