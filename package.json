@@ -1,7 +1,7 @@
 {
   "name": "jq-timeline",
   "description": "jQuery plugin for the horizontal timeline creation",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "version_short": "2.0",
   "keywords": [
     "javascript",
