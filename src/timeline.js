@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.1.1
+ * Version: 2.1.2
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.1.1"
+const VERSION            = "2.1.2"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -134,6 +134,7 @@ const Default = {
     wrapScale       : true,
     firstDayOfWeek  : 0, // 0: Sunday, 1: Monday, ... 6: Saturday
     engine          : "canvas",
+    disableLimitter : false, // Added new option since v2.1.2
     debug           : false,
     // datetimeFormat : {},       // --> Deprecated since v2.0.0
     // datetimePrefix : "",       // --> Deprecated since v2.0.0
@@ -592,11 +593,12 @@ class Timeline {
             // For scales where the value of quantity per unit is variable length (:> 単位あたりの量の値が可変長であるスケールの場合
             let _temp       = this.verifyScale( _opts.scale, _props.begin, _props.end, _props.isVLS ),
                 _values     = Object.values( _temp ),
-                _averageVar = this.numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average value within the range
-                _minVar     = Math.min( ..._values ),
-                _totalWidth = 0,
-                _base_is_min = true, // Whether use min value of scale as base grid width
-                _baseVar    = _base_is_min ? _minVar : _averageVar
+                //_averageVar = this.numRound( _values.reduce( ( a, v ) => a + v, 0 ) / _values.length, 4 ), // Average value within the range
+                //_minVar     = Math.min( ..._values ),
+                _baseVar    = /^weeks?$/i.test( _opts.scale ) ? Math.max( ..._values ) : Math.min( ..._values ),
+                _totalWidth = 0//,
+                //_baseToMin  = true, // Whether use min value of scale as base grid width (:> スケールの最小値をベースグリッド幅として使用するか
+                //_baseVar    = _baseToMin ? _minVar : _averageVar
 
             switch ( true ) {
                 case /^millenniums?|millennia$/i.test( _opts.scale ):
@@ -630,9 +632,9 @@ class Timeline {
                     _props.scale = _baseVar * 1
                     break
             }
-//console.log( '!_calcVars::', _opts.scale, _temp, _values )
+            //console.log( '!_calcVars::', _opts.scale, _temp, _values, _props )
             _values.forEach( ( val ) => {
-//console.log( `!!_calcVars::_totalWidth: ${_totalWidth} + ${this.numRound( ( val * _props.scaleSize ) / _baseVar, 2 )}` )
+                //console.log( `!!_calcVars::_totalWidth: ${_totalWidth} + ${this.numRound( ( val * _props.scaleSize ) / _baseVar, 2 )}` )
                 _totalWidth += this.numRound( ( val * _props.scaleSize ) / _baseVar, 2 )
             })
 
@@ -660,7 +662,7 @@ class Timeline {
             throw new TypeError( `The range of the timeline to be rendered is incorrect.` )
         }
 
-//console.log( '!_calcVars::return:', _props )
+        //console.log( '!_calcVars::return:', _props )
         this._instanceProps = _props
     }
 
@@ -827,8 +829,13 @@ class Timeline {
      * @private: Verify the display period of the timeline does not exceed the maximum renderable range (:> タイムラインの表示期間が最大描画可能範囲を超過していないか検証する
      */
     _verifyMaxRenderableRange( scale = this._config.scale ) {
-        this._debug( `Verify max renderable range::${scale}: ${this._instanceProps.grids} / ${LimitScaleGrids[this._filterScaleKeyName( scale )]}` )
-        return this._instanceProps.grids <= LimitScaleGrids[this._filterScaleKeyName( scale )]
+        if ( this._config.disableLimitter ) {
+            this._debug( `The scale limiter has been OFF::${scale}: ${this._instanceProps.grids} / ${LimitScaleGrids[this._filterScaleKeyName( scale )]}` )
+            return true
+        } else {
+            this._debug( `Verify max renderable range::${scale}: ${this._instanceProps.grids} / ${LimitScaleGrids[this._filterScaleKeyName( scale )]}` )
+            return this._instanceProps.grids <= LimitScaleGrids[this._filterScaleKeyName( scale )]
+        }
     }
 
     /*
@@ -2712,7 +2719,7 @@ class Timeline {
             if ( ! Object.hasOwnProperty.call( moveOpts, 'scale' ) || ! this.verifyScale( moveOpts.scale ) ) {
                 moveOpts.scale = _opts.scale
             }
-            if ( ! Object.hasOwnProperty.call( moveOpts, 'range' ) || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'range' ) || ( ! _opts.disableLimitter ? parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] : true ) ) {
                 moveOpts.range = _opts.range
             }
         }
@@ -2781,7 +2788,7 @@ class Timeline {
             if ( ! Object.hasOwnProperty.call( moveOpts, 'scale' ) || ! this.verifyScale( moveOpts.scale ) ) {
                 moveOpts.scale = _opts.scale
             }
-            if ( ! Object.hasOwnProperty.call( moveOpts, 'range' ) || parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] ) {
+            if ( ! Object.hasOwnProperty.call( moveOpts, 'range' ) || ( ! _opts.disableLimitter ? parseInt( moveOpts.range, 10 ) > LimitScaleGrids[moveOpts.scale] : true ) ) {
                 moveOpts.range = _opts.range
             }
         }

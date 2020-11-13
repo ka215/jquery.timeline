@@ -1,6 +1,12 @@
 Change Logs
 ---
 
+### v2.1.2 (November 13, 2020 GMT)
+
+* Fixed a bug where the grid width specified minGridSize did not work properly when the scale is "week" ([Issue#54](/ka215/jquery.timeline/issues/54)).
+* Added the "disableLimitter" option to avoid validation of the maximum of the scale grids ([Issue#71](/ka215/jquery.timeline/issues/71)).
+* Modified the styles of sidebar item elements in the timeline.
+
 ### v2.1.1 (October 10, 2020 GMT)
 
 * Fixed a bug that some methods did not work if the selector of the timeline instance contained uppercase letters ([Issue#56](/ka215/jquery.timeline/issues/56)).

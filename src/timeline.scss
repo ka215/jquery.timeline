@@ -15,7 +15,7 @@ $marker:     #2C7CFF;
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 2.1.1
+ * Version: 2.1.2
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -425,11 +425,6 @@ $marker:     #2C7CFF;
   z-index: 25;
 
   &> [class^="jqtl-side-index-"] { 
-    /*
-    display: table-cell;
-    padding-left: .5rem;
-    padding-right: .5rem;
-    */
     padding: 0;
     width: 100%;
     font-size: 14px;
@@ -440,6 +435,19 @@ $marker:     #2C7CFF;
   }
 
   .jqtl-side-index-item {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+
+    &::before,
+    &::after {
+      display: inline-block;
+      content: '';
+    }
+
     &:nth-child(odd) {
       background-color: $striped1;
     }
