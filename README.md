@@ -26,9 +26,9 @@
 </p>
 
 [![Build Status](https://travis-ci.org/ka215/jquery.timeline.svg?branch=master)](https://travis-ci.org/ka215/jquery.timeline)
-![David](https://img.shields.io/david/ka215/jquery.timeline.svg)
 ![GitHub release](https://img.shields.io/github/release/ka215/jquery.timeline.svg)
 ![GitHub All Releases](https://img.shields.io/github/downloads/ka215/jquery.timeline/total.svg)
+![npm download](https://img.shields.io/npm/dt/jq-timeline?label=npm%20download)
 [![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE)
 
 <br>
