@@ -56,8 +56,8 @@ Several quick start options are available:
 - Clone the repository: `git clone https://github.com/ka215/jquery.timeline.git`
 - Load via CDN:
 ```HTML
-<link href="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@master/dist/jquery.timeline.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@master/dist/jquery.timeline.min.js"></script>
+<link href="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@main/dist/jquery.timeline.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/gh/ka215/jquery.timeline@main/dist/jquery.timeline.min.js"></script>
 ```
 
 ## What's included
@@ -178,4 +178,4 @@ Donate URL: <https://ka215.github.io/jquery.timeline/donation.html>
 
 ## Copyright and license
 
-Code and documentation copyright 2011-2020 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE).
+Code and documentation copyright 2011-2020 the [ka2](https://ka2.org/). Code released under the [MIT License](https://raw.githubusercontent.com/ka215/jquery.timeline/main/LICENSE).
