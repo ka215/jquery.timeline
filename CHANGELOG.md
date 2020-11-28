@@ -1,6 +1,12 @@
 Change Logs
 ---
 
+### v2.1.3 (November 28, 2020 GMT)
+
+* Fixed the bug that fails to rendering the headline meta when a "endDatetime" of the timeline option is defined to "auto" ([Issue#72](/ka215/jquery.timeline/issues/72)).
+* Modified several styles of headline and footer in Timeline.
+* Changed the branch name representing the repository from "master" to "main".
+
 ### v2.1.2 (November 13, 2020 GMT)
 
 * Fixed a bug where the grid width specified minGridSize did not work properly when the scale is "week" ([Issue#54](/ka215/jquery.timeline/issues/54)).

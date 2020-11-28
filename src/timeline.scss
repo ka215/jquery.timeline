@@ -15,7 +15,7 @@ $marker:     #2C7CFF;
 /*!
  * jQuery Timeline Plugin
  * ------------------------
- * Version: 2.1.2
+ * Version: 2.1.3
  * Coded by: ka2 ( https://ka2.org/ )
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -72,10 +72,10 @@ $marker:     #2C7CFF;
  */
 .jqtl-headline {
   width: auto;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-  padding-left: 5px;
-  padding-right: 5px;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
 }
 
 .jqtl-headline-wrapper {
@@ -83,18 +83,21 @@ $marker:     #2C7CFF;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: center;
 }
 
 .jqtl-timeline-title {
+  margin: 0;
   align-self: center;
-  font-size: 26px;
+  font-size: 1.4286em;
+  font-weight: 600;
   color: $text;
 }
 
 .jqtl-range-meta {
+  margin: 0;
   align-self: center;
-  font-size: 86%;
+  font-size: 0.8571em;
   color: $subtext;
 }
 
@@ -585,14 +588,23 @@ $marker:     #2C7CFF;
  * ----------------------------------------------------------------------------
  */
 .jqtl-footer {
-  margin: 15px auto;
-  padding: 0;
-  width: 100%;
-}
+  margin: 0.25em 0;
+  padding: 0 0.25em;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
 
-.jqtl-footer-content {
-  clear: both;
-  text-align: center;
+  .jqtl-range-meta {
+    width: 100%;
+  }
+
+  .jqtl-footer-content {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* ----------------------------------------------------------------------------

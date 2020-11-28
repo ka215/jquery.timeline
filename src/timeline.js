@@ -4,7 +4,7 @@ import "regenerator-runtime/runtime"
 /*!
  * jQuery Timeline
  * ------------------------
- * Version: 2.1.2
+ * Version: 2.1.3
  * Author: Ka2 (https://ka2.org/)
  * Repository: https://github.com/ka215/jquery.timeline
  * Lisenced: MIT
@@ -15,7 +15,7 @@ import "regenerator-runtime/runtime"
  * ----------------------------------------------------------------------------------------------------------------
  */
 const NAME               = "Timeline"
-const VERSION            = "2.1.2"
+const VERSION            = "2.1.3"
 const DATA_KEY           = "jq.timeline"
 const EVENT_KEY          = `.${DATA_KEY}`
 const PREFIX             = "jqtl-"
@@ -940,11 +940,7 @@ class Timeline {
                 if ( Object.hasOwnProperty.call( _format, 'custom' ) ) {
                     _scale = 'custom'
                 }
-                if ( [ 'year', 'month', 'day', 'week' ].includes( _scale ) ) {
-                    _meta = `${this.getLocaleString( _opts.startDatetime, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _opts.endDatetime, _scale, _locale, _format )}`
-                } else {
-                    _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
-                }
+                _meta = `${this.getLocaleString( _begin, _scale, _locale, _format )}<span class="${ClassName.RANGE_SPAN}"></span>${this.getLocaleString( _end, _scale, _locale, _format )}`
                 _wrapper.append( `<div class="${ClassName.RANGE_META}">${_meta}</div>` )// .jqtl-range-meta
             }
         }
