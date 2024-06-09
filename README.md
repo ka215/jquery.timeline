@@ -14,7 +14,7 @@
   </table>
 
   <p align="center">
-    You are able to easily create two types of horizontal timeline with this jQuery plugin.
+    You are able to easily create two types of horizontal timeline with this jQuery plugin.  
     <br>
     <br>
     <a href="https://github.com/ka215/jquery.timeline/issues/new?template=bug_report.md">Report bug</a>
@@ -32,6 +32,8 @@
 [![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://raw.githubusercontent.com/ka215/jquery.timeline/master/LICENSE)
 
 <br>
+
+![introduce-sunorhc-timeline](https://github.com/ka215/jquery.timeline/assets/7112853/8d550523-d3d8-421c-afbb-27b951f999de)  
 
 ## Table of Contents
 
