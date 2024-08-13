@@ -25,6 +25,8 @@
   </p>
 </p>
 
+<div align="center">
+
 [![Build Status](https://travis-ci.org/ka215/jquery.timeline.svg?branch=master)](https://travis-ci.org/ka215/jquery.timeline)
 ![GitHub release](https://img.shields.io/github/release/ka215/jquery.timeline.svg)
 ![GitHub All Releases](https://img.shields.io/github/downloads/ka215/jquery.timeline/total.svg)
@@ -33,7 +35,10 @@
 
 <br>
 
-![introduce-sunorhc-timeline](https://github.com/ka215/jquery.timeline/assets/7112853/8d550523-d3d8-421c-afbb-27b951f999de)  
+| We have released "[Sunorhc.Timeline](https://github.com/ka215/sunorhc.timeline/)", the long-awaited successor to "jQuery.Timeline". Please try it out! |
+|:---:|
+
+</div>
 
 ## Table of Contents
 
